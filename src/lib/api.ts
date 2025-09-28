@@ -1,0 +1,71 @@
+import axios from "axios";
+import type { ApiRegisterRequest } from "@/types";
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+  console.log("[API_BASE_URL]", API_BASE_URL);
+
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: { "Content-Type": "application/json", Accept: "application/json" },
+  withCredentials: false,
+});
+
+// ========================
+// Token Helpers
+// ========================
+const LS_TOKEN_KEY = "gleam_token";
+const COOKIE_TOKEN_KEY = "auth_token";
+
+export const getToken = () => localStorage.getItem(LS_TOKEN_KEY) || "";
+export const setToken = (t: string) => localStorage.setItem(LS_TOKEN_KEY, t);
+export const clearToken = () => localStorage.removeItem(LS_TOKEN_KEY);
+
+export const setTokenCookie = (t: string) => {
+  document.cookie = `${COOKIE_TOKEN_KEY}=${t}; Path=/; Max-Age=${
+    60 * 60 * 24 * 7
+  }; SameSite=Lax`;
+};
+export const clearTokenCookie = () => {
+  document.cookie = `${COOKIE_TOKEN_KEY}=; Path=/; Max-Age=0; SameSite=Lax`;
+};
+
+// Attach Authorization if present
+api.interceptors.request.use((config) => {
+  const t = localStorage.getItem('gleam_token');
+  if (t) config.headers.Authorization = `Bearer ${t}`;
+  return config;
+});
+
+// ========================
+// Auth API
+// ========================
+export const authAPI = {
+  registerUser: (data: ApiRegisterRequest) =>
+    api.post("/auth/register/user", data),
+  login: (data: { email: string; password: string }) =>
+    api.post("/auth/login", data),
+  me: () => api.get("/auth/me"),
+  logout: () => api.post("/auth/logout"),
+};
+
+// ========================
+// User Management API (Admin)
+// ========================
+export const usersAPI = {
+  list: () => api.get("/admin/users").then((r) => r.data),
+  create: (payload: {
+    nama: string;
+    username: string;
+    email: string;
+    nomor_telepon?: string;
+    password: string;
+    role: "admin" | "manajemen" | "nakes" | "user";
+  }) => api.post("/admin/users", payload).then((r) => r.data),
+  show: (id: number) => api.get(`/admin/users/${id}`).then((r) => r.data),
+  update: (id: number, payload: any) =>
+    api.put(`/admin/users/${id}`, payload).then((r) => r.data),
+  delete: (id: number) => api.delete(`/admin/users/${id}`).then((r) => r.data),
+};
+
+export default api;
