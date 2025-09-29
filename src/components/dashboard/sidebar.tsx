@@ -56,7 +56,7 @@ export function Sidebar({ role }: SidebarProps) {
   const items = menuItems[role];
 
   return (
-    <div className="flex flex-col h-full bg-card border-r">
+    <div className="flex flex-col h-full bg-white border-r border-emerald-100">
       {/* <div className="p-6 border-b">
         <GleamLogo size="sm" />
       </div> */}
@@ -74,7 +74,8 @@ export function Sidebar({ role }: SidebarProps) {
                 variant={isActive ? "secondary" : "ghost"}
                 className={cn(
                   "w-full justify-start gap-3 h-11",
-                  isActive && "bg-primary/10 text-primary hover:bg-primary/10",
+                  isActive && "bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+                  !isActive && "hover:bg-emerald-50/50"
                 )}
               >
                 <Link href={item.href}>
@@ -87,14 +88,14 @@ export function Sidebar({ role }: SidebarProps) {
         </div>
       </nav>
 
-      <div className="p-4 border-t space-y-3">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-            <User className="h-4 w-4 text-primary-foreground" />
+      <div className="p-4 border-t border-emerald-100 space-y-3">
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50">
+          <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center">
+            <User className="h-4 w-4 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.nama || "User"}</p>
-            <p className="text-xs text-muted-foreground capitalize">{(user?.role as any) || role}</p>
+            <p className="text-sm font-medium truncate text-emerald-900">{user?.nama || "User"}</p>
+            <p className="text-xs text-emerald-600 capitalize">{(user?.role as any) || role}</p>
           </div>
         </div>
 
