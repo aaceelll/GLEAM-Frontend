@@ -1,41 +1,87 @@
 import axios from "axios";
 import type { ApiRegisterRequest } from "@/types";
 
+// Base URL API Laravel (punya /api di belakang)
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-  console.log("[API_BASE_URL]", API_BASE_URL);
+console.log("[API_BASE_URL]", API_BASE_URL);
 
-export const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: { "Content-Type": "application/json", Accept: "application/json" },
-  withCredentials: false,
-});
+// ===== Helpers (aman untuk SSR) =====
+const isBrowser = () => typeof window !== "undefined";
 
-// ========================
-// Token Helpers
-// ========================
 const LS_TOKEN_KEY = "gleam_token";
 const COOKIE_TOKEN_KEY = "auth_token";
 
-export const getToken = () => localStorage.getItem(LS_TOKEN_KEY) || "";
-export const setToken = (t: string) => localStorage.setItem(LS_TOKEN_KEY, t);
-export const clearToken = () => localStorage.removeItem(LS_TOKEN_KEY);
+export const getToken = (): string => {
+  if (!isBrowser()) return "";
+  return window.localStorage.getItem(LS_TOKEN_KEY) || "";
+};
+export const setToken = (t: string) => {
+  if (!isBrowser()) return;
+  window.localStorage.setItem(LS_TOKEN_KEY, t);
+};
+export const clearToken = () => {
+  if (!isBrowser()) return;
+  window.localStorage.removeItem(LS_TOKEN_KEY);
+};
+
+const getCookieToken = (): string => {
+  if (!isBrowser()) return "";
+  const m = document.cookie.match(
+    new RegExp(`(?:^|; )${COOKIE_TOKEN_KEY}=([^;]*)`)
+  );
+  return m ? decodeURIComponent(m[1]) : "";
+};
 
 export const setTokenCookie = (t: string) => {
+  if (!isBrowser()) return;
   document.cookie = `${COOKIE_TOKEN_KEY}=${t}; Path=/; Max-Age=${
     60 * 60 * 24 * 7
   }; SameSite=Lax`;
 };
 export const clearTokenCookie = () => {
+  if (!isBrowser()) return;
   document.cookie = `${COOKIE_TOKEN_KEY}=; Path=/; Max-Age=0; SameSite=Lax`;
 };
 
-// Attach Authorization if present
+// ===== Axios instance =====
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+  // pakai Bearer token → tidak perlu cookie kredensial
+  withCredentials: false,
+});
+
+// Selipkan Authorization Bearer ke setiap request
 api.interceptors.request.use((config) => {
-  const t = localStorage.getItem('gleam_token');
-  if (t) config.headers.Authorization = `Bearer ${t}`;
+  const token = getToken() || getCookieToken();
+  if (token) {
+    config.headers = config.headers || {};
+    (config.headers as any).Authorization = `Bearer ${token}`;
+  }
   return config;
 });
+
+// Logging error + auto-logout bila 401
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    const status = err?.response?.status;
+    const url = err?.response?.config?.url;
+    const data = err?.response?.data;
+    console.error("API ERROR", status, url, data);
+
+    if (status === 401) {
+      clearToken();
+      clearTokenCookie();
+      if (isBrowser()) window.location.href = "/login/user";
+    }
+    return Promise.reject(err);
+  }
+);
 
 // ========================
 // Auth API

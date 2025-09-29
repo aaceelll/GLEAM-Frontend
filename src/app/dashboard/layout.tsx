@@ -23,16 +23,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const r: Role = (parsed.role ?? "user") as Role;
       setRole(r);
 
-      // Kalau user buka /dashboard langsung, arahkan ke beranda role-nya
       if (pathname === "/dashboard") {
         if (r === "admin" || r === "super_admin") router.replace("/dashboard/admin");
         else router.replace(`/dashboard/${r}`);
         return;
       }
 
-      // Amankan admin path
       if ((r === "admin" || r === "super_admin") && !pathname.startsWith("/dashboard/admin")) {
-        // kalau admin masuk ke user path, arahkan balik
         if (pathname.startsWith("/dashboard/user") || pathname === "/dashboard") {
           router.replace("/dashboard/admin");
         }
@@ -42,21 +39,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [router, pathname]);
 
-  if (!role) return null; // tunggu role diketahui
+  if (!role) return null;
 
   const sidebarRole = role === "super_admin" ? "admin" : (role as any);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="w-64 flex-shrink-0 border-r bg-card">
+    // ⬇️ hanya container ini yang full screen, scroll global dimatikan
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* Sidebar (tetap) */}
+      <aside className="w-64 flex-shrink-0 border-r bg-card sticky top-0 h-screen overflow-y-auto">
         <Sidebar role={sidebarRole} />
       </aside>
 
       {/* Kanan */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header full width + info akun kanan */}
-        <header className="h-16 border-b bg-card/80 backdrop-blur-sm flex items-center justify-between px-4">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Header (tetap) */}
+        <header className="h-16 border-b bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 sticky top-0 z-20">
           <GleamLogo size="sm" />
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground capitalize">{role}</span>
@@ -73,6 +71,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
+        {/* Area konten yang scroll */}
         <main className="flex-1 overflow-auto">
           <div className="p-6 md:p-8">{children}</div>
         </main>

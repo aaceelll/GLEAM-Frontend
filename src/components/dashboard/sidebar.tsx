@@ -18,8 +18,9 @@ interface SidebarProps {
 const menuItems = {
   admin: [
     { icon: Home, label: "Beranda", href: "/dashboard/admin" },
-    { icon: FileText, label: "Bank Soal", href: "/dashboard/admin/bank-soal" },
-    { icon: ClipboardList, label: "Pre Test & Post Test", href: "/dashboard/admin/test" },
+    // { icon: FileText, label: "Bank Soal", href: "/dashboard/admin/bank-soal" },
+    // { icon: ClipboardList, label: "Pre Test & Post Test", href: "/dashboard/admin/test" },
+    { icon: ClipboardList, label: "Assessment", href: "/dashboard/admin/assessment" },
     { icon: MessageSquare, label: "Forum Komunitas", href: "/dashboard/admin/forum" },
     { icon: HelpCircle, label: "FAQ", href: "/dashboard/admin/faq" },
     { icon: Users, label: "Akun & Peran", href: "/dashboard/admin/users" },
