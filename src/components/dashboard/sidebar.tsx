@@ -18,10 +18,8 @@ interface SidebarProps {
 const menuItems = {
   admin: [
     { icon: Home, label: "Beranda", href: "/dashboard/admin" },
-    // { icon: FileText, label: "Bank Soal", href: "/dashboard/admin/bank-soal" },
-    // { icon: ClipboardList, label: "Pre Test & Post Test", href: "/dashboard/admin/test" },
     { icon: ClipboardList, label: "Assessment", href: "/dashboard/admin/assessment" },
-    { icon: MessageSquare, label: "Forum Komunitas", href: "/dashboard/admin/forum" },
+    { icon: MessageSquare, label: "Forum Komunitas", href: "/dashboard/admin/forum" }, // ← TAMBAH INI
     { icon: HelpCircle, label: "FAQ", href: "/dashboard/admin/faq" },
     { icon: Users, label: "Akun & Peran", href: "/dashboard/admin/users" },
     { icon: Settings, label: "Pengaturan", href: "/dashboard/admin/settings" },
@@ -35,7 +33,7 @@ const menuItems = {
   nakes: [
     { icon: Home, label: "Beranda", href: "/dashboard/nakes" },
     { icon: Activity, label: "Input Cek Kesehatan", href: "/dashboard/nakes/health-check" },
-    { icon: MessageSquare, label: "Pertanyaan Private", href: "/dashboard/nakes/private-questions" },
+    { icon: MessageSquare, label: "Pertanyaan Private", href: "/dashboard/nakes/private-questions" }, // ← TAMBAH INI
     { icon: BarChart3, label: "Laporan Keseluruhan", href: "/dashboard/nakes/reports" },
     { icon: Settings, label: "Pengaturan", href: "/dashboard/nakes/settings" },
   ],
@@ -45,7 +43,7 @@ const menuItems = {
     { icon: FileText, label: "Ulasan Website", href: "/dashboard/user/reviews" },
     { icon: BookOpen, label: "Penjelasan Umum", href: "/dashboard/user/education" },
     { icon: History, label: "Riwayat", href: "/dashboard/user/history" },
-    { icon: MessageSquare, label: "Forum Komunitas", href: "/dashboard/user/forum" },
+    { icon: MessageSquare, label: "Forum Komunitas", href: "/dashboard/user/forum" }, // ← SUDAH ADA
     { icon: Settings, label: "Pengaturan", href: "/dashboard/user/settings" },
   ],
 };
