@@ -40,7 +40,6 @@ const menuItems = {
   user: [
     { icon: Home, label: "Beranda", href: "/dashboard/user" },
     { icon: Activity, label: "Diabetes Melitus", href: "/dashboard/user/diabetes" },
-    { icon: FileText, label: "Ulasan Website", href: "/dashboard/user/reviews" },
     { icon: BookOpen, label: "Penjelasan Umum", href: "/dashboard/user/education" },
     { icon: History, label: "Riwayat", href: "/dashboard/user/history" },
     { icon: FileText, label: "Ulasan Website", href: "/dashboard/user/ulasan-website" },
