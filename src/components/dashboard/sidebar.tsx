@@ -43,6 +43,7 @@ const menuItems = {
     { icon: FileText, label: "Ulasan Website", href: "/dashboard/user/reviews" },
     { icon: BookOpen, label: "Penjelasan Umum", href: "/dashboard/user/education" },
     { icon: History, label: "Riwayat", href: "/dashboard/user/history" },
+    { icon: FileText, label: "Ulasan Website", href: "/dashboard/user/ulasan-website" },
     { icon: MessageSquare, label: "Forum Komunitas", href: "/dashboard/user/forum" }, // ← SUDAH ADA
     { icon: Settings, label: "Pengaturan", href: "/dashboard/user/settings" },
   ],
