@@ -73,11 +73,11 @@ export default function AssessmentPage() {
       {/* bikin container lebih lebar biar lega */}
       <div className="max-w-7xl mx-auto space-y-8">
         <header>
-          <h1 className="text-3xl font-semibold">Assessment Manager</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Kelola Bank Soal & Pre/Post Test dalam satu halaman.
-          </p>
-        </header>
+      <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+        Assessment Manager
+      </h1>
+    </header>
+
 
         {/* ROW ATAS: 2 kolom besar */}
         <div className="grid grid-cols-12 gap-8">

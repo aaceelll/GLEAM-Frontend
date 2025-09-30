@@ -12,6 +12,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [role, setRole] = useState<Role | null>(null);
 
+  // ===== Auth + routing guard
   useEffect(() => {
     const userData = localStorage.getItem("user_data");
     if (!userData) {
@@ -23,12 +24,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const r: Role = (parsed.role ?? "user") as Role;
       setRole(r);
 
+      // /dashboard (root) → redirect sesuai role
       if (pathname === "/dashboard") {
         if (r === "admin" || r === "super_admin") router.replace("/dashboard/admin");
         else router.replace(`/dashboard/${r}`);
         return;
       }
 
+      // admin/super_admin jangan masuk route user
       if ((r === "admin" || r === "super_admin") && !pathname.startsWith("/dashboard/admin")) {
         if (pathname.startsWith("/dashboard/user") || pathname === "/dashboard") {
           router.replace("/dashboard/admin");
@@ -43,19 +46,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const sidebarRole = role === "super_admin" ? "admin" : (role as any);
 
-  return (
-    // ⬇️ hanya container ini yang full screen, scroll global dimatikan
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar (tetap) */}
-      <aside className="w-64 flex-shrink-0 border-r bg-card sticky top-0 h-screen overflow-y-auto">
-        <Sidebar role={sidebarRole} />
-      </aside>
+  // tinggi header (4rem = h-16)
+  const HEADER_PX = 64;
 
-      {/* Kanan */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header (tetap) */}
-        <header className="h-16 border-b bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 sticky top-0 z-20">
-          <GleamLogo size="sm" />
+  return (
+    <div className="min-h-screen bg-background">
+      {/* ===== Header global full width (tetap di atas) ===== */}
+      <header className="fixed top-0 inset-x-0 h-16 border-b bg-card/90 backdrop-blur z-50">
+        <div className="max-w-7xl mx-auto h-full px-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <GleamLogo size="sm" />
+            {/* bisa tambahkan subtitle kalau mau */}
+          </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground capitalize">{role}</span>
             <button
@@ -69,11 +71,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               Keluar
             </button>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {/* Area konten yang scroll */}
-        <main className="flex-1 overflow-auto">
-          <div className="p-6 md:p-8">{children}</div>
+      {/* ===== Body: Sidebar + Content (mulai di bawah header) ===== */}
+      <div className="flex" style={{ paddingTop: HEADER_PX }}>
+        {/* Sidebar (tingginya = tinggi layar - header) */}
+        <aside
+          className="w-64 flex-shrink-0 border-r bg-card"
+          style={{ height: `calc(100vh - ${HEADER_PX}px)` }}
+        >
+          {/* Sidebar sudah pakai h-full internal, jadi cukup overflow di sini */}
+          <div className="h-full overflow-y-auto">
+            <Sidebar role={sidebarRole} />
+          </div>
+        </aside>
+
+        {/* Konten kanan (scroll sendiri) */}
+        <main
+          className="flex-1 overflow-y-auto"
+          style={{ height: `calc(100vh - ${HEADER_PX}px)` }}
+        >
+          <div className="p-6 md:p-8 max-w-7xl mx-auto">{children}</div>
         </main>
       </div>
     </div>

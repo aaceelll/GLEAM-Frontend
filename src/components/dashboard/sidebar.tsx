@@ -18,10 +18,11 @@ interface SidebarProps {
 const menuItems = {
   admin: [
     { icon: Home, label: "Beranda", href: "/dashboard/admin" },
+    { icon: BookOpen, label: "Konten Materi", href: "/dashboard/admin/materi" }, 
     { icon: ClipboardList, label: "Assessment", href: "/dashboard/admin/assessment" },
-    { icon: MessageSquare, label: "Forum Komunitas", href: "/dashboard/admin/forum" }, // ← TAMBAH INI
-    { icon: HelpCircle, label: "FAQ", href: "/dashboard/admin/faq" },
     { icon: Users, label: "Akun & Peran", href: "/dashboard/admin/users" },
+    { icon: MessageSquare, label: "Forum Komunitas", href: "/dashboard/admin/forum" }, 
+    { icon: HelpCircle, label: "FAQ", href: "/dashboard/admin/faq" },
     { icon: Settings, label: "Pengaturan", href: "/dashboard/admin/settings" },
   ],
   manajemen: [
@@ -39,7 +40,7 @@ const menuItems = {
   ],
   user: [
     { icon: Home, label: "Beranda", href: "/dashboard/user" },
-    { icon: Activity, label: "Diabetes Melitus", href: "/dashboard/user/diabetes" },
+    { icon: Activity, label: "Diabetes Melitus", href: "/dashboard/user/diabetes-melitus" },
     { icon: BookOpen, label: "Penjelasan Umum", href: "/dashboard/user/education" },
     { icon: History, label: "Riwayat", href: "/dashboard/user/history" },
     { icon: FileText, label: "Ulasan Website", href: "/dashboard/user/ulasan-website" },
@@ -72,8 +73,8 @@ export function Sidebar({ role }: SidebarProps) {
                 variant={isActive ? "secondary" : "ghost"}
                 className={cn(
                   "w-full justify-start gap-3 h-11",
-                  isActive && "bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
-                  !isActive && "hover:bg-emerald-50/50"
+                  isActive && "bg-emerald-100 text-emerald-800 hover:bg-emerald-200",
+                  !isActive && "text-gray-700 hover:bg-emerald-50 hover:text-emerald-700"
                 )}
               >
                 <Link href={item.href}>
@@ -81,6 +82,9 @@ export function Sidebar({ role }: SidebarProps) {
                   {item.label}
                 </Link>
               </Button>
+
+
+
             );
           })}
         </div>

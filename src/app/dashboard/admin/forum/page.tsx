@@ -11,7 +11,6 @@ import {
   Pin,
   Lock,
   Trash2,
-  TrendingUp,
   Users,
   Eye,
   Heart,
@@ -33,10 +32,7 @@ interface Thread {
   id: number;
   title: string;
   content: string;
-  user: {
-    id: number;
-    nama: string;
-  };
+  user: { id: number; nama: string };
   category: Category;
   is_pinned: boolean;
   is_locked: boolean;
@@ -55,13 +51,8 @@ export default function AdminForumPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
-  useEffect(() => {
-    loadThreads();
-  }, [selectedCategory, searchQuery]);
+  useEffect(() => { loadCategories(); }, []);
+  useEffect(() => { loadThreads(); }, [selectedCategory, searchQuery]);
 
   const loadCategories = async () => {
     try {
@@ -75,12 +66,9 @@ export default function AdminForumPage() {
   const loadThreads = async () => {
     setLoading(true);
     try {
-      const params: any = {
-        type: "public", // Admin hanya bisa lihat public
-      };
+      const params: any = { type: "public" };
       if (selectedCategory) params.category_id = selectedCategory;
       if (searchQuery) params.search = searchQuery;
-
       const response = await api.get("/forum/threads", { params });
       setThreads(response.data.data || []);
     } catch (error) {
@@ -112,7 +100,6 @@ export default function AdminForumPage() {
 
   const handleDeleteThread = async (threadId: number, title: string) => {
     if (!confirm(`Hapus thread "${title}"?`)) return;
-
     try {
       await api.delete(`/admin/forum/threads/${threadId}/force`);
       alert("Thread berhasil dihapus");
@@ -125,27 +112,19 @@ export default function AdminForumPage() {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
+      day: "numeric", month: "short", year: "numeric",
     });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 p-6">
+    <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-white p-8 rounded-3xl shadow-2xl">
-          <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-            <MessageSquare className="w-10 h-10" />
-            Kelola Forum Komunitas
-          </h1>
-          <p className="text-emerald-100 text-lg">
-            Moderasi diskusi publik dan pastikan komunitas tetap sehat 💚
-          </p>
-        </div>
+        {/* Header sederhana (tanpa card / shadow / icon) */}
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+          Kelola Forum Komunitas
+        </h1>
 
-        {/* Info Box */}
+        {/* Info Box (biarkan seperti sebelumnya) */}
         <Card className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border-l-4 border-blue-500">
           <div className="flex items-center gap-3">
             <Shield className="w-6 h-6 text-blue-600" />
@@ -216,9 +195,7 @@ export default function AdminForumPage() {
                   onClick={() => setSelectedCategory(null)}
                   variant={selectedCategory === null ? "default" : "ghost"}
                   className={`w-full justify-start ${
-                    selectedCategory === null
-                      ? "bg-emerald-600 text-white"
-                      : "hover:bg-emerald-50"
+                    selectedCategory === null ? "bg-emerald-600 text-white" : "hover:bg-emerald-50"
                   }`}
                 >
                   Semua Kategori
@@ -229,9 +206,7 @@ export default function AdminForumPage() {
                     onClick={() => setSelectedCategory(cat.id)}
                     variant={selectedCategory === cat.id ? "default" : "ghost"}
                     className={`w-full justify-start ${
-                      selectedCategory === cat.id
-                        ? "bg-emerald-600 text-white"
-                        : "hover:bg-emerald-50"
+                      selectedCategory === cat.id ? "bg-emerald-600 text-white" : "hover:bg-emerald-50"
                     }`}
                   >
                     <span className="mr-2">{cat.icon}</span>
@@ -295,10 +270,7 @@ export default function AdminForumPage() {
                             </Badge>
                           )}
                           <Badge
-                            style={{
-                              backgroundColor: thread.category.color,
-                              color: "white",
-                            }}
+                            style={{ backgroundColor: thread.category.color, color: "white" }}
                           >
                             {thread.category.icon} {thread.category.name}
                           </Badge>
