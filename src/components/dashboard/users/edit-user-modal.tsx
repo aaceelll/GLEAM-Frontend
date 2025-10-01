@@ -1,202 +1,196 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { usersAPI } from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, UserCog, AlertCircle, Info } from "lucide-react";
-import { toast } from "sonner";
+import { useState, type FormEvent } from "react"
+import { usersAPI } from "@/lib/api"
+import { X, Pencil } from "lucide-react"
+import { toast } from "sonner"
 
 type User = {
-  id: number;
-  nama: string;
-  username: string;
-  email: string;
-  nomor_telepon?: string;
-  role: "admin" | "manajemen" | "nakes" | "user";
-};
+  id: number
+  nama: string
+  username: string
+  email: string
+  nomor_telepon?: string
+  role: "admin" | "manajemen" | "nakes" | "user"
+}
 
 type Props = {
-  user: User;
-  onUpdated: () => void;
-  onClose: () => void;
-};
+  user: User
+  onUpdated: () => void
+  onClose: () => void
+}
+
+/** Payload yang dikirim ke API saat update.
+ *  Password dibuat OPTIONAL supaya bisa di-skip saat kosong.
+ */
+type UpdateUserPayload = {
+  nama: string
+  username: string
+  email: string
+  password?: string
+  nomor_telepon?: string
+  role: User["role"]
+}
 
 export default function EditUserModal({ user, onUpdated, onClose }: Props) {
-  const [form, setForm] = useState({
+  const [formData, setFormData] = useState<UpdateUserPayload>({
     nama: user.nama,
     username: user.username,
     email: user.email,
+    password: "", // opsional untuk edit: kosongkan jika tidak ubah
     nomor_telepon: user.nomor_telepon || "",
-    password: "",
     role: user.role,
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  })
+  const [loading, setLoading] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
 
+    if (!formData.nama.trim() || !formData.username.trim() || !formData.email.trim()) {
+      toast.error("Nama, username, dan email wajib diisi")
+      return
+    }
+
+    setLoading(true)
     try {
-      const payload: any = {
-        nama: form.nama,
-        username: form.username,
-        email: form.email,
-        nomor_telepon: form.nomor_telepon,
-        role: form.role,
-      };
-      if (form.password.trim()) payload.password = form.password;
+      // Bangun payload: hanya sertakan password jika diisi
+      const { password, ...rest } = formData
+      const payload: UpdateUserPayload =
+        password && password.trim().length > 0 ? { ...rest, password: password.trim() } : rest
 
-      await usersAPI.update(user.id, payload);
-      toast.success("User berhasil diupdate");
-      onUpdated();
-      onClose();
+      await usersAPI.update(user.id, payload)
+      toast.success("User berhasil diperbarui!")
+      onUpdated()
+      onClose()
     } catch (error: any) {
-      const msg = error?.response?.data?.message || "Gagal mengupdate user";
-      setError(msg);
-      toast.error(msg);
+      const errMsg = error?.response?.data?.message || "Gagal memperbarui user"
+      toast.error(errMsg)
     } finally {
-      setSubmitting(false);
+      setLoading(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-         onClick={onClose}>
-      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="relative bg-gradient-to-r from-green-600 to-green-700 px-6 py-5 rounded-t-2xl">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 p-2 rounded-lg">
-              <UserCog className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">Edit User</h2>
-              <p className="text-green-100 text-sm mt-0.5">Perbarui informasi user yang dipilih</p>
-            </div>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-hidden">
+        <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-600 px-6 py-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              <Pencil className="h-6 w-6" />
+              Edit User
+            </h2>
+            <p className="text-amber-100 text-sm mt-1">Perbarui informasi user</p>
           </div>
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+            className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300"
           >
-            <X className="h-5 w-5" />
+            <X className="h-6 w-6 text-white" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
-          {error && (
-            <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-red-800">Terjadi Kesalahan</p>
-                <p className="text-sm text-red-600 mt-1">{error}</p>
-              </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-100px)]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="space-y-2">
+              <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
+                Nama Lengkap <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.nama}
+                onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+                placeholder="Masukkan nama lengkap"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 outline-none transition-all"
+              />
             </div>
-          )}
 
-          {/* Nama */}
-          <div className="space-y-2">
-            <Label htmlFor="nama" className="text-sm font-medium text-gray-700 flex items-center gap-1">
-              Nama <span className="text-red-500 text-base">*</span>
-            </Label>
-            <Input
-              id="nama"
-              required
-              value={form.nama}
-              onChange={(e) => setForm({ ...form, nama: e.target.value })}
-              className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+            <div className="space-y-2">
+              <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
+                Username <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                placeholder="Masukkan username"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 outline-none transition-all"
+              />
+            </div>
 
-          {/* Username */}
-          <div className="space-y-2">
-            <Label htmlFor="username" className="text-sm font-medium text-gray-700 flex items-center gap-1">
-              Username <span className="text-red-500 text-base">*</span>
-            </Label>
-            <Input
-              id="username"
-              required
-              value={form.username}
-              onChange={(e) => setForm({ ...form, username: e.target.value })}
-              className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+            <div className="space-y-2">
+              <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="email@example.com"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 outline-none transition-all"
+              />
+            </div>
 
-          {/* Email */}
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-gray-700 flex items-center gap-1">
-              Email <span className="text-red-500 text-base">*</span>
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              required
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+            <div className="space-y-2">
+              <label className="font-semibold text-gray-900 text-sm">Password Baru</label>
+              <input
+                type="password"
+                value={formData.password ?? ""}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Kosongkan jika tidak ingin mengubah"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 outline-none transition-all"
+              />
+              <p className="text-xs text-gray-500">Kosongkan jika tidak ingin mengubah password</p>
+            </div>
 
-          {/* Nomor Telepon */}
-          <div className="space-y-2">
-            <Label htmlFor="nomor_telepon" className="text-sm font-medium text-gray-700">Nomor Telepon</Label>
-            <Input
-              id="nomor_telepon"
-              value={form.nomor_telepon}
-              onChange={(e) => setForm({ ...form, nomor_telepon: e.target.value })}
-              placeholder="08xx xxxx xxxx"
-              className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+            <div className="space-y-2">
+              <label className="font-semibold text-gray-900 text-sm">Nomor Telepon</label>
+              <input
+                type="tel"
+                value={formData.nomor_telepon ?? ""}
+                onChange={(e) => setFormData({ ...formData, nomor_telepon: e.target.value })}
+                placeholder="08xxxxxxxxxx"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 outline-none transition-all"
+              />
+            </div>
 
-          {/* Password Baru */}
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password Baru</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Kosongkan jika tidak ingin mengubah"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-            />
-            <div className="flex items-start gap-2">
-              <Info className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-red-700">Minimal 6 karakter. Kosongkan jika tidak ingin mengubah password.</p>
+            <div className="space-y-2">
+              <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
+                Role <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.role}
+                onChange={(e) =>
+                  setFormData({ ...formData, role: e.target.value as UpdateUserPayload["role"] })
+                }
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 outline-none transition-all"
+              >
+                <option value="user">User</option>
+                <option value="nakes">Nakes</option>
+                <option value="manajemen">Manajemen</option>
+                <option value="admin">Admin</option>
+              </select>
             </div>
           </div>
 
-          {/* Role */}
-          <div className="space-y-2">
-            <Label htmlFor="role" className="text-sm font-medium text-gray-700 flex items-center gap-1">
-              Role <span className="text-red-500 text-base">*</span>
-            </Label>
-            <Select value={form.role} onValueChange={(v: any) => setForm({ ...form, role: v })}>
-              <SelectTrigger className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="manajemen">Manajemen</SelectItem>
-                <SelectItem value="nakes">Nakes</SelectItem>
-                <SelectItem value="user">User</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex gap-3 justify-end pt-2">
-            <Button type="button" variant="outline" onClick={onClose} className="border-gray-300 hover:bg-gray-100" disabled={submitting}>
+          <div className="flex items-center gap-3 pt-4 border-t-2 border-gray-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105"
+              disabled={loading}
+            >
               Batal
-            </Button>
-            <Button type="submit" disabled={submitting} className="bg-green-600 hover:bg-green-700 min-w-[110px]">
-              {submitting ? "Menyimpan..." : "Simpan"}
-            </Button>
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Menyimpan..." : "💾 Simpan Perubahan"}
+            </button>
           </div>
         </form>
       </div>
     </div>
-  );
+  )
 }
