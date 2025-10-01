@@ -27,9 +27,9 @@ const menuItems = {
   ],
   manajemen: [
     { icon: Home, label: "Beranda", href: "/dashboard/manajemen" },
-    { icon: BarChart3, label: "Laporan Keseluruhan", href: "/dashboard/manajemen/reports" },
-    { icon: MapPin, label: "Lokasi Persebaran", href: "/dashboard/manajemen/locations" },
-    { icon: Settings, label: "Pengaturan", href: "/dashboard/manajemen/settings" },
+    { icon: BarChart3, label: "Laporan Keseluruhan", href: "/dashboard/manajemen/laporan" },
+    { icon: MapPin, label: "Lokasi Persebaran", href: "/dashboard/manajemen/lokasi" },
+    { icon: Settings, label: "Pengaturan", href: "/dashboard/manajemen/pengaturan" },
   ],
   nakes: [
     { icon: Home, label: "Beranda", href: "/dashboard/nakes" },
