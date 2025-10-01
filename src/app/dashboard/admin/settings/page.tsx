@@ -85,7 +85,7 @@ export default function PengaturanPage() {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Section */}
         <header>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-emerald-800 to-gray-900 bg-clip-text text-transparent">
             Pengaturan Akun
           </h1>
         </header>

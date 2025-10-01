@@ -101,9 +101,10 @@ export default function UsersPage() {
       {/* Header Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-          Manajemen Akun & Peran
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-emerald-800 to-gray-900 bg-clip-text text-transparent">
+          Manajemen Akun dan Peran
         </h1>
+        <p className="text-gray-600 mt-0.5">Kelola Akun Staff</p>
       </div>
 
         <Button 

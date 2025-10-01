@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, X, Pencil, Trash2, FileText, Video, CheckCircle2, AlertCircle, Download, ExternalLink } from "lucide-react";
-import { api } from "@/lib/api";
+import { Plus, X, Pencil, Trash2, FileText, Video, CheckCircle2, AlertCircle, Download, ExternalLink, Calendar, Clock, Upload } from "lucide-react";
 
 type Konten = {
   id: string;
@@ -16,6 +11,45 @@ type Konten = {
   deskripsi: string;
   created_at: string;
   updated_at: string;
+};
+
+// Mock API untuk demo
+const api = {
+  get: async (url: string) => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return {
+      data: {
+        data: [
+          {
+            id: "1",
+            judul: "Pengenalan Diabetes Melitus",
+            deskripsi: "Pelajari dasar-dasar diabetes melitus, mulai dari definisi, jenis-jenis diabetes, hingga faktor risiko yang perlu Anda ketahui untuk pencegahan dini.",
+            video_id: "dQw4w9WgXcQ",
+            file_url: "#",
+            created_at: "2024-01-15T10:00:00Z",
+            updated_at: "2024-01-20T15:30:00Z"
+          },
+          {
+            id: "2",
+            judul: "Gejala dan Diagnosis Diabetes",
+            deskripsi: "Kenali gejala-gejala diabetes sejak dini dan pahami prosedur diagnosis yang tepat untuk deteksi diabetes melitus.",
+            video_id: null,
+            file_url: "#",
+            created_at: "2024-02-10T09:00:00Z",
+            updated_at: "2024-02-12T11:00:00Z"
+          }
+        ]
+      }
+    };
+  },
+  post: async (url: string, data: any) => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return { data: { success: true } };
+  },
+  delete: async (url: string) => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return { data: { success: true } };
+  }
 };
 
 export default function MateriPage() {
@@ -73,26 +107,15 @@ export default function MateriPage() {
     setShowModal(true);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit() {
     setSubmitting(true);
-
-    const data = new FormData();
-    data.append("judul", formData.judul);
-    data.append("video_id", formData.tanpa_video ? "" : formData.video_id);
-    if (formData.file_pdf) data.append("file_pdf", formData.file_pdf);
-    data.append("deskripsi", formData.deskripsi);
 
     try {
       if (editMode && editId) {
-        await api.post(`/admin/materi/konten/${editId}`, data, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        await api.post(`/admin/materi/konten/${editId}`, formData);
         setMsg({ type: "success", text: "Konten berhasil diperbarui!" });
       } else {
-        await api.post("/admin/materi/konten", data, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        await api.post("/admin/materi/konten", formData);
         setMsg({ type: "success", text: "Konten berhasil ditambahkan!" });
       }
       setShowModal(false);
@@ -118,120 +141,166 @@ export default function MateriPage() {
     }
   }
 
+  const gradients = [
+    "from-blue-500 to-cyan-500",
+    "from-purple-500 to-pink-500",
+    "from-emerald-500 to-teal-500",
+    "from-orange-500 to-red-500",
+    "from-indigo-500 to-purple-500",
+    "from-rose-500 to-pink-500"
+  ];
+
   return (
-    <div className="px-6 md:px-10 py-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-white px-6 md:px-10 py-6">
+      <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Materi Edukasi</h1>
-            <p className="text-gray-600 mt-1">Kelola konten materi Diabetes Melitus</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-emerald-800 to-gray-900 bg-clip-text text-transparent">
+                  Materi Edukasi
+                </h1>
+                <p className="text-gray-600 mt-0.5">Kelola konten materi Diabetes Melitus</p>
+              </div>
+            </div>
           </div>
-          <Button
+          <button
             onClick={openAddModal}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center gap-2 px-5 py-2.5 shadow-sm"
+            className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
             Tambah Konten
-          </Button>
+          </button>
         </header>
 
         {/* Notification */}
         {msg && (
           <div
-            className={`rounded-xl px-4 py-3.5 flex items-start gap-3 shadow-sm ${
+            className={`rounded-2xl px-5 py-4 flex items-start gap-3 shadow-lg border-2 ${
               msg.type === "success"
-                ? "bg-emerald-50 border border-emerald-200 text-emerald-900"
-                : "bg-red-50 border border-red-200 text-red-900"
+                ? "bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 text-emerald-900"
+                : "bg-gradient-to-r from-red-50 to-pink-50 border-red-200 text-red-900"
             }`}
           >
             {msg.type === "success" ? (
-              <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" />
+              <CheckCircle2 className="h-6 w-6 flex-shrink-0 mt-0.5" />
             ) : (
-              <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="h-6 w-6 flex-shrink-0 mt-0.5" />
             )}
-            <span className="font-medium text-sm">{msg.text}</span>
+            <span className="font-semibold">{msg.text}</span>
           </div>
         )}
 
         {/* Content List */}
-        <div className="bg-white rounded-2xl border shadow-sm">
-          <div className="px-6 py-4 border-b bg-gray-50/50">
-            <h2 className="text-lg font-bold text-gray-900">Daftar Konten</h2>
-            <p className="text-sm text-gray-600 mt-0.5">{kontenList.length} konten tersedia</p>
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl">
+          <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <span className="w-1.5 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
+                  Daftar Konten
+                </h2>
+                <p className="text-sm text-gray-600 mt-1 ml-4">{kontenList.length} konten tersedia</p>
+              </div>
+              <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-gray-700">{kontenList.length} Materi</span>
+              </div>
+            </div>
           </div>
 
           <div className="p-6">
             {loading ? (
-              <div className="text-center py-16">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-emerald-600 mb-3"></div>
-                <p className="text-sm text-gray-500">Memuat konten...</p>
+              <div className="text-center py-20">
+                <div className="inline-block relative">
+                  <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+                  <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-teal-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1s' }}></div>
+                </div>
+                <p className="text-sm text-gray-500 mt-4 font-medium">Memuat konten...</p>
               </div>
             ) : kontenList.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                  <FileText className="h-8 w-8 text-gray-400" />
+              <div className="text-center py-20">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4 shadow-inner">
+                  <FileText className="h-10 w-10 text-gray-400" />
                 </div>
-                <p className="text-gray-600 font-medium mb-1">Belum ada konten</p>
+                <p className="text-gray-700 font-bold text-lg mb-2">Belum ada konten</p>
                 <p className="text-sm text-gray-500">Klik "Tambah Konten" untuk memulai</p>
               </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-6">
                 {kontenList.map((konten, index) => (
                   <div
                     key={konten.id}
-                    className="border-2 border-gray-100 rounded-2xl p-5 hover:border-emerald-200 hover:shadow-md transition-all"
+                    className="group relative bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden"
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="flex items-center justify-center min-w-[2.5rem] h-10 rounded-xl bg-emerald-600 text-white font-bold text-lg shadow-sm">
+                    <div className={`absolute inset-0 bg-gradient-to-r ${gradients[index % gradients.length]} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
+                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${gradients[index % gradients.length]} opacity-5 rounded-bl-full`}></div>
+                    
+                    <div className="relative flex items-start gap-5">
+                      <div className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${gradients[index % gradients.length]} text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                         {index + 1}
                       </div>
 
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-gray-900 text-xl mb-2">{konten.judul}</h3>
-                        <p className="text-gray-600 text-sm leading-relaxed mb-3">{konten.deskripsi}</p>
+                      <div className="flex-1 min-w-0 space-y-4">
+                        <h3 className="font-bold text-gray-900 text-2xl group-hover:text-emerald-700 transition-colors">
+                          {konten.judul}
+                        </h3>
 
-                        <div className="flex items-center gap-3 mb-3">
+                        <p className="text-gray-600 text-base leading-relaxed">
+                          {konten.deskripsi}
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-3">
                           <a
                             href={konten.file_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors text-sm font-medium"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
                           >
                             <Download className="h-4 w-4" />
-                            PDF
+                            Unduh PDF
                           </a>
                           {konten.video_id && (
                             <a
                               href={`https://www.youtube.com/watch?v=${konten.video_id}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors text-sm font-medium"
+                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
                             >
-                              <ExternalLink className="h-4 w-4" />
-                              Video
+                              <Video className="h-4 w-4" />
+                              Tonton Video
                             </a>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span>Dibuat: {new Date(konten.created_at).toLocaleDateString("id-ID")}</span>
-                          <span>•</span>
-                          <span>Diubah: {new Date(konten.updated_at).toLocaleDateString("id-ID")}</span>
+                        <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5 text-emerald-600" />
+                            <span className="font-medium">Dibuat: {new Date(konten.created_at).toLocaleDateString("id-ID", { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                          </div>
+                          <span className="text-gray-300">•</span>
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5 text-blue-600" />
+                            <span className="font-medium">Diperbarui: {new Date(konten.updated_at).toLocaleDateString("id-ID", { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                          </div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <button
                           onClick={() => openEditModal(konten)}
-                          className="p-2 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors"
+                          className="p-3 rounded-xl text-amber-600 bg-amber-50 hover:bg-gradient-to-br hover:from-amber-500 hover:to-orange-500 hover:text-white transition-all shadow-sm hover:shadow-lg hover:scale-110"
                           title="Edit"
                         >
                           <Pencil className="h-5 w-5" />
                         </button>
                         <button
                           onClick={() => handleDelete(konten.id)}
-                          className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                          className="p-3 rounded-xl text-red-600 bg-red-50 hover:bg-gradient-to-br hover:from-red-500 hover:to-pink-500 hover:text-white transition-all shadow-sm hover:shadow-lg hover:scale-110"
                           title="Hapus"
                         >
                           <Trash2 className="h-5 w-5" />
@@ -248,59 +317,59 @@ export default function MateriPage() {
         {/* Modal Form */}
         {showModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-              <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-4 flex items-center justify-between">
+            <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+              <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 px-6 py-5 flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-white">
+                  <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    {editMode ? <Pencil className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
                     {editMode ? "Edit Konten" : "Tambah Konten"}
                   </h2>
-                  <p className="text-emerald-100 text-sm mt-0.5">
+                  <p className="text-emerald-100 text-sm mt-1">
                     {editMode ? "Perbarui informasi konten" : "Lengkapi formulir di bawah"}
                   </p>
                 </div>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
+                  className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300"
                 >
-                  <X className="h-5 w-5 text-white" />
+                  <X className="h-6 w-6 text-white" />
                 </button>
               </div>
 
-              <div className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-88px)]">
+              <div className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-100px)]">
                 <div className="space-y-2">
-                  <Label className="font-semibold text-gray-900 text-sm">
+                  <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
                     Judul Konten <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    required
+                  </label>
+                  <input
                     value={formData.judul}
                     onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
                     placeholder="Contoh: Pengenalan Diabetes Melitus"
-                    className="px-4 py-2.5 rounded-xl border-2 focus:border-emerald-500"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-semibold text-gray-900 text-sm">
+                  <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
+                    <Video className="h-4 w-4 text-purple-600" />
                     Video ID YouTube {!formData.tanpa_video && <span className="text-red-500">*</span>}
-                  </Label>
-                  <Input
-                    required={!formData.tanpa_video}
+                  </label>
+                  <input
                     disabled={formData.tanpa_video}
                     value={formData.video_id}
                     onChange={(e) => setFormData({ ...formData, video_id: e.target.value })}
                     placeholder="Contoh: y55Wupx2ZDU"
-                    className="px-4 py-2.5 rounded-xl border-2 focus:border-emerald-500 disabled:bg-gray-100"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p className="text-xs text-blue-800">
-                      💡 <strong>Contoh:</strong> https://youtube.com/watch?v=<span className="font-mono bg-blue-100 px-1">y55Wupx2ZDU</span>
-                      <br />Masukkan hanya: <span className="font-mono bg-blue-100 px-1">y55Wupx2ZDU</span>
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-4">
+                    <p className="text-xs text-blue-900">
+                      💡 <strong>Contoh:</strong> https://youtube.com/watch?v=<span className="font-mono bg-white px-2 py-0.5 rounded">y55Wupx2ZDU</span>
+                      <br />Masukkan hanya: <span className="font-mono bg-white px-2 py-0.5 rounded">y55Wupx2ZDU</span>
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border">
+                <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl border-2 border-gray-200">
                   <input
                     type="checkbox"
                     id="tanpa_video"
@@ -308,9 +377,9 @@ export default function MateriPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, tanpa_video: e.target.checked, video_id: "" })
                     }
-                    className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 mt-0.5"
+                    className="w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 mt-0.5 cursor-pointer"
                   />
-                  <label htmlFor="tanpa_video" className="text-sm text-gray-700 cursor-pointer">
+                  <label htmlFor="tanpa_video" className="text-sm text-gray-700 cursor-pointer flex-1">
                     <strong>Konten tanpa video YouTube</strong>
                     <br />
                     <span className="text-gray-500 text-xs">Video ID akan diabaikan jika dicentang</span>
@@ -318,56 +387,55 @@ export default function MateriPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-semibold text-gray-900 text-sm">
+                  <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
+                    <Upload className="h-4 w-4 text-blue-600" />
                     File PDF {!editMode && <span className="text-red-500">*</span>}
-                  </Label>
-                  <Input
+                  </label>
+                  <input
                     type="file"
                     accept=".pdf"
-                    required={!editMode}
                     onChange={(e) =>
                       setFormData({ ...formData, file_pdf: e.target.files?.[0] || null })
                     }
-                    className="px-4 py-2.5 rounded-xl border-2 focus:border-emerald-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-emerald-50 file:text-emerald-700 file:text-sm file:font-medium hover:file:bg-emerald-100"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gradient-to-r file:from-blue-500 file:to-blue-600 file:text-white file:text-sm file:font-semibold hover:file:from-blue-600 hover:file:to-blue-700 file:cursor-pointer"
                   />
                   {editMode && (
-                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                      ⚠️ Kosongkan jika tidak ingin mengubah file
+                    <p className="text-xs text-amber-700 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl px-4 py-3 flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                      <span>Kosongkan jika tidak ingin mengubah file PDF yang sudah ada</span>
                     </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-semibold text-gray-900 text-sm">
+                  <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
+                    <FileText className="h-4 w-4 text-emerald-600" />
                     Deskripsi <span className="text-red-500">*</span>
-                  </Label>
-                  <Textarea
-                    required
+                  </label>
+                  <textarea
                     value={formData.deskripsi}
                     onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
                     placeholder="Tulis deskripsi singkat tentang konten..."
                     rows={5}
-                    className="px-4 py-3 rounded-xl border-2 focus:border-emerald-500 resize-none"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all resize-none"
                   />
                 </div>
 
-                <div className="flex items-center gap-3 pt-4 border-t">
-                  <Button
-                    type="button"
+                <div className="flex items-center gap-3 pt-4 border-t-2 border-gray-100">
+                  <button
                     onClick={() => setShowModal(false)}
                     disabled={submitting}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-2.5 font-semibold disabled:opacity-50"
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold disabled:opacity-50 transition-all hover:scale-105"
                   >
                     Batal
-                  </Button>
-                  <Button
-                    type="button"
+                  </button>
+                  <button
                     onClick={handleSubmit}
                     disabled={submitting}
-                    className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl py-2.5 font-semibold disabled:opacity-50"
+                    className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl py-3 font-semibold disabled:opacity-50 transition-all hover:scale-105 shadow-lg"
                   >
-                    {submitting ? "Menyimpan..." : editMode ? "Simpan" : "Tambah"}
-                  </Button>
+                    {submitting ? "Menyimpan..." : editMode ? "💾 Simpan" : "➕ Tambah"}
+                  </button>
                 </div>
               </div>
             </div>

@@ -73,9 +73,10 @@ export default function AssessmentPage() {
       {/* bikin container lebih lebar biar lega */}
       <div className="max-w-7xl mx-auto space-y-8">
         <header>
-      <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-        Assessment Manager
+      <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-emerald-800 to-gray-900 bg-clip-text text-transparent">
+          Assesment Manager
       </h1>
+      <p className="text-gray-600 mt-0.5">Kelola Assessment Diabetes Melitus</p>
     </header>
 
 
