@@ -1,57 +1,100 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, X, Pencil, Trash2, FileText, Video, CheckCircle2, AlertCircle, Download, ExternalLink, Calendar, Clock, Upload } from "lucide-react";
+import {
+  Plus,
+  X,
+  Pencil,
+  Trash2,
+  FileText,
+  Video,
+  CheckCircle2,
+  AlertCircle,
+  Download,
+  Calendar,
+  Clock,
+  Upload,
+} from "lucide-react";
+import axios from "axios";
+import { api } from "@/lib/api";
 
+/* ================= Helper (SATU VERSI SAJA) ================= */
+// Base URL backend dari .env, fallback ke localhost
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(/\/+$/, "");
+// Host backend tanpa "/api"
+const FILE_HOST = API_BASE.replace(/\/api\/?$/, "");
+
+// Normalisasi URL file agar selalu absolute
+function toAbsolute(url?: string | null) {
+  if (!url) return "";
+  return /^https?:\/\//i.test(url) ? url : `${FILE_HOST}${url}`;
+}
+
+// Ambil token login (kalau route file dilindungi)
+const LS_TOKEN_KEY = "gleam_token";
+const getToken = () =>
+  (typeof window !== "undefined" ? localStorage.getItem(LS_TOKEN_KEY) : "") || "";
+
+// Ekstrak nama file dari header Content-Disposition (opsional)
+function getFilenameFromCD(cd?: string) {
+  if (!cd) return null;
+  const m = /filename\*?=(?:UTF-8''|")?([^\";]+)/i.exec(cd);
+  try {
+    return m ? decodeURIComponent(m[1].replace(/\"/g, "")) : null;
+  } catch {
+    return m?.[1] ?? null;
+  }
+}
+
+// Download via fetch blob + Authorization (agar jalan untuk route protected)
+async function downloadPdfWithAuth(konten: { file_url?: string | null; judul: string }) {
+  const raw = konten.file_url ?? "";
+  const url = toAbsolute(raw);
+  if (!url) throw new Error("URL file kosong");
+
+  try {
+    const token = getToken();
+    const res = await axios.get(url, {
+      responseType: "blob",
+      withCredentials: true, // penting: kirim cookies sesi
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    const blob = new Blob([res.data], {
+      type: res.headers["content-type"] || "application/pdf",
+    });
+    const href = URL.createObjectURL(blob);
+
+    const cd = res.headers["content-disposition"];
+    const fromHeader = getFilenameFromCD(cd);
+    const fallback = (konten.judul || "materi").replace(/[^\w\-]+/g, "_") + ".pdf";
+    const filename = fromHeader || fallback;
+
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(href);
+  } catch (err) {
+    // fallback: buka langsung (cookies browser otomatis ikut)
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+}
+
+/* ================= Types ================= */
 type Konten = {
   id: string;
   judul: string;
   video_id: string | null;
-  file_url: string;
+  file_url: string | null;
   deskripsi: string;
   created_at: string;
   updated_at: string;
 };
 
-// Mock API untuk demo
-const api = {
-  get: async (url: string) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return {
-      data: {
-        data: [
-          {
-            id: "1",
-            judul: "Pengenalan Diabetes Melitus",
-            deskripsi: "Pelajari dasar-dasar diabetes melitus, mulai dari definisi, jenis-jenis diabetes, hingga faktor risiko yang perlu Anda ketahui untuk pencegahan dini.",
-            video_id: "dQw4w9WgXcQ",
-            file_url: "#",
-            created_at: "2024-01-15T10:00:00Z",
-            updated_at: "2024-01-20T15:30:00Z"
-          },
-          {
-            id: "2",
-            judul: "Gejala dan Diagnosis Diabetes",
-            deskripsi: "Kenali gejala-gejala diabetes sejak dini dan pahami prosedur diagnosis yang tepat untuk deteksi diabetes melitus.",
-            video_id: null,
-            file_url: "#",
-            created_at: "2024-02-10T09:00:00Z",
-            updated_at: "2024-02-12T11:00:00Z"
-          }
-        ]
-      }
-    };
-  },
-  post: async (url: string, data: any) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return { data: { success: true } };
-  },
-  delete: async (url: string) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return { data: { success: true } };
-  }
-};
-
+/* ============== Page ============== */
 export default function MateriPage() {
   const [kontenList, setKontenList] = useState<Konten[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +102,7 @@ export default function MateriPage() {
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     judul: "",
     video_id: "",
@@ -90,7 +133,13 @@ export default function MateriPage() {
   function openAddModal() {
     setEditMode(false);
     setEditId(null);
-    setFormData({ judul: "", video_id: "", tanpa_video: false, file_pdf: null, deskripsi: "" });
+    setFormData({
+      judul: "",
+      video_id: "",
+      tanpa_video: false,
+      file_pdf: null,
+      deskripsi: "",
+    });
     setShowModal(true);
   }
 
@@ -109,20 +158,45 @@ export default function MateriPage() {
 
   async function handleSubmit() {
     setSubmitting(true);
-
     try {
+      const fd = new FormData();
+      fd.append("judul", formData.judul);
+      fd.append("deskripsi", formData.deskripsi);
+      if (!formData.tanpa_video && formData.video_id.trim()) {
+        fd.append("video_id", formData.video_id.trim());
+      } else {
+        fd.append("video_id", "");
+      }
+      if (formData.file_pdf) fd.append("file_pdf", formData.file_pdf);
+
       if (editMode && editId) {
-        await api.post(`/admin/materi/konten/${editId}`, formData);
+        fd.append("_method", "PATCH"); // Laravel expects PATCH
+        await api.post(`/admin/materi/konten/${editId}`, fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
+        });
         setMsg({ type: "success", text: "Konten berhasil diperbarui!" });
       } else {
-        await api.post("/admin/materi/konten", formData);
+        if (!formData.file_pdf) {
+          setMsg({ type: "error", text: "File PDF wajib diunggah." });
+          setSubmitting(false);
+          return;
+        }
+        await api.post("/admin/materi/konten", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
+        });
         setMsg({ type: "success", text: "Konten berhasil ditambahkan!" });
       }
+
       setShowModal(false);
       fetchKonten();
       setTimeout(() => setMsg(null), 3000);
     } catch (error: any) {
-      const errorMsg = error?.response?.data?.message || "Gagal menyimpan konten.";
+      const errorMsg =
+        error?.response?.data?.message ||
+        error?.response?.data?.errors?.file_pdf?.[0] ||
+        "Gagal menyimpan konten.";
       setMsg({ type: "error", text: errorMsg });
     } finally {
       setSubmitting(false);
@@ -132,7 +206,7 @@ export default function MateriPage() {
   async function handleDelete(kontenId: string) {
     if (!confirm("Yakin ingin menghapus konten ini?")) return;
     try {
-      await api.delete(`/admin/materi/konten/${kontenId}`);
+      await api.delete(`/admin/materi/konten/${kontenId}`, { withCredentials: true });
       setMsg({ type: "success", text: "Konten berhasil dihapus!" });
       fetchKonten();
       setTimeout(() => setMsg(null), 3000);
@@ -147,7 +221,7 @@ export default function MateriPage() {
     "from-emerald-500 to-teal-500",
     "from-orange-500 to-red-500",
     "from-indigo-500 to-purple-500",
-    "from-rose-500 to-pink-500"
+    "from-rose-500 to-pink-500",
   ];
 
   return (
@@ -172,7 +246,7 @@ export default function MateriPage() {
             onClick={openAddModal}
             className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
           >
-            <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
+            <Plus className="h-5 w-5" />
             Tambah Konten
           </button>
         </header>
@@ -204,7 +278,9 @@ export default function MateriPage() {
                   <span className="w-1.5 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
                   Daftar Konten
                 </h2>
-                <p className="text-sm text-gray-600 mt-1 ml-4">{kontenList.length} konten tersedia</p>
+                <p className="text-sm text-gray-600 mt-1 ml-4">
+                  {loading ? "Memuat…" : `${kontenList.length} konten tersedia`}
+                </p>
               </div>
               <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
@@ -218,9 +294,8 @@ export default function MateriPage() {
               <div className="text-center py-20">
                 <div className="inline-block relative">
                   <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-                  <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-teal-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1s' }}></div>
                 </div>
-                <p className="text-sm text-gray-500 mt-4 font-medium">Memuat konten...</p>
+                <p className="text-sm text-gray-500 mt-4 font-medium">Memuat konten…</p>
               </div>
             ) : kontenList.length === 0 ? (
               <div className="text-center py-20">
@@ -237,9 +312,9 @@ export default function MateriPage() {
                     key={konten.id}
                     className="group relative bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden"
                   >
-                    <div className={`absolute inset-0 bg-gradient-to-r ${gradients[index % gradients.length]} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
-                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${gradients[index % gradients.length]} opacity-5 rounded-bl-full`}></div>
-                    
+                    <div className={`absolute inset-0 bg-gradient-to-r ${gradients[index % gradients.length]} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${gradients[index % gradients.length]} opacity-5 rounded-bl-full`} />
+
                     <div className="relative flex items-start gap-5">
                       <div className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${gradients[index % gradients.length]} text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                         {index + 1}
@@ -250,20 +325,27 @@ export default function MateriPage() {
                           {konten.judul}
                         </h3>
 
-                        <p className="text-gray-600 text-base leading-relaxed">
+                        <p className="text-gray-600 text-base leading-relaxed break-words whitespace-pre-wrap [overflow-wrap:anywhere]">
                           {konten.deskripsi}
                         </p>
 
                         <div className="flex flex-wrap items-center gap-3">
-                          <a
-                            href={konten.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
-                          >
-                            <Download className="h-4 w-4" />
-                            Unduh PDF
-                          </a>
+                          {konten.file_url && (
+                            <a
+                              href={toAbsolute(konten.file_url)}
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                await downloadPdfWithAuth({ file_url: konten.file_url, judul: konten.judul });
+                              }}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
+                            >
+                              <Download className="h-4 w-4" />
+                              Unduh PDF
+                            </a>
+                          )}
+
                           {konten.video_id && (
                             <a
                               href={`https://www.youtube.com/watch?v=${konten.video_id}`}
@@ -278,15 +360,35 @@ export default function MateriPage() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="h-3.5 w-3.5 text-emerald-600" />
-                            <span className="font-medium">Dibuat: {new Date(konten.created_at).toLocaleDateString("id-ID", { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                          </div>
-                          <span className="text-gray-300">•</span>
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5 text-blue-600" />
-                            <span className="font-medium">Diperbarui: {new Date(konten.updated_at).toLocaleDateString("id-ID", { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                          </div>
+                          {konten.created_at && (
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 text-emerald-600" />
+                              <span className="font-medium">
+                                Dibuat:{" "}
+                                {new Date(konten.created_at).toLocaleDateString("id-ID", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </span>
+                            </div>
+                          )}
+                          {konten.updated_at && (
+                            <>
+                              <span className="text-gray-300">•</span>
+                              <div className="flex items-center gap-1.5">
+                                <Clock className="h-3.5 w-3.5 text-blue-600" />
+                                <span className="font-medium">
+                                  Diperbarui:{" "}
+                                  {new Date(konten.updated_at).toLocaleDateString("id-ID", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
 
@@ -363,8 +465,10 @@ export default function MateriPage() {
                   />
                   <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-4">
                     <p className="text-xs text-blue-900">
-                      💡 <strong>Contoh:</strong> https://youtube.com/watch?v=<span className="font-mono bg-white px-2 py-0.5 rounded">y55Wupx2ZDU</span>
-                      <br />Masukkan hanya: <span className="font-mono bg-white px-2 py-0.5 rounded">y55Wupx2ZDU</span>
+                      💡 <strong>Contoh:</strong> https://youtube.com/watch?v=
+                      <span className="font-mono bg-white px-2 py-0.5 rounded">y55Wupx2ZDU</span>
+                      <br />
+                      Masukkan hanya: <span className="font-mono bg-white px-2 py-0.5 rounded">y55Wupx2ZDU</span>
                     </p>
                   </div>
                 </div>
