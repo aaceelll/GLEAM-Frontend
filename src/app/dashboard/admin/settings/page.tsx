@@ -1,13 +1,23 @@
-// app/dashboard/admin/pengaturan/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Eye, EyeOff, Save, User, Lock, Mail, Phone, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Save,
+  User,
+  Lock,
+  Mail,
+  Phone,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/hooks/use-auth";
 
 type ProfilePayload = {
   nama: string;
@@ -30,34 +40,71 @@ export default function PengaturanPage() {
   const [confirmPass, setConfirmPass] = useState("");
   const [show, setShow] = useState({ old: false, new: false, confirm: false });
 
-  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [msg, setMsg] =
+    useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const { setUser } = useAuth();
+
+  /** Load profil SEKALI supaya nilai input tidak ke-reset saat mengetik */
   useEffect(() => {
-    const raw = localStorage.getItem("user_data");
-    if (raw) {
-      const u = JSON.parse(raw);
-      setProfile({
-        nama: u?.nama ?? "",
-        email: u?.email ?? "",
-        username: u?.username ?? "",
-        nomor_telepon: u?.nomor_telepon ?? "",
-      });
-    }
-  }, []);
+    (async () => {
+      try {
+        const { data } = await api.get("/profile");
+        const u = data?.data;
+        setProfile({
+          nama: u?.nama ?? "",
+          email: u?.email ?? "",
+          username: u?.username ?? "",
+          nomor_telepon: u?.nomor_telepon ?? "",
+        });
+        // cukup simpan ke LS; update sidebar saat SAVE saja
+        localStorage.setItem("user_data", JSON.stringify(u));
+      } catch {
+        setMsg({ type: "error", text: "Gagal memuat profil." });
+      }
+    })();
+  }, []); // <— penting: kosong
 
-  async function handleSaveProfile(e: React.FormEvent) {
+  // Simpan profil ke DB
+  async function handleSaveProfile(e: FormEvent) {
     e.preventDefault();
     setMsg(null);
     try {
-      localStorage.setItem("user_data", JSON.stringify(profile));
+      const { data } = await api.put("/profile", profile);
+      const updated = data?.user ?? data?.data ?? profile;
+
+      setProfile((prev) => ({
+        ...prev,
+        nama: updated.nama ?? "",
+        email: updated.email ?? "",
+        username: updated.username ?? "",
+        nomor_telepon: updated.nomor_telepon ?? "",
+      }));
+
+      // update cache + context → sidebar langsung rerender
+      localStorage.setItem("user_data", JSON.stringify(updated));
+      setUser(updated);
+
       setMsg({ type: "success", text: "Profil berhasil diperbarui." });
       setTimeout(() => setMsg(null), 3000);
-    } catch {
-      setMsg({ type: "error", text: "Gagal menyimpan profil." });
+    } catch (err) {
+      const resData = (err as any)?.response?.data;
+      const errors =
+        (resData?.errors as Record<string, string[] | string> | undefined) ??
+        undefined;
+
+      const first = errors ? Object.values(errors)[0] : undefined;
+      const firstMsg = Array.isArray(first) ? first[0] : first;
+
+      const text =
+        (firstMsg as string) || resData?.message || "Gagal menyimpan profil.";
+
+      setMsg({ type: "error", text });
     }
   }
 
-  async function handleSavePassword(e: React.FormEvent) {
+  // Ganti password di DB
+  async function handleSavePassword(e: FormEvent) {
     e.preventDefault();
     setMsg(null);
     if (!oldPass || !newPass || !confirmPass) {
@@ -70,13 +117,31 @@ export default function PengaturanPage() {
     }
 
     try {
+      await api.patch("/profile/password", {
+        old_password: oldPass,
+        new_password: newPass,
+        new_password_confirmation: confirmPass,
+      });
       setMsg({ type: "success", text: "Password berhasil diperbarui." });
       setOldPass("");
       setNewPass("");
       setConfirmPass("");
       setTimeout(() => setMsg(null), 3000);
-    } catch {
-      setMsg({ type: "error", text: "Gagal memperbarui password." });
+    } catch (err) {
+      const resData = (err as any)?.response?.data;
+      const errors =
+        (resData?.errors as Record<string, string[] | string> | undefined) ??
+        undefined;
+
+      const first = errors ? Object.values(errors)[0] : undefined;
+      const firstMsg = Array.isArray(first) ? first[0] : first;
+
+      const text =
+        (firstMsg as string) ||
+        resData?.message ||
+        "Gagal memperbarui password.";
+
+      setMsg({ type: "error", text });
     }
   }
 
@@ -143,8 +208,12 @@ export default function PengaturanPage() {
                   <User className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Informasi Profil</h2>
-                  <p className="text-sm text-slate-600">Perbarui data pribadi Anda</p>
+                  <h2 className="text-xl font-bold text-slate-900">
+                    Informasi Profil
+                  </h2>
+                  <p className="text-sm text-slate-600">
+                    Perbarui data pribadi Anda
+                  </p>
                 </div>
               </div>
 
@@ -154,7 +223,9 @@ export default function PengaturanPage() {
                   icon={<User className="h-5 w-5 text-slate-400" />}
                   required
                   value={profile.nama}
-                  onChange={(v) => setProfile({ ...profile, nama: v })}
+                  onChange={(v) =>
+                    setProfile((p) => ({ ...p, nama: v }))
+                  }
                   placeholder="Masukkan nama lengkap"
                 />
 
@@ -164,7 +235,9 @@ export default function PengaturanPage() {
                   required
                   type="email"
                   value={profile.email}
-                  onChange={(v) => setProfile({ ...profile, email: v })}
+                  onChange={(v) =>
+                    setProfile((p) => ({ ...p, email: v }))
+                  }
                   placeholder="nama@email.com"
                 />
 
@@ -173,7 +246,9 @@ export default function PengaturanPage() {
                   icon={<User className="h-5 w-5 text-slate-400" />}
                   required
                   value={profile.username}
-                  onChange={(v) => setProfile({ ...profile, username: v })}
+                  onChange={(v) =>
+                    setProfile((p) => ({ ...p, username: v }))
+                  }
                   placeholder="username_anda"
                 />
 
@@ -181,18 +256,20 @@ export default function PengaturanPage() {
                   label="Nomor Telepon"
                   icon={<Phone className="h-5 w-5 text-slate-400" />}
                   value={profile.nomor_telepon}
-                  onChange={(v) => setProfile({ ...profile, nomor_telepon: v })}
+                  onChange={(v) =>
+                    setProfile((p) => ({ ...p, nomor_telepon: v }))
+                  }
                   placeholder="+62 812 3456 7890"
                 />
 
                 <div className="flex justify-end pt-4">
-                  <Button
+                  <button
                     type="submit"
-                    className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-8 py-6 rounded-xl font-semibold transition-all duration-200"
+                    className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
-                    <Save className="h-5 w-5 mr-2" />
+                    <Save className="h-5 w-5" />
                     Simpan Perubahan
-                  </Button>
+                  </button>
                 </div>
               </form>
             </div>
@@ -208,8 +285,12 @@ export default function PengaturanPage() {
                   <Lock className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Ubah Password</h2>
-                  <p className="text-sm text-slate-600">Tingkatkan keamanan akun Anda</p>
+                  <h2 className="text-xl font-bold text-slate-900">
+                    Ubah Password
+                  </h2>
+                  <p className="text-sm text-slate-600">
+                    Tingkatkan keamanan akun Anda
+                  </p>
                 </div>
               </div>
 
@@ -246,7 +327,8 @@ export default function PengaturanPage() {
 
                 <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4">
                   <p className="text-sm text-blue-900 font-medium">
-                    💡 Tips Keamanan: Gunakan kombinasi huruf besar, huruf kecil, angka, dan simbol untuk password yang lebih kuat.
+                    Tips Keamanan: Gunakan kombinasi huruf besar, huruf kecil,
+                    angka, dan simbol untuk password yang lebih kuat.
                   </p>
                 </div>
 
@@ -279,7 +361,7 @@ function InputField({
   placeholder,
 }: {
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   value?: string;
   onChange: (val: string) => void;
   required?: boolean;
@@ -302,6 +384,8 @@ function InputField({
           onChange={(e) => onChange(e.target.value)}
           required={required}
           placeholder={placeholder}
+          autoComplete="off"
+          spellCheck={false}
           className="pl-12 py-6 rounded-xl border-2 border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200"
         />
       </div>
@@ -342,6 +426,8 @@ function PasswordInput({
           onChange={(e) => onChange(e.target.value)}
           required={required}
           placeholder={placeholder}
+          autoComplete="off"
+          spellCheck={false}
           className="pl-12 pr-12 py-6 rounded-xl border-2 border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200"
         />
         <button
