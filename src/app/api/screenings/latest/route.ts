@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    // Get latest screening result
+    // Ambil screening terbaru
     const [latestRows] = await db.query(
       `SELECT * FROM diabetes_screenings 
        ORDER BY created_at DESC 
        LIMIT 1`
     );
 
-    // Get history (last 10 screenings)
+    // Ambil history 10 screening terakhir
     const [historyRows] = await db.query(
       `SELECT * FROM diabetes_screenings 
        ORDER BY created_at DESC 

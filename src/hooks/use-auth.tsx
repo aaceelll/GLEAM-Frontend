@@ -1,10 +1,20 @@
-// src/hooks/use-auth.tsx
 "use client";
 
 import {
-  createContext, useContext, useEffect, useState, type ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
 } from "react";
-import { authAPI, getToken, setToken, clearToken, setTokenCookie, clearTokenCookie } from "@/lib/api";
+import {
+  authAPI,
+  getToken,
+  setToken,
+  clearToken,
+  setTokenCookie,
+  clearTokenCookie,
+} from "@/lib/api";
 import type {
   AuthResponse,
   RegisterFormData,
@@ -16,6 +26,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
+  /** Setter supaya halaman lain (Sidebar) ikut rerender */
+  setUser: (u: User | null) => void;
   login: (data: { email: string; password: string }) => Promise<User>;
   register: (data: RegisterFormData) => Promise<AuthResponse>;
   logout: () => void;
@@ -24,16 +36,28 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUserState] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  /** Sinkronkan context + localStorage */
+  const setUser = (u: User | null) => {
+    setUserState(u);
+    if (typeof window !== "undefined") {
+      if (u) localStorage.setItem("user_data", JSON.stringify(u));
+      else localStorage.removeItem("user_data");
+    }
+  };
 
   useEffect(() => {
     const token = getToken();
-    if (!token) { setLoading(false); return; }
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     (async () => {
       try {
         const res = await authAPI.me();
-        setUser(res.data as User);
+        setUser(res.data as User); // juga simpan ke localStorage
       } catch {
         clearToken();
         clearTokenCookie();
@@ -48,14 +72,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await authAPI.login(data);
     const { token, user } = res.data as AuthResponse;
 
-    // save to localStorage (for axios) and cookie (for middleware)
     setToken(token);
     setTokenCookie(token);
-
-    // (optional) keep user in LS for quick role checks in layout
-    localStorage.setItem("user_data", JSON.stringify(user));
-
-    setUser(user);
+    setUser(user); // context + localStorage
     return user;
   };
 
@@ -93,7 +112,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, isAuthenticated: !!user, login, register, logout }}
+      value={{
+        user,
+        loading,
+        isAuthenticated: !!user,
+        setUser,
+        login,
+        register,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>

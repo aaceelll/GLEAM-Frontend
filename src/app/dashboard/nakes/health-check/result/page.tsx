@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { Sidebar } from '@/components/dashboard/sidebar';
-
-import { Heart, Activity, Droplet, Calendar, User, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { Sidebar } from "@/components/dashboard/sidebar";
+import { Heart, Activity, Droplet, Calendar, User, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 interface ScreeningResult {
   id: number;
@@ -30,35 +29,30 @@ export default function ResultPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchResults();
+    (async () => {
+      try {
+        const r = await fetch("/api/screenings/latest");
+        const d = await r.json();
+        setLatestResult(d?.latest || null);
+        setHistoryResults(d?.history || []);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const fetchResults = async () => {
-    try {
-      // Ambil hasil terbaru dan history dari API
-      const response = await fetch('/api/screenings/latest');
-      const data = await response.json();
-      
-      setLatestResult(data.latest);
-      setHistoryResults(data.history || []);
-    } catch (error) {
-      console.error('Error fetching results:', error);
-    } finally {
-      setLoading(false);
-    }
+  const getRiskColor = (p: string) => {
+    const v = parseFloat(p);
+    if (v >= 63) return "text-red-700 bg-red-50 border-red-200";
+    if (v >= 48) return "text-orange-700 bg-orange-50 border-orange-200";
+    return "text-green-700 bg-green-50 border-green-200";
   };
-
-  const getRiskColor = (probability: string) => {
-    const prob = parseFloat(probability);
-    if (prob >= 63) return 'text-red-700 bg-red-50 border-red-200';
-    if (prob >= 48) return 'text-orange-700 bg-orange-50 border-orange-200';
-    return 'text-green-700 bg-green-50 border-green-200';
-  };
-
-  const getRiskBadge = (result: string) => {
-    if (result.includes('Risiko')) return 'bg-red-100 text-red-800';
-    if (result.includes('Sedang')) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-green-100 text-green-800';
+  const getRiskBadge = (s: string) => {
+    if (s.includes("Risiko")) return "bg-red-100 text-red-800";
+    if (s.includes("Sedang")) return "bg-yellow-100 text-yellow-800";
+    return "bg-green-100 text-green-800";
   };
 
   if (loading) {
@@ -83,10 +77,7 @@ export default function ResultPage() {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-gray-600 mb-4">Tidak ada hasil screening</p>
-            <Link
-              href="/dashboard/nakes/health-check"
-              className="text-emerald-600 hover:text-emerald-700 font-medium"
-            >
+            <Link href="/dashboard/nakes/health-check" className="text-emerald-600 hover:text-emerald-700 font-medium">
               Kembali ke Form Screening
             </Link>
           </div>
@@ -100,15 +91,10 @@ export default function ResultPage() {
       <div className="w-64 flex-shrink-0">
         <Sidebar role="nakes" />
       </div>
-      
       <div className="flex-1 overflow-auto bg-gray-50">
         <div className="max-w-6xl mx-auto p-6">
-          {/* Header */}
           <div className="mb-6">
-            <Link
-              href="/dashboard/nakes/health-check"
-              className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium mb-4"
-            >
+            <Link href="/dashboard/nakes/health-check" className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium mb-4">
               <ArrowLeft className="w-4 h-4" />
               Kembali
             </Link>
@@ -116,37 +102,31 @@ export default function ResultPage() {
             <p className="text-gray-600">Dashboard hasil screening dan riwayat pemeriksaan</p>
           </div>
 
-          {/* Latest Result Card */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
             <div className="flex items-start justify-between mb-6">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                    <Activity className="w-6 h-6 text-emerald-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-800">Hasil Screening</h2>
-                    <p className="text-sm text-gray-600">
-                      {new Date(latestResult.created_at).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <Activity className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">Hasil Screening</h2>
+                  <p className="text-sm text-gray-600">
+                    {new Date(latestResult.created_at).toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
                 </div>
               </div>
-              <button
-                onClick={() => window.print()}
-                className="px-4 py-2 text-sm font-medium text-emerald-600 border border-emerald-600 rounded-lg hover:bg-emerald-50"
-              >
+              <button onClick={() => window.print()} className="px-4 py-2 text-sm font-medium text-emerald-600 border border-emerald-600 rounded-lg hover:bg-emerald-50">
                 Cetak Hasil
               </button>
             </div>
 
-            {/* Patient Info */}
+            {/* Info pasien */}
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <User className="w-5 h-5 text-blue-600" />
@@ -174,9 +154,8 @@ export default function ResultPage() {
               </div>
             </div>
 
-            {/* Main Results */}
+            {/* Ringkasan hasil */}
             <div className="grid grid-cols-2 gap-6 mb-6">
-              {/* Diabetes Result */}
               <div className={`rounded-xl p-6 border-2 ${getRiskColor(latestResult.diabetes_probability)}`}>
                 <div className="flex items-center gap-2 mb-3">
                   <Droplet className="w-5 h-5" />
@@ -194,20 +173,18 @@ export default function ResultPage() {
                     <div>
                       <span className="text-gray-600">Klasifikasi:</span>
                       <span className="font-semibold ml-1">
-                        {latestResult.blood_glucose_level < 140 ? 'Rendah' : 'Tinggi'}
+                        {latestResult.blood_glucose_level < 140 ? "Rendah" : "Tinggi"}
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Hypertension Result */}
               <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-6 border-2 border-red-200">
                 <div className="flex items-center gap-2 mb-3">
                   <Heart className="w-5 h-5 text-red-600" />
                   <h3 className="font-semibold text-red-900">Data Screening Hipertensi</h3>
                 </div>
-                <p className="text-xs text-red-700 mb-2">Tingkat Risiko: Normal</p>
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="bg-white rounded-lg p-3">
                     <p className="text-xs text-gray-600 mb-1">Sistolik</p>
@@ -225,7 +202,7 @@ export default function ResultPage() {
               </div>
             </div>
 
-            {/* Additional Info */}
+            {/* Info tambahan */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm font-medium text-gray-700 mb-2">Riwayat Penyakit Jantung</p>
@@ -233,13 +210,10 @@ export default function ResultPage() {
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm font-medium text-gray-700 mb-2">Riwayat Merokok</p>
-                <p className="text-lg font-semibold text-gray-800 capitalize">
-                  {latestResult.smoking_history}
-                </p>
+                <p className="text-lg font-semibold text-gray-800 capitalize">{latestResult.smoking_history}</p>
               </div>
             </div>
 
-            {/* Recommendation */}
             <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
               <div className="flex items-start gap-2">
                 <div className="text-2xl">💡</div>
@@ -263,7 +237,7 @@ export default function ResultPage() {
             </div>
           </div>
 
-          {/* History Table */}
+          {/* History */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center gap-2 mb-4">
               <Calendar className="w-5 h-5 text-gray-600" />
@@ -274,40 +248,55 @@ export default function ResultPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200 text-left">
-                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">TANGGAL</th>
-                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">BMI</th>
-                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">GULA DARAH</th>
-                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">TEKANAN DARAH</th>
-                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">HASIL</th>
-                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">SKOR</th>
+                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
+                      TANGGAL
+                    </th>
+                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
+                      BMI
+                    </th>
+                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
+                      GULA DARAH
+                    </th>
+                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
+                      TEKANAN DARAH
+                    </th>
+                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
+                      HASIL
+                    </th>
+                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
+                      SKOR
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {historyResults.map((result, index) => (
-                    <tr key={result.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  {historyResults.map((r) => (
+                    <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-4 text-sm text-gray-800">
-                        {new Date(result.created_at).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
+                        {new Date(r.created_at).toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })}
                       </td>
-                      <td className="py-4 text-sm text-gray-800">{result.bmi}</td>
-                      <td className="py-4 text-sm text-gray-800">{result.blood_glucose_level} mg/dL</td>
+                      <td className="py-4 text-sm text-gray-800">{r.bmi}</td>
+                      <td className="py-4 text-sm text-gray-800">{r.blood_glucose_level} mg/dL</td>
                       <td className="py-4 text-sm text-gray-800">
-                        {result.systolic_bp}/{result.diastolic_bp}
-                        <div className="text-xs text-gray-500">{result.bp_classification}</div>
+                        {r.systolic_bp}/{r.diastolic_bp}
+                        <div className="text-xs text-gray-500">{r.bp_classification}</div>
                       </td>
                       <td className="py-4">
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getRiskBadge(result.diabetes_result)}`}>
-                          {result.diabetes_result.includes('Tidak') ? 'Rendah' : 
-                           result.diabetes_result.includes('Sedang') ? 'Sedang' : 'Tinggi'}
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getRiskBadge(r.diabetes_result)}`}>
+                          {r.diabetes_result.includes("Tidak")
+                            ? "Rendah"
+                            : r.diabetes_result.includes("Sedang")
+                            ? "Sedang"
+                            : "Tinggi"}
                         </span>
                       </td>
                       <td className="py-4 text-sm font-semibold text-gray-800">
-                        {result.diabetes_probability}
+                        {r.diabetes_probability}
                       </td>
                     </tr>
                   ))}
