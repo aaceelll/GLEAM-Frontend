@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
+import { Star, Sparkles, MessageCircle, ArrowRight, CheckCircle2 } from "lucide-react";
 
 const questions = [
   { id: 'q1', text: 'Saya ingin menggunakan website ini secara rutin.' },
@@ -23,11 +24,11 @@ const questions = [
 ];
 
 const options = [
-  { value: '1', label: 'Sangat Tidak Setuju' },
-  { value: '2', label: 'Tidak Setuju' },
-  { value: '3', label: 'Netral' },
-  { value: '4', label: 'Setuju' },
-  { value: '5', label: 'Sangat Setuju' },
+  { value: '1', label: 'STS' },
+  { value: '2', label: 'TS' },
+  { value: '3', label: 'N' },
+  { value: '4', label: 'S' },
+  { value: '5', label: 'SS' },
 ];
 
 export default function UlasanWebsitePage() {
@@ -37,7 +38,7 @@ export default function UlasanWebsitePage() {
   const [suggestion, setSuggestion] = useState('');
   const [progress, setProgress] = useState(0);
 
-  // Load existing review jika ada
+  // Load existing review
   useEffect(() => {
     const loadReview = async () => {
       try {
@@ -76,112 +77,224 @@ export default function UlasanWebsitePage() {
       });
 
       await api.post('/website-review', payload);
-      
-      // ✅ PAKAI ALERT
       alert("✅ Berhasil! Ulasan Anda telah tersimpan. Terima kasih atas feedback-nya! 🎉");
-      
       router.push('/dashboard/user');
     } catch (error: any) {
-      // ✅ PAKAI ALERT
       alert("❌ Gagal menyimpan: " + (error.response?.data?.message || "Terjadi kesalahan"));
     } finally {
       setLoading(false);
     }
   };
 
+  const allAnswered = Object.keys(answers).length === questions.length;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-emerald-800 mb-3">
+    <div className="min-h-screen bg-white">
+      {/* Decorative Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-teal-400/10 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
+      </div>
+
+      <div className="relative max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Header Section */}
+        <div className="text-center mb-12 space-y-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 rounded-full mb-4">
+            <Sparkles className="w-4 h-4 text-emerald-600" />
+            <span className="text-sm font-medium text-emerald-700">System Usability Scale</span>
+          </div>
+          
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-emerald-700 via-teal-600 to-cyan-600 bg-clip-text text-transparent mb-4">
             Ulasan Website
           </h1>
-          <p className="text-lg text-gray-600">
-            Silakan berikan ulasan Anda terhadap website ini. Jawaban Anda akan membantu kami untuk meningkatkan kualitas layanan.
+          
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Bantu kami meningkatkan pengalaman Anda. Setiap masukan sangat berarti untuk pengembangan platform ini.
           </p>
         </div>
 
-        {/* Progress Bar */}
-        <Card className="mb-6 border-emerald-200 shadow-lg">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-emerald-700">Progress</span>
-              <span className="text-sm font-bold text-emerald-800">{progress}%</span>
-            </div>
-            <div className="w-full bg-emerald-100 rounded-full h-3 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-300 ease-out"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {/* Progress Section */}
+        <div className="mb-8">
+          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Progress Pengisian</p>
+                    <p className="text-xs text-gray-400">{Object.keys(answers).length} dari {questions.length} pertanyaan</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                    {progress}%
+                  </span>
+                </div>
+              </div>
+              
+              <div className="relative w-full bg-gray-100 rounded-full h-3 overflow-hidden shadow-inner">
+                <div
+                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-full transition-all duration-500 ease-out shadow-lg"
+                  style={{ width: `${progress}%` }}
+                >
+                  <div className="absolute inset-0 bg-white/30 animate-pulse"></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Card className="border-emerald-200 shadow-xl">
-            <CardHeader className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-t-lg">
-              <CardTitle>Form Ulasan</CardTitle>
-              <p className="text-emerald-50 text-sm mt-1">
-                Isi semua pertanyaan berikut dan berikan saran Anda
-              </p>
-            </CardHeader>
-            <CardContent className="p-6 space-y-8">
-              {questions.map((question, index) => (
-                <div key={question.id} className="space-y-4 pb-6 border-b border-emerald-100 last:border-0">
-                  <Label className="text-base font-semibold text-gray-800 leading-relaxed">
-                    {index + 1}. {question.text}
-                  </Label>
-                  <RadioGroup
-                    value={answers[question.id] || ''}
-                    onValueChange={(value) => setAnswers(prev => ({ ...prev, [question.id]: value }))}
-                    className="grid grid-cols-1 md:grid-cols-5 gap-3"
-                  >
-                    {options.map((option) => (
-                      <div key={option.value} className="flex items-center space-x-2">
-                        <RadioGroupItem
-                          value={option.value}
-                          id={`${question.id}-${option.value}`}
-                          className="border-emerald-500 text-emerald-600"
-                        />
-                        <Label
-                          htmlFor={`${question.id}-${option.value}`}
-                          className="text-sm cursor-pointer hover:text-emerald-600 transition-colors"
-                        >
-                          {option.label}
-                        </Label>
+          {/* Questions */}
+          <div className="space-y-5">
+            {questions.map((question, index) => {
+              const isAnswered = !!answers[question.id];
+              
+              return (
+                <Card 
+                  key={question.id}
+                  className={`border-2 transition-all duration-300 hover:shadow-xl ${
+                    isAnswered 
+                      ? 'border-emerald-200 bg-emerald-50/30' 
+                      : 'border-gray-200 hover:border-emerald-200'
+                  }`}
+                >
+                  <CardContent className="p-6 sm:p-8">
+                    <div className="space-y-5">
+                      {/* Question Header */}
+                      <div className="flex items-start gap-4">
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm transition-all duration-300 ${
+                          isAnswered 
+                            ? 'bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-md' 
+                            : 'bg-gray-100 text-gray-400'
+                        }`}>
+                          {isAnswered ? <CheckCircle2 className="w-4 h-4" /> : index + 1}
+                        </div>
+                        
+                        <div className="flex-1">
+                          <Label className="text-base sm:text-lg font-semibold text-gray-800 leading-relaxed">
+                            {question.text}
+                          </Label>
+                        </div>
                       </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-              ))}
 
-              {/* Kotak Saran */}
-              <div className="space-y-3 pt-4">
-                <Label className="text-base font-semibold text-gray-800">
-                  Kotak Saran
-                </Label>
-                <Textarea
-                  value={suggestion}
-                  onChange={(e) => setSuggestion(e.target.value)}
-                  placeholder="Berikan saran untuk website ini..."
-                  className="min-h-[150px] border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white"
-                />
+                      {/* Radio Options - Simple & Hover Effect */}
+                      <RadioGroup
+                        value={answers[question.id] || ''}
+                        onValueChange={(value) => setAnswers(prev => ({ ...prev, [question.id]: value }))}
+                        className="flex justify-center gap-2 mt-4"
+                      >
+                        {options.map((option) => {
+                          const isSelected = answers[question.id] === option.value;
+                          
+                          return (
+                            <div key={option.value} className="relative group">
+                              <RadioGroupItem
+                                value={option.value}
+                                id={`${question.id}-${option.value}`}
+                                className="peer sr-only"
+                              />
+                              <Label
+                                htmlFor={`${question.id}-${option.value}`}
+                                className={`
+                                  flex items-center justify-center w-16 h-16 rounded-xl border-2 
+                                  cursor-pointer font-bold text-lg transition-all duration-200
+                                  ${isSelected
+                                    ? 'border-emerald-500 bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg scale-110'
+                                    : 'border-gray-300 bg-white text-gray-600 hover:border-emerald-400 hover:bg-emerald-50 hover:shadow-md hover:-translate-y-1'
+                                  }
+                                `}
+                              >
+                                {option.label}
+                              </Label>
+                            </div>
+                          );
+                        })}
+                      </RadioGroup>
+                      
+                      {/* Legend */}
+                      <div className="flex justify-center gap-4 text-xs text-gray-500 mt-2">
+                        <span>STS: Sangat Tidak Setuju</span>
+                        <span>•</span>
+                        <span>TS: Tidak Setuju</span>
+                        <span>•</span>
+                        <span>N: Netral</span>
+                        <span>•</span>
+                        <span>S: Setuju</span>
+                        <span>•</span>
+                        <span>SS: Sangat Setuju</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Suggestion Box */}
+          <Card className="border-2 border-teal-200 shadow-xl bg-gradient-to-br from-white to-teal-50/30">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl text-gray-800">Kotak Saran & Masukan</CardTitle>
+                  <p className="text-sm text-gray-500 mt-1">Bagikan pendapat Anda untuk perbaikan lebih lanjut</p>
+                </div>
               </div>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={suggestion}
+                onChange={(e) => setSuggestion(e.target.value)}
+                placeholder="Tuliskan saran, kritik, atau pengalaman Anda menggunakan website ini..."
+                className="min-h-[180px] border-2 border-teal-200 focus:border-teal-400 focus:ring-2 focus:ring-teal-200 bg-white rounded-xl text-base resize-none"
+              />
+              <p className="text-xs text-gray-400 mt-2">Opsional - Tapi kami sangat menghargai masukan Anda</p>
             </CardContent>
           </Card>
 
           {/* Submit Button */}
-          <div className="flex justify-center">
+          <div className="flex justify-center pt-4">
             <Button
               type="submit"
-              disabled={loading}
-              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-12 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+              disabled={loading || !allAnswered}
+              className={`group relative px-10 py-7 text-lg font-semibold rounded-2xl shadow-2xl transition-all duration-300 overflow-hidden ${
+                allAnswered
+                  ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:shadow-emerald-500/50 hover:scale-105'
+                  : 'bg-gray-300 cursor-not-allowed'
+              }`}
             >
-              {loading ? "Menyimpan..." : "Kirim Ulasan"}
+              {allAnswered && (
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              )}
+              
+              <span className="relative flex items-center gap-3 text-white">
+                {loading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <Star className="w-5 h-5" />
+                    Kirim Ulasan
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
+              </span>
             </Button>
           </div>
+
+          {!allAnswered && (
+            <p className="text-center text-sm text-amber-600 font-medium">
+              Mohon jawab semua pertanyaan sebelum mengirim ulasan
+            </p>
+          )}
         </form>
       </div>
     </div>

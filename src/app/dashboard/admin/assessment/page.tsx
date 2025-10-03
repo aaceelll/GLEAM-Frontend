@@ -78,6 +78,25 @@ export default function AssessmentPage() {
         );
   }, [soal, soalQuery]);
 
+  const publishTest = async (bankSoalId: number, namaTest: string) => {
+  try {
+    // Tentukan materiId - sesuaikan dengan materi DM Anda
+    const materiDmId = 1; // Atau ambil dari data materi
+    
+    await api.post('/admin/tests/from-bank', {
+      nama: namaTest, // "Pre Test DM" atau "Post Test DM"
+      tipe: namaTest.toLowerCase().includes('pre') ? 'pre' : 'post',
+      materiId: materiDmId,
+      bankId: bankSoalId,
+      status: 'publish' // Langsung publish agar user bisa lihat
+    });
+    
+    alert('Test berhasil dipublish untuk user!');
+  } catch (error) {
+    console.error(error);
+  }
+};
+
   function showMsg(next: Msg) {
     setMsg(next);
     if (next) setTimeout(() => setMsg(null), 3000);
@@ -258,6 +277,7 @@ export default function AssessmentPage() {
       options: opsi,
     };
 
+    
     try {
       await api.post(API_PATHS.soalCreate, payload);
       showMsg({ type: "success", text: "Soal berhasil ditambahkan!" });
