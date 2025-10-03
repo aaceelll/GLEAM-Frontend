@@ -22,35 +22,28 @@ type BankSoal = { id: string; nama: string; totalSoal: number; status?: "draft" 
 type Soal = { id: string; teks: string; tipe?: "pilihan_ganda" | "true_false" | "screening"; opsi?: { no: number; teks: string; skor?: number }[] };
 type Msg = { type: "success" | "error"; text: string } | null;
 
-/** ====== Endpoints sesuai API Laravel-mu (TETAP) ====== */
+/** ====== FIXED ENDPOINTS ====== */
 const API_PATHS = {
   bankList   : "/admin/bank-soal",
-  soalList   : (bankId: string) => `/admin/bank-soal/${bankId}/soal`, // GET
-  soalCreate : "/admin/soal",                                        // POST (pakai bank_id di payload)
-  soalDelete : (id: string | number) => `/admin/soal/${id}`,         // DELETE
+  soalList   : (bankId: string) => `/admin/bank-soal/${bankId}/soal`,
+  soalCreate : (bankId: string) => `/admin/bank-soal/${bankId}/soal`,
+  soalDelete : (id: string | number) => `/admin/soal/${id}`,
   tesList    : (bankId?: string) => bankId ? `/admin/tes?bankId=${bankId}` : "/admin/tes",
 };
 
 export default function AssessmentPage() {
-  /** ====== Global UI state ====== */
   const [msg, setMsg] = useState<Msg>(null);
-
-  /** ====== Bank Soal state ====== */
   const [banks, setBanks] = useState<BankSoal[]>([]);
   const [banksLoading, setBanksLoading] = useState(true);
   const [bankQuery, setBankQuery] = useState("");
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
-
-  /** ====== Soal state ====== */
   const [soal, setSoal] = useState<Soal[]>([]);
   const [soalLoading, setSoalLoading] = useState(false);
   const [soalQuery, setSoalQuery] = useState("");
-
-  /** ====== Modal state ====== */
   const [openAddBank, setOpenAddBank] = useState(false);
+  
   const [addBankName, setAddBankName] = useState("");
   const [openRename, setOpenRename] = useState<{ id: string; nama: string } | null>(null);
-
   const [openAddSoal, setOpenAddSoal] = useState(false);
   const [qText, setQText] = useState("");
   const [isScreening, setIsScreening] = useState(false);
@@ -58,10 +51,8 @@ export default function AssessmentPage() {
     { label: "", skor: "" },
     { label: "", skor: "" },
   ]);
-
   const [openDetail, setOpenDetail] = useState<Soal | null>(null);
 
-  /** ====== Helpers ====== */
   const filteredBanks = useMemo(() => {
     const q = bankQuery.toLowerCase();
     return !q ? banks : banks.filter((b) => b.nama.toLowerCase().includes(q));
@@ -69,33 +60,8 @@ export default function AssessmentPage() {
 
   const filteredSoal = useMemo(() => {
     const q = soalQuery.toLowerCase();
-    return !q
-      ? soal
-      : soal.filter(
-          (s) =>
-            s.teks?.toLowerCase().includes(q) ||
-            s.opsi?.some((o) => o.teks.toLowerCase().includes(q))
-        );
+    return !q ? soal : soal.filter((s) => s.teks?.toLowerCase().includes(q) || s.opsi?.some((o) => o.teks.toLowerCase().includes(q)));
   }, [soal, soalQuery]);
-
-  const publishTest = async (bankSoalId: number, namaTest: string) => {
-  try {
-    // Tentukan materiId - sesuaikan dengan materi DM Anda
-    const materiDmId = 1; // Atau ambil dari data materi
-    
-    await api.post('/admin/tests/from-bank', {
-      nama: namaTest, // "Pre Test DM" atau "Post Test DM"
-      tipe: namaTest.toLowerCase().includes('pre') ? 'pre' : 'post',
-      materiId: materiDmId,
-      bankId: bankSoalId,
-      status: 'publish' // Langsung publish agar user bisa lihat
-    });
-    
-    alert('Test berhasil dipublish untuk user!');
-  } catch (error) {
-    console.error(error);
-  }
-};
 
   function showMsg(next: Msg) {
     setMsg(next);
@@ -114,7 +80,6 @@ export default function AssessmentPage() {
     return fallback;
   }
 
-  /** ====== Fetches (TETAP) ====== */
   const fetchBanks = useCallback(async () => {
     setBanksLoading(true);
     try {
@@ -150,12 +115,11 @@ export default function AssessmentPage() {
         id: String(it.id),
         teks: it.teks ?? it.pertanyaan ?? "",
         tipe: it.tipe ?? (it.is_screening ? "screening" : "pilihan_ganda"),
-        opsi:
-          (it.opsi ?? it.options ?? it.pilihan ?? [])?.map((o: any, idx: number) => ({
-            no: Number(o.no ?? o.order ?? idx + 1),
-            teks: o.teks ?? o.label ?? "",
-            skor: o.skor ?? o.score ?? undefined,
-          })) ?? [],
+        opsi: (it.opsi ?? it.options ?? it.pilihan ?? [])?.map((o: any, idx: number) => ({
+          no: Number(o.no ?? o.order ?? idx + 1),
+          teks: o.teks ?? o.label ?? "",
+          skor: o.skor ?? o.score ?? undefined,
+        })) ?? [],
       }));
       setSoal(mapped);
     } catch {
@@ -174,7 +138,6 @@ export default function AssessmentPage() {
     fetchSoal(selectedBankId);
   }, [selectedBankId, fetchSoal]);
 
-  /** ====== Bank handlers (TETAP) ====== */
   async function handleCreateBank() {
     if (!addBankName.trim()) return;
     try {
@@ -216,7 +179,6 @@ export default function AssessmentPage() {
     }
   }
 
-  /** ====== Soal handlers (TETAP) ====== */
   function setOpt(i: number, patch: Partial<{ label: string; skor: string }>) {
     setOptions((prev) => {
       const next = [...prev];
@@ -244,13 +206,17 @@ export default function AssessmentPage() {
 
   async function handleCreateSoal(e: FormEvent) {
     e.preventDefault();
-    if (!selectedBankId) return;
+    
+    if (!selectedBankId) {
+      showMsg({ type: "error", text: "Pilih bank soal terlebih dahulu." });
+      return;
+    }
+    
     if (!qText.trim()) {
       showMsg({ type: "error", text: "Pertanyaan wajib diisi." });
       return;
     }
 
-    // Validasi hanya jika BUKAN screening
     if (!isScreening) {
       const hasEmptyOption = options.some((o) => o.label.trim() === "");
       const hasEmptyScore = options.some((o) => o.skor.trim() === "");
@@ -260,32 +226,34 @@ export default function AssessmentPage() {
       }
     }
 
-    const opsi = isScreening
-      ? []
-      : options.map((o, i) => ({
-          no: i + 1,
-          teks: o.label.trim(),
-          skor: Number(o.skor || 0),
-        }));
+    const opsi = isScreening ? [] : options.map((o, i) => ({
+      no: i + 1,
+      teks: o.label.trim(),
+      skor: Number(o.skor || 0),
+    }));
 
     const payload = {
-      bank_id: Number(selectedBankId),
       teks: qText.trim(),
       tipe: isScreening ? "screening" : "pilihan_ganda",
-      is_screening: isScreening ? 1 : 0,
-      opsi,
-      options: opsi,
+      bobot: 1,
+      opsi: opsi,
+      kunci: null,
     };
 
-    
+    console.log("🔍 Endpoint:", API_PATHS.soalCreate(selectedBankId));
+    console.log("🔍 Payload:", payload);
+
     try {
-      await api.post(API_PATHS.soalCreate, payload);
+      const response = await api.post(API_PATHS.soalCreate(selectedBankId), payload);
+      console.log("✅ Response:", response.data);
+      
       showMsg({ type: "success", text: "Soal berhasil ditambahkan!" });
       setOpenAddSoal(false);
       resetSoalForm();
       await fetchSoal(selectedBankId);
       await fetchBanks();
     } catch (err) {
+      console.error("❌ Error:", err);
       showMsg({ type: "error", text: parseErrText(err, "Gagal menambahkan soal.") });
     }
   }
@@ -313,11 +281,9 @@ export default function AssessmentPage() {
     "from-rose-500 to-pink-500",
   ];
 
-  /** ====== UI (disesuaikan seperti kode kedua) ====== */
   return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-6">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header sederhana */}
         <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
@@ -334,25 +300,13 @@ export default function AssessmentPage() {
           </div>
         </header>
 
-        {/* Notification */}
         {msg && (
-          <div
-            className={`rounded-2xl px-5 py-4 flex items-start gap-3 shadow-lg border-2 ${
-              msg.type === "success"
-                ? "bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 text-emerald-900"
-                : "bg-gradient-to-r from-red-50 to-pink-50 border-red-200 text-red-900"
-            }`}
-          >
-            {msg.type === "success" ? (
-              <CheckCircle2 className="h-6 w-6 flex-shrink-0 mt-0.5" />
-            ) : (
-              <AlertCircle className="h-6 w-6 flex-shrink-0 mt-0.5" />
-            )}
+          <div className={`rounded-2xl px-5 py-4 flex items-start gap-3 shadow-lg border-2 ${msg.type === "success" ? "bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 text-emerald-900" : "bg-gradient-to-r from-red-50 to-pink-50 border-red-200 text-red-900"}`}>
+            {msg.type === "success" ? <CheckCircle2 className="h-6 w-6 flex-shrink-0 mt-0.5" /> : <AlertCircle className="h-6 w-6 flex-shrink-0 mt-0.5" />}
             <span className="font-semibold">{msg.text}</span>
           </div>
         )}
 
-        {/* ===== Section: Bank Soal (gaya kode kedua) ===== */}
         <section>
           <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl overflow-hidden">
             <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
@@ -369,10 +323,7 @@ export default function AssessmentPage() {
                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                     <span className="text-sm font-medium text-gray-700">{banks.length} Bank</span>
                   </div>
-                  <button
-                    className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-4 py-2.5 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
-                    onClick={() => setOpenAddBank(true)}
-                  >
+                  <button className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-4 py-2.5 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold" onClick={() => setOpenAddBank(true)}>
                     <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300" />
                     Tambah Bank Soal
                   </button>
@@ -380,139 +331,79 @@ export default function AssessmentPage() {
               </div>
             </div>
 
-            {/* Search bank */}
             <div className="px-6 py-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  value={bankQuery}
-                  onChange={(e) => setBankQuery(e.target.value)}
-                  placeholder="Cari bank soal..."
-                  className="w-full pl-9 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
-                />
+                <input value={bankQuery} onChange={(e) => setBankQuery(e.target.value)} placeholder="Cari bank soal..." className="w-full pl-9 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none" />
               </div>
             </div>
 
-            {/* Daftar bank */}
             <div className="px-3 pb-4">
               {banksLoading ? (
-                <div className="py-10 flex flex-col items-center justify-center text-gray-500">
+                <div className="py-10 flex flex-col items-center justify-center">
                   <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-                  <p className="text-sm mt-4 font-medium">Memuat bank soal...</p>
+                  <p className="text-sm text-gray-500 mt-4 font-medium">Memuat bank soal...</p>
                 </div>
               ) : filteredBanks.length === 0 ? (
-                <div className="py-10 text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
-                    <FolderPlus className="h-8 w-8 text-gray-400" />
+                <div className="py-16 text-center">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
+                    <FolderOpen className="h-10 w-10 text-gray-400" />
                   </div>
-                  <p className="text-gray-700 font-bold">Belum ada data</p>
-                  <p className="text-sm text-gray-500">Klik "Tambah Bank Soal" untuk memulai</p>
+                  <p className="text-gray-700 font-bold text-lg">Belum Ada Bank Soal</p>
+                  <p className="text-sm text-gray-500">Klik tombol di atas untuk membuat bank soal pertama</p>
                 </div>
               ) : (
-                <ul className="space-y-2">
-                  {filteredBanks.map((b, idx) => {
-                    const active = selectedBankId === b.id;
-                    return (
-                      <li
-                        key={b.id}
-                        className={`group relative mx-3 px-4 py-4 rounded-2xl border-2 transition-all overflow-hidden ${
-                          active
-                            ? "border-transparent bg-gradient-to-r from-emerald-50 to-teal-50 shadow-lg"
-                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        {active && <div className={`absolute inset-0 bg-gradient-to-r ${gradients[idx % gradients.length]} opacity-5`}></div>}
-                        <div className="relative flex items-center justify-between">
-                          <button onClick={() => setSelectedBankId(b.id)} className="flex items-center gap-3 text-left flex-1">
-                            <div
-                              className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
-                                active
-                                  ? `bg-gradient-to-br ${gradients[idx % gradients.length]} text-white shadow-md`
-                                  : "bg-gray-100 text-gray-500"
-                              }`}
-                            >
-                              {active ? <FolderOpen className="h-5 w-5" /> : <FolderPlus className="h-5 w-5" />}
-                            </div>
-                            <div className="flex-1">
-                              <div className={`font-bold ${active ? "text-gray-900" : "text-gray-700"}`}>{b.nama}</div>
-                              <div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
-                                <span className="inline-flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                                  {b.totalSoal} soal
-                                </span>
-                                {b.updatedAt && (
-                                  <>
-                                    <span>•</span>
-                                    <span>update {b.updatedAt}</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </button>
-                          <div className="flex items-center gap-2">
-                            <button
-                              className="p-2 rounded-xl text-amber-600 bg-amber-50 hover:bg-gradient-to-br hover:from-amber-500 hover:to-orange-500 hover:text-white transition-all hover:scale-110"
-                              onClick={() => setOpenRename({ id: b.id, nama: b.nama })}
-                              title="Edit"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                            <button
-                              className="p-2 rounded-xl text-red-600 bg-red-50 hover:bg-gradient-to-br hover:from-red-500 hover:to-pink-500 hover:text-white transition-all hover:scale-110"
-                              onClick={() => handleDeleteBank(b.id, b.nama)}
-                              title="Hapus"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredBanks.map((bank, i) => (
+                    <div key={bank.id} onClick={() => setSelectedBankId(bank.id)} className={`group relative overflow-hidden rounded-2xl p-5 border-2 cursor-pointer transition-all hover:shadow-xl ${selectedBankId === bank.id ? "border-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 shadow-lg scale-105" : "border-gray-200 bg-white hover:border-emerald-300"}`}>
+                      <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${gradients[i % gradients.length]}`}></div>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedBankId === bank.id ? "bg-gradient-to-br from-emerald-500 to-teal-500" : "bg-gray-100 group-hover:bg-emerald-100"} transition-all`}>
+                          <FolderOpen className={`h-5 w-5 ${selectedBankId === bank.id ? "text-white" : "text-gray-600"}`} />
                         </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={(e) => { e.stopPropagation(); setOpenRename({ id: bank.id, nama: bank.nama }); }} className="p-2 rounded-lg hover:bg-white transition-colors" title="Ubah Nama">
+                            <Pencil className="h-4 w-4 text-gray-600" />
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteBank(bank.id, bank.nama); }} className="p-2 rounded-lg hover:bg-white transition-colors" title="Hapus">
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </button>
+                        </div>
+                      </div>
+                      <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{bank.nama}</h3>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600 font-medium">{bank.totalSoal} soal</span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${bank.status === "publish" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
+                          {bank.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>
         </section>
 
-        {/* ===== Section: Soal (gaya kode kedua, list grid 2 kolom) ===== */}
         <section>
           <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl overflow-hidden">
             <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                     <span className="w-1.5 h-6 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full"></span>
-                    {banks.find((b) => b.id === selectedBankId)?.nama || "Daftar Soal"}
+                    Daftar Soal
                   </h2>
                   <p className="text-sm text-gray-600 mt-1 ml-4">
-                    {selectedBankId ? "Kelola pertanyaan & opsi skoring" : "Pilih salah satu bank soal"}
+                    {selectedBankId ? banks.find((b) => b.id === selectedBankId)?.nama : "Pilih salah satu bank soal"}
                   </p>
                 </div>
-                <button
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl flex items-center gap-2 px-4 py-2.5 shadow-md hover:shadow-lg hover:scale-105 transition-all font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={!selectedBankId}
-                  onClick={() => setOpenAddSoal(true)}
-                >
+                <button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl flex items-center gap-2 px-4 py-2.5 shadow-md hover:shadow-lg hover:scale-105 transition-all font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled={!selectedBankId} onClick={() => setOpenAddSoal(true)}>
                   <Plus className="h-4 w-4" />
                   Tambah Soal
                 </button>
               </div>
             </div>
-
-            {/* (Opsional) Search Soal — kalau mau aktif, uncomment blok ini
-            <div className="px-6 py-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  value={soalQuery}
-                  onChange={(e) => setSoalQuery(e.target.value)}
-                  placeholder="Cari pertanyaan..."
-                  className="w-full pl-9 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none"
-                  disabled={!selectedBankId}
-                />
-              </div>
-            </div> */}
 
             <div className="px-6 py-4">
               {!selectedBankId ? (
@@ -531,70 +422,51 @@ export default function AssessmentPage() {
               ) : filteredSoal.length === 0 ? (
                 <div className="py-16 text-center">
                   <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
-                    <ListChecks className="h-10 w-10 text-gray-400" />
+                    <Info className="h-10 w-10 text-gray-400" />
                   </div>
-                  <p className="text-gray-700 font-bold text-lg">Belum ada soal</p>
-                  <p className="text-sm text-gray-500">Klik "Tambah Soal" untuk memulai</p>
+                  <p className="text-gray-700 font-bold text-lg">Belum Ada Soal</p>
+                  <p className="text-sm text-gray-500">Klik tombol &quot;Tambah Soal&quot; untuk membuat pertanyaan pertama</p>
                 </div>
               ) : (
-                // ✅ Grid 2 kolom agar kartu lebih besar & nggak kosong bawahnya
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
                   {filteredSoal.map((q, idx) => (
-                    <div
-                      key={q.id}
-                      className="group relative bg-white border-2 border-gray-100 rounded-3xl p-5 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden"
-                    >
-                      <div className={`absolute inset-0 bg-gradient-to-r ${gradients[idx % gradients.length]} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-                      <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${gradients[idx % gradients.length]} opacity-5 rounded-bl-full`} />
-
-                      <div className="relative flex items-start gap-4">
-                        <div className={`flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${gradients[idx % gradients.length]} text-white font-bold shadow-md group-hover:scale-110 transition-transform duration-300`}>
-                          {idx + 1}
-                        </div>
-
-                        <div className="flex-1 min-w-0 space-y-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 font-semibold capitalize border border-purple-200">
-                              {q.tipe === "screening" ? "Screening" : q.tipe === "true_false" ? "True/False" : "Pilihan Ganda"}
+                    <div key={q.id} className="group relative overflow-hidden rounded-2xl border-2 border-gray-100 bg-white p-5 hover:border-blue-300 hover:shadow-lg transition-all">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-3">
+                            <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 text-white font-bold flex items-center justify-center shadow-sm text-sm">
+                              {idx + 1}
                             </span>
+                            {q.tipe === "screening" && (
+                              <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
+                                Screening
+                              </span>
+                            )}
                           </div>
-
-                          <div className="font-bold text-gray-900 text-base leading-relaxed group-hover:text-emerald-700 transition-colors">
-                            {q.teks}
-                          </div>
-
-                          {q.tipe !== "screening" && q.opsi?.length ? (
-                            <ul className="space-y-2 pl-1">
-                              {q.opsi.map((o) => (
-                                <li key={o.no} className="flex items-center gap-3 text-sm">
-                                  <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-100 to-teal-100 text-emerald-700 font-semibold flex items-center justify-center text-xs border border-emerald-200">
-                                    {o.no}
+                          <p className="font-semibold text-gray-900 mb-3 leading-relaxed">{q.teks}</p>
+                          {q.opsi && q.opsi.length > 0 && (
+                            <div className="space-y-2">
+                              {q.opsi.map((opt) => (
+                                <div key={opt.no} className="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                  <span className="flex-shrink-0 w-6 h-6 rounded bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center">
+                                    {opt.no}
                                   </span>
-                                  <span className="text-gray-700 flex-1">{o.teks}</span>
-                                  {typeof o.skor !== "undefined" && (
-                                    <span className="text-xs px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 font-semibold border border-emerald-200">
-                                      Skor: {o.skor}
+                                  <span className="flex-1 text-sm text-gray-700">{opt.teks}</span>
+                                  {opt.skor !== undefined && (
+                                    <span className="flex-shrink-0 px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-semibold">
+                                      Skor: {opt.skor}
                                     </span>
                                   )}
-                                </li>
+                                </div>
                               ))}
-                            </ul>
-                          ) : null}
+                            </div>
+                          )}
                         </div>
-
-                        <div className="flex-shrink-0 flex items-center gap-2">
-                          <button
-                            className="p-2.5 rounded-xl text-blue-600 bg-blue-50 hover:bg-gradient-to-br hover:from-blue-500 hover:to-indigo-500 hover:text-white transition-all hover:scale-110 shadow-sm"
-                            onClick={() => setOpenDetail(q)}
-                            title="Lihat Detail"
-                          >
+                        <div className="flex-shrink-0 flex flex-col gap-2">
+                          <button className="p-2.5 rounded-xl text-blue-600 bg-blue-50 hover:bg-gradient-to-br hover:from-blue-500 hover:to-indigo-500 hover:text-white transition-all hover:scale-110 shadow-sm" onClick={() => setOpenDetail(q)} title="Lihat Detail">
                             <Eye className="h-4 w-4" />
                           </button>
-                          <button
-                            className="p-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-gradient-to-br hover:from-red-500 hover:to-pink-500 hover:text-white transition-all hover:scale-110 shadow-sm"
-                            onClick={() => handleDeleteSoal(q.id)}
-                            title="Hapus"
-                          >
+                          <button className="p-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-gradient-to-br hover:from-red-500 hover:to-pink-500 hover:text-white transition-all hover:scale-110 shadow-sm" onClick={() => handleDeleteSoal(q.id)} title="Hapus">
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
@@ -608,100 +480,41 @@ export default function AssessmentPage() {
         </section>
       </div>
 
-      {/* ===== Dialog: Tambah Bank Soal ===== */}
       {openAddBank && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl">
-            <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 px-6 py-5 flex items-center justify-between rounded-t-3xl">
-              <div>
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <Plus className="h-6 w-6" />
-                  Tambah Bank Soal
-                </h2>
-                <p className="text-emerald-100 text-sm mt-1">Buat bank soal baru untuk assessment</p>
-              </div>
-              <button onClick={() => setOpenAddBank(false)} className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300">
-                <X className="h-6 w-6 text-white" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
-                  Nama Bank Soal <span className="text-red-500">*</span>
-                </label>
-                <input
-                  autoFocus
-                  value={addBankName}
-                  onChange={(e) => setAddBankName(e.target.value)}
-                  placeholder="Contoh: Pre-Test Diabetes Melitus"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all"
-                  onKeyDown={(e) => e.key === "Enter" && handleCreateBank()}
-                />
-              </div>
-
-              <div className="flex items-center gap-3 pt-4">
-                <button onClick={() => setOpenAddBank(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105">
-                  Batal
-                </button>
-                <button
-                  onClick={handleCreateBank}
-                  className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg"
-                >
-                  💾 Simpan
-                </button>
-              </div>
-            </div>
-          </div>
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl">
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 px-6 py-5 flex items-center justify-between rounded-t-3xl">
+        <div>
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Plus className="h-6 w-6" />
+            Tambah Bank Soal
+          </h2>
+          <p className="text-emerald-100 text-sm mt-1">Buat bank soal baru untuk assessment</p>
         </div>
-      )}
-
-      {/* ===== Dialog: Rename Bank Soal ===== */}
-      {openRename && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl">
-            <div className="bg-gradient-to-r from-green-500 via-indigo-400 to-green-500 px-6 py-5 flex items-center justify-between rounded-t-3xl">
-              <div>
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <Pencil className="h-6 w-6" />
-                  Ubah Nama Bank Soal
-                </h2>
-                <p className="text-green-100 text-sm mt-1">Perbarui nama bank soal</p>
-              </div>
-              <button onClick={() => setOpenRename(null)} className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300">
-                <X className="h-6 w-6 text-white" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="font-semibold text-gray-900 text-sm">Nama Baru</label>
-                <input
-                  autoFocus
-                  value={openRename?.nama ?? ""}
-                  onChange={(e) => setOpenRename((s) => (s ? { ...s, nama: e.target.value } : s))}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 outline-none transition-all"
-                  onKeyDown={(e) => e.key === "Enter" && handleRenameBank()}
-                />
-              </div>
-
-              <div className="flex items-center gap-3 pt-4">
-                <button onClick={() => setOpenRename(null)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105">
-                  Batal
-                </button>
-                <button
-                  onClick={handleRenameBank}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-indigo-400 hover:from-green-700 hover:to-green-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg"
-                >
-                  💾 Simpan
-                </button>
-              </div>
-            </div>
-          </div>
+        <button onClick={() => setOpenAddBank(false)} className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300">
+          <X className="h-6 w-6 text-white" />
+        </button>
+      </div>
+      <div className="p-6 space-y-5">
+        <div className="space-y-2">
+          <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
+            Nama Bank Soal <span className="text-red-500">*</span>
+          </label>
+          <input autoFocus value={addBankName} onChange={(e) => setAddBankName(e.target.value)} placeholder="Contoh: Pre-Test Diabetes Melitus" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all" onKeyDown={(e) => e.key === "Enter" && handleCreateBank()} />
         </div>
-      )}
+        <div className="flex items-center gap-3 pt-4">
+          <button onClick={() => setOpenAddBank(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105">
+            Batal
+          </button>
+          <button onClick={handleCreateBank} className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg">
+            💾 Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
-      {/* ===== Dialog: Tambah Soal ===== */}
       {openAddSoal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
@@ -717,92 +530,47 @@ export default function AssessmentPage() {
                 <X className="h-6 w-6 text-white" />
               </button>
             </div>
-
             <form onSubmit={handleCreateSoal} className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-100px)]">
-              {/* Pertanyaan */}
               <div className="space-y-2">
                 <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
                   Pertanyaan <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  value={qText}
-                  onChange={(e) => setQText(e.target.value)}
-                  placeholder="Tulis pertanyaan di sini..."
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all resize-none"
-                />
+                <textarea value={qText} onChange={(e) => setQText(e.target.value)} placeholder="Tulis pertanyaan di sini..." rows={3} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all resize-none" />
               </div>
 
-              {/* (Opsional) Toggle screening — simpan logic-nya, tinggal buka kalau butuh */}
-              {false && (
-                <div className="flex items-start gap-3 p-4 rounded-xl border-2 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-                  <input
-                    type="checkbox"
-                    id="screening-check"
-                    checked={isScreening}
-                    onChange={(e) => setIsScreening(e.target.checked)}
-                    className="w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500 mt-0.5 cursor-pointer"
-                  />
-                  <label htmlFor="screening-check" className="cursor-pointer flex-1">
-                    <div className="text-sm font-semibold text-gray-900">Tipe Screening</div>
-                    <div className="text-xs text-gray-600 flex items-center gap-1 mt-1">
-                      <Info className="h-3.5 w-3.5 text-purple-600" />
-                      Screening tidak menggunakan skor / opsi jawaban
-                    </div>
+              <div className="flex items-start gap-3 p-4 rounded-xl border-2 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+                <input type="checkbox" id="isScreening" checked={isScreening} onChange={(e) => setIsScreening(e.target.checked)} className="mt-1 w-5 h-5 rounded border-purple-300 text-purple-600 focus:ring-purple-500" />
+                <div className="flex-1">
+                  <label htmlFor="isScreening" className="font-semibold text-gray-900 cursor-pointer">
+                    Soal Screening (Tanpa Opsi Jawaban)
                   </label>
+                  <p className="text-xs text-gray-600 mt-1">Centang jika soal tidak memerlukan pilihan jawaban (hanya pertanyaan terbuka)</p>
                 </div>
-              )}
+              </div>
 
-              {/* Opsi (hanya jika bukan screening) */}
               {!isScreening && (
-                <div className="space-y-4 p-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl border-2 border-gray-200">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-bold text-gray-900">Pilihan Jawaban & Skor</div>
-                    <button
-                      type="button"
-                      onClick={addOption}
-                      className="text-xs bg-white hover:bg-emerald-50 text-emerald-700 border-2 border-emerald-200 rounded-lg px-3 py-1.5 font-semibold transition-all hover:scale-105 flex items-center gap-1"
-                    >
-                      <Plus className="h-3 w-3" />
+                    <label className="font-semibold text-gray-900 text-sm">Opsi Jawaban *</label>
+                    <button type="button" onClick={addOption} className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                      <Plus className="h-4 w-4" />
                       Tambah Opsi
                     </button>
                   </div>
-
                   <div className="space-y-3">
-                    {options.map((op, i) => (
-                      <div key={i} className="grid grid-cols-12 gap-3 items-end bg-white rounded-xl border-2 border-gray-200 p-3">
-                        <div className="col-span-7">
-                          <label className="text-xs text-gray-600 font-medium mb-1 block">Opsi {i + 1}</label>
-                          <input
-                            value={op.label}
-                            onChange={(e) => setOpt(i, { label: e.target.value })}
-                            placeholder={`Teks opsi ${i + 1}`}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-sm"
-                          />
+                    {options.map((opt, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className="flex-1 space-y-2">
+                          <input type="text" value={opt.label} onChange={(e) => setOpt(i, { label: e.target.value })} placeholder={`Teks opsi ${i + 1}`} className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all" required />
                         </div>
-                        <div className="col-span-4">
-                          <label className="text-xs text-gray-600 font-medium mb-1 block">Skor</label>
-                          <input
-                            value={op.skor}
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/[^\d-]/g, "");
-                              setOpt(i, { skor: val });
-                            }}
-                            placeholder="mis. 4"
-                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm"
-                          />
+                        <div className="w-28">
+                          <input type="number" value={opt.skor} onChange={(e) => setOpt(i, { skor: e.target.value })} placeholder="Skor" className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-100 outline-none transition-all" required />
                         </div>
-                        <div className="col-span-1 flex items-end">
-                          <button
-                            type="button"
-                            onClick={() => removeOption(i)}
-                            disabled={options.length <= 2}
-                            className="p-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:scale-110"
-                            title={options.length <= 2 ? "Minimal 2 opsi" : "Hapus opsi"}
-                          >
+                        {options.length > 2 && (
+                          <button type="button" onClick={() => removeOption(i)} className="p-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title={options.length <= 2 ? "Minimal 2 opsi" : "Hapus opsi"}>
                             <Trash2 className="h-4 w-4" />
                           </button>
-                        </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -822,7 +590,6 @@ export default function AssessmentPage() {
         </div>
       )}
 
-      {/* ===== Dialog: Detail Soal ===== */}
       {openDetail && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl">
@@ -840,7 +607,6 @@ export default function AssessmentPage() {
                 <X className="h-6 w-6 text-white" />
               </button>
             </div>
-
             <div className="p-6 space-y-5">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-4">
                 <div className="text-sm font-semibold text-gray-600 mb-2">Pertanyaan:</div>
@@ -875,10 +641,7 @@ export default function AssessmentPage() {
               )}
 
               <div className="flex items-center gap-3 pt-4 border-t-2 border-gray-100">
-                <button
-                  onClick={() => setOpenDetail(null)}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-indigo-500 hover:from-indigo-700 hover:to-green-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg"
-                >
+                <button onClick={() => setOpenDetail(null)} className="flex-1 bg-gradient-to-r from-green-600 to-indigo-500 hover:from-indigo-700 hover:to-green-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg">
                   Tutup
                 </button>
               </div>
