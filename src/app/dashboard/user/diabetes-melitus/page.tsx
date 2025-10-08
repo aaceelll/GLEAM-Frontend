@@ -15,6 +15,8 @@ import {
   Droplet,
   Heart,
   User,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -51,7 +53,7 @@ type ScreeningResult = {
   smoking_history: string;
   bmi: number;
   blood_glucose_level: number;
-  diabetes_probability: string; // "49.31%" atau "49.31"
+  diabetes_probability: string;
   diabetes_result: string;
   bp_classification: string;
   bp_recommendation: string;
@@ -62,26 +64,25 @@ type ScreeningResult = {
 export default function DiabetesMelitusPage() {
   const router = useRouter();
 
-  // ====== EDU CONTENT STATES (punyamu) ======
+  // ====== EDU CONTENT STATES ======
   const [konten, setKonten] = useState<MateriItem[]>([]);
   const [tes, setTes] = useState<TesItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [quizzes, setQuizzes] = useState<any[]>([]);
 
-  // ====== SCREENING STATES (baru) ======
+  // ====== SCREENING STATES ======
   const [latestResult, setLatestResult] = useState<ScreeningResult | null>(null);
   const [historyResults, setHistoryResults] = useState<ScreeningResult[]>([]);
   const [loadingScreening, setLoadingScreening] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
 
-  // Fetch kuis bank (punyamu)
+  // Fetch kuis bank
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
         const response = await api.get("/user/quiz/banks");
-        if (response.data.success) {
-          setQuizzes(response.data.data);
-        }
+        if (response.data.success) setQuizzes(response.data.data);
       } catch (error) {
         console.error(error);
       }
@@ -89,7 +90,7 @@ export default function DiabetesMelitusPage() {
     fetchQuizzes();
   }, []);
 
-  // Fetch materi + tes (punyamu)
+  // Fetch materi + tes
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -142,7 +143,7 @@ export default function DiabetesMelitusPage() {
     };
   }, []);
 
-  // Fetch screening latest + history (baru)
+  // Fetch screening latest + history
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -165,23 +166,51 @@ export default function DiabetesMelitusPage() {
     };
   }, []);
 
-  const gradients = useMemo(
-    () => [
-      "from-blue-500 to-cyan-500",
-      "from-purple-500 to-pink-500",
-      "from-emerald-500 to-teal-500",
-      "from-orange-500 to-red-500",
-      "from-indigo-500 to-purple-500",
-      "from-rose-500 to-pink-500",
-    ],
-    []
-  );
+  // Gradient hijau global (match card #3)
+  const greenGrad = "from-emerald-500 to-teal-500";
+
+  const gradients = useMemo(() => [greenGrad], [greenGrad]);
 
   const mulaiTest = (t: TesItem) => {
     router.push(`/dashboard/user/kuisioner/${t.id}`);
   };
 
-  // ===== util warna risiko (baru) =====
+  // theme warna berbasis probabilitas
+const getRiskTheme = (probStr: string | number) => {
+  const prob = typeof probStr === "number" ? probStr : parseFloat(String(probStr).replace("%", ""));
+  if (Number.isNaN(prob)) {
+    return {
+      bg: "from-emerald-50 to-green-50",
+      border: "border-emerald-200",
+      accentText: "text-emerald-700",
+      badge: "bg-emerald-100 text-emerald-800",
+    };
+  }
+  if (prob >= 63) {
+    return {
+      bg: "from-red-50 to-rose-50",
+      border: "border-red-200",
+      accentText: "text-red-700",
+      badge: "bg-red-100 text-red-800",
+    };
+  }
+  if (prob >= 48) {
+    return {
+      bg: "from-amber-50 to-orange-50",
+      border: "border-amber-200",
+      accentText: "text-amber-700",
+      badge: "bg-amber-100 text-amber-800",
+    };
+  }
+  return {
+    bg: "from-emerald-50 to-green-50",
+    border: "border-emerald-200",
+    accentText: "text-emerald-700",
+    badge: "bg-emerald-100 text-emerald-800",
+  };
+};
+
+  // util warna risiko
   const getRiskColor = (probability: string) => {
     const prob = parseFloat(String(probability).replace("%", ""));
     if (prob >= 63) return "text-red-700 bg-red-50 border-red-200";
@@ -196,28 +225,25 @@ export default function DiabetesMelitusPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white px-6 md:px-10 py-6">
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header kecil, rata kiri */}
-        <header className="space-y-1">
+    <div className="min-h-screen bg-white p-6">
+      <div className="max-w-7xl mx-auto lg:ml-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
-              <FileText className="h-5 w-5 text-white" />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
+              <FileText className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                Edukasi & Hasil Screening Diabetes Melitus
-              </h1>
-              <p className="text-sm text-gray-600">
-                Lihat hasil screening Anda dan pelajari materi edukasinya
-              </p>
+              <h1 className="text-3xl md:text-4xl font-bold text-emerald-800">Edukasi & Hasil Screening Diabetes Melitus</h1>
+              <p className="text-gray-600 mt-0.5">Lihat Hasil Screening Anda dan Pelajari Materi Edukasinya</p>
             </div>
           </div>
-        </header>
+        </div>
+       
 
-        {/* =================== HASIL SCREENING (baru) =================== */}
+        {/* =================== HASIL SCREENING (gabungan 1 card) =================== */}
         <div className="bg-white rounded-3xl border-2 border-gray-100 shadow-xl">
-          <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
                 <Activity className="w-5 h-5 text-emerald-600" />
@@ -241,8 +267,8 @@ export default function DiabetesMelitusPage() {
             </div>
           </div>
 
-          {/* Kartu hasil */}
-          <div className="p-6">
+          {/* Isi card gabungan */}
+          <div className="p-8 space-y-6">
             {loadingScreening ? (
               <div className="text-center py-10">
                 <div className="inline-block relative">
@@ -259,177 +285,200 @@ export default function DiabetesMelitusPage() {
               </div>
             ) : (
               <>
-                {/* Data pasien */}
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <User className="w-5 h-5 text-blue-600" />
-                    <h3 className="font-semibold text-blue-900">Data Pasien</h3>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-xs text-blue-700 mb-1">PASIEN</p>
-                      <p className="font-semibold text-blue-900">{latestResult.patient_name}</p>
+                {/* Banner status risiko */}
+                <div
+                  className={`rounded-2xl border-2 bg-gradient-to-r ${
+                    getRiskTheme(latestResult.diabetes_probability).bg
+                  } ${getRiskTheme(latestResult.diabetes_probability).border} p-5`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                        getRiskTheme(latestResult.diabetes_probability).badge
+                      }`}
+                    >
+                      <Activity className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs text-blue-700 mb-1">USIA</p>
-                      <p className="font-semibold text-blue-900">{latestResult.age} tahun</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-blue-700 mb-1">BMI</p>
-                      <p className="font-semibold text-blue-900">{latestResult.bmi}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-blue-700 mb-1">TEKANAN DARAH</p>
-                      <p className="font-semibold text-blue-900">
-                        {latestResult.systolic_bp}/{latestResult.diastolic_bp}
+                      <p className="text-xs text-gray-600">Status Risiko</p>
+                      <p
+                        className={`text-lg font-bold ${
+                          getRiskTheme(latestResult.diabetes_probability).accentText
+                        }`}
+                      >
+                        {latestResult.diabetes_result}
+                        <span className="ml-2 text-gray-800 font-semibold">
+                          ({latestResult.diabetes_probability})
+                        </span>
+                      </p>
+                      <p className="text-xs text-gray-600 mt-0.5">
+                        Berdasarkan data screening terbaru
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Dua panel */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {/* Diabetes */}
-                  <div
-                    className={`rounded-xl p-6 border-2 ${getRiskColor(
-                      latestResult.diabetes_probability
-                    )}`}
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <Droplet className="w-5 h-5" />
-                      <h3 className="font-semibold">Probabilitas Diabetes</h3>
-                    </div>
-                    <p className="text-xs mb-2">Tingkat Risiko: {latestResult.diabetes_result}</p>
-                    <p className="text-4xl font-bold mb-2">{latestResult.diabetes_probability}</p>
-                    <div className="mt-4 bg-white bg-opacity-50 rounded-lg p-3">
-                      <p className="text-xs font-medium mb-1">Data Screening:</p>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="text-gray-600">Gula Darah:</span>
-                          <span className="font-semibold ml-1">
-                            {latestResult.blood_glucose_level} mg/dL
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Klasifikasi:</span>
-                          <span className="font-semibold ml-1">
-                            {latestResult.blood_glucose_level < 140 ? "Rendah" : "Tinggi"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+          {/* DATA SCREENING */}
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 shadow-sm">
+            <p className="text-sm font-semibold text-gray-800 mb-3">Data Screening</p>
 
-                  {/* Hipertensi */}
-                  <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-6 border-2 border-red-200">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Heart className="w-5 h-5 text-red-600" />
-                      <h3 className="font-semibold text-red-900">Data Screening Hipertensi</h3>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="bg-white rounded-lg p-3">
-                        <p className="text-xs text-gray-600 mb-1">Sistolik</p>
-                        <p className="text-2xl font-bold text-gray-800">{latestResult.systolic_bp}</p>
-                      </div>
-                      <div className="bg-white rounded-lg p-3">
-                        <p className="text-xs text-gray-600 mb-1">Diastolik</p>
-                        <p className="text-2xl font-bold text-gray-800">{latestResult.diastolic_bp}</p>
-                      </div>
-                    </div>
-                    <div className="bg-white rounded-lg p-3">
-                      <p className="text-xs font-medium text-gray-600 mb-1">Klasifikasi Hipertensi:</p>
-                      <p className="font-semibold text-red-700">{latestResult.bp_classification}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Rekomendasi + disclaimer */}
-                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-                  <p className="font-semibold text-blue-900 mb-1">Rekomendasi:</p>
-                  <p className="text-sm text-blue-800">{latestResult.bp_recommendation}</p>
-                </div>
-                <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-                  <p className="font-semibold text-yellow-900 mb-1">Disclaimer:</p>
-                  <p className="text-sm text-yellow-800">
-                    Hasil ini hanya prediksi dan tidak menggantikan diagnosis medis profesional.
-                  </p>
-                </div>
-              </>
-            )}
+            {/* Satu grid untuk semua item */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
+              {/* 1 */}
+              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                <p className="text-xs text-gray-500 mb-1">NAMA PASIEN</p>
+                <p className="font-semibold text-gray-900">{latestResult.patient_name}</p>
+              </div>
+              {/* 2 */}
+              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                <p className="text-xs text-gray-500 mb-1">USIA</p>
+                <p className="font-semibold text-gray-900">{latestResult.age} tahun</p>
+              </div>
+              {/* 3 */}
+              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                <p className="text-xs text-gray-500 mb-1">JENIS KELAMIN</p>
+                <p className="font-semibold text-gray-900">{latestResult.gender || "—"}</p>
+              </div>
+              {/* 4 */}
+              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                <p className="text-xs text-gray-500 mb-1">BMI</p>
+                <p className="font-semibold text-gray-900">{latestResult.bmi}</p>
+              </div>
+              {/* 5 */}
+              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                <p className="text-xs text-gray-500 mb-1">TEKANAN DARAH</p>
+                <p className="font-semibold text-gray-900">
+                  {latestResult.systolic_bp}/{latestResult.diastolic_bp}
+                </p>
+              </div>
+              {/* 6 */}
+              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                <p className="text-xs text-gray-500 mb-1">RIWAYAT MEROKOK</p>
+                <p className="font-semibold text-gray-900">
+                  {latestResult.smoking_history || "Tidak Ada Data"}
+                </p>
+              </div>
+              {/* 7 */}
+              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                <p className="text-xs text-gray-500 mb-1">RIWAYAT JANTUNG</p>
+                <p className="font-semibold text-gray-900">
+                  {latestResult.heart_disease || "Tidak Ada Data"}
+                </p>
+              </div>
+              {/* 8 */}
+              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                <p className="text-xs text-gray-500 mb-1">KLASIFIKASI HIPERTENSI</p>
+                <p className="font-semibold text-gray-900">{latestResult.bp_classification}</p>
+              </div>
+              {/* 9 */}
+              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                <p className="text-xs text-gray-500 mb-1">GULA DARAH</p>
+                <p className="font-semibold text-gray-900">
+                  {latestResult.blood_glucose_level} mg/dL
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Riwayat */}
+
+
+          {/* Rekomendasi */}
+          {latestResult.bp_recommendation && (
+            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
+              <p className="font-semibold text-black-900 mb-1">💡 Rekomendasi</p>
+              <p className="text-sm text-black-800">
+                {latestResult.bp_recommendation}
+              </p>
+            </div>
+          )} 
+        </>
+      )}
+    </div>
+
+          {/* Riwayat + toggle */}
           <div className="px-6 py-5 border-t-2 border-gray-100">
-            <div className="flex items-center gap-2 mb-4">
-              <Calendar className="w-5 h-5 text-gray-600" />
-              <h2 className="text-xl font-bold text-gray-900">Riwayat Screening</h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-gray-600" />
+                <h2 className="text-xl font-bold text-gray-900">Riwayat Screening</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHistory((v) => !v)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-emerald-500 text-black-700 hover:bg-emerald-50 transition"
+                aria-expanded={showHistory}
+              >
+                {showHistory ? (
+                  <>
+                    <ChevronUp className="w-4 h-4" /> Tutup
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-4 h-4" /> Lihat
+                  </>
+                )}
+              </button>
             </div>
 
             {loadingScreening ? (
               <div className="text-center py-8 text-gray-500">Memuat riwayat…</div>
-            ) : historyResults.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                Belum ada riwayat screening sebelumnya
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200 text-left">
-                      <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">TANGGAL</th>
-                      <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">BMI</th>
-                      <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">GULA DARAH</th>
-                      <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">TEKANAN DARAH</th>
-                      <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">HASIL</th>
-                      <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">SKOR</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historyResults.map((r) => (
-                      <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-4 text-sm text-gray-800">
-                          {new Date(r.created_at).toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </td>
-                        <td className="py-4 text-sm text-gray-800">{r.bmi}</td>
-                        <td className="py-4 text-sm text-gray-800">{r.blood_glucose_level} mg/dL</td>
-                        <td className="py-4 text-sm text-gray-800">
-                          {r.systolic_bp}/{r.diastolic_bp}
-                          <div className="text-xs text-gray-500">{r.bp_classification}</div>
-                        </td>
-                        <td className="py-4">
-                          <span
-                            className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getRiskBadge(
-                              r.diabetes_result
-                            )}`}
-                          >
-                            {r.diabetes_result}
-                          </span>
-                        </td>
-                        <td className="py-4 text-sm font-semibold text-gray-800">
-                          {r.diabetes_probability}
-                        </td>
+            ) : showHistory ? (
+              historyResults.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">Belum ada riwayat screening sebelumnya</div>
+              ) : (
+                <div className="overflow-x-auto mt-4">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 text-left">
+                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">TANGGAL</th>
+                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">BMI</th>
+                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">GULA DARAH</th>
+                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">TEKANAN DARAH</th>
+                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">HASIL</th>
+                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">SKOR</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody>
+                      {historyResults.map((r) => (
+                        <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-4 text-sm text-gray-800">
+                            {new Date(r.created_at).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </td>
+                          <td className="py-4 text-sm text-gray-800">{r.bmi}</td>
+                          <td className="py-4 text-sm text-gray-800">{r.blood_glucose_level} mg/dL</td>
+                          <td className="py-4 text-sm text-gray-800">
+                            {r.systolic_bp}/{r.diastolic_bp}
+                            <div className="text-xs text-gray-500">{r.bp_classification}</div>
+                          </td>
+                          <td className="py-4">
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getRiskBadge(r.diabetes_result)}`}>
+                              {r.diabetes_result}
+                            </span>
+                          </td>
+                          <td className="py-4 text-sm font-semibold text-gray-800">{r.diabetes_probability}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            ) : null}
           </div>
         </div>
 
-        {/* =================== KUISONER / TES (punyamu) =================== */}
+        {/* =================== KUISONER / TES (warna hijau) =================== */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl">
-          <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-indigo-50 to-blue-50">
+          <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <span className="w-1.5 h-6 bg-gradient-to-b from-indigo-500 to-blue-500 rounded-full"></span>
+                  <span className="w-1.5 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
                   Kuisioner / Tes
                 </h2>
                 <p className="text-sm text-gray-600 mt-1 ml-4">
@@ -437,10 +486,8 @@ export default function DiabetesMelitusPage() {
                 </p>
               </div>
               <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm">
-                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-gray-700">
-                  {tes.length} Kuisioner
-                </span>
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-gray-700">{tes.length} Kuisioner</span>
               </div>
             </div>
           </div>
@@ -449,20 +496,16 @@ export default function DiabetesMelitusPage() {
             {loading ? (
               <div className="text-center py-10">
                 <div className="inline-block relative">
-                  <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                  <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
                 </div>
-                <p className="text-sm text-gray-500 mt-4 font-medium">
-                  Memuat kuisioner…
-                </p>
+                <p className="text-sm text-gray-500 mt-4 font-medium">Memuat kuisioner…</p>
               </div>
             ) : tes.length === 0 ? (
               <div className="text-center py-10">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-3">
                   <ClipboardList className="h-8 w-8 text-gray-400" />
                 </div>
-                <p className="text-gray-700 font-semibold">
-                  Belum ada kuisioner untuk materi ini
-                </p>
+                <p className="text-gray-700 font-semibold">Belum ada kuisioner untuk materi ini</p>
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
@@ -471,32 +514,18 @@ export default function DiabetesMelitusPage() {
                     key={t.id}
                     className="group relative bg-white border-2 border-gray-100 rounded-2xl p-5 hover:border-transparent hover:shadow-2xl transition-all overflow-hidden"
                   >
-                    <div
-                      className={`absolute inset-0 bg-gradient-to-r ${
-                        gradients[i % gradients.length]
-                      } opacity-0 group-hover:opacity-5 transition-opacity`}
-                    />
-                    <div
-                      className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${
-                        gradients[i % gradients.length]
-                      } opacity-5 rounded-bl-full`}
-                    />
+                    <div className={`absolute inset-0 bg-gradient-to-r ${greenGrad} opacity-0 group-hover:opacity-5 transition-opacity`} />
+                    <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${greenGrad} opacity-5 rounded-bl-full`} />
 
                     <div className="relative flex items-start gap-4">
-                      <div
-                        className={`flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br ${
-                          gradients[i % gradients.length]
-                        } text-white font-bold shadow`}
-                      >
+                      <div className={`flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br ${greenGrad} text-white font-bold shadow`}>
                         <ListChecks className="w-5 h-5" />
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <h3 className="font-bold text-gray-900 text-lg leading-snug">
-                              {t.nama}
-                            </h3>
+                            <h3 className="font-bold text-gray-900 text-lg leading-snug">{t.nama}</h3>
                             <p className="text-xs text-gray-500 mt-0.5">
                               {t.totalSoal ?? "-"} soal
                               {t.durasiMenit ? ` • ${t.durasiMenit} menit` : ""}
@@ -506,7 +535,7 @@ export default function DiabetesMelitusPage() {
                           <button
                             type="button"
                             onClick={() => mulaiTest(t)}
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 transition-all shadow hover:shadow-lg text-sm font-semibold"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-white bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-700 hover:to-yellow-700 transition-all shadow hover:shadow-lg text-sm font-semibold"
                           >
                             <Play className="h-4 w-4" />
                             Mulai
@@ -527,7 +556,7 @@ export default function DiabetesMelitusPage() {
           </div>
         </div>
 
-        {/* =================== DAFTAR KONTEN (punyamu) =================== */}
+        {/* =================== DAFTAR KONTEN (warna hijau) =================== */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl">
           <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
             <div className="flex items-center justify-between">
@@ -570,18 +599,12 @@ export default function DiabetesMelitusPage() {
                     key={it.id}
                     className="group relative bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden"
                   >
-                    <div
-                      className={`absolute inset-0 bg-gradient-to-r ${gradients[i % gradients.length]} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
-                    />
-                    <div
-                      className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${gradients[i % gradients.length]} opacity-5 rounded-bl-full`}
-                    />
+                    <div className={`absolute inset-0 bg-gradient-to-r ${greenGrad} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${greenGrad} opacity-5 rounded-bl-full`} />
 
                     <div className="relative flex items-start gap-5">
                       <div
-                        className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${
-                          gradients[i % gradients.length]
-                        } text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                        className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${greenGrad} text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
                       >
                         {i + 1}
                       </div>
@@ -601,7 +624,7 @@ export default function DiabetesMelitusPage() {
                               href={it.file_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
+                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-700 hover:to-yellow-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
                             >
                               <Download className="h-4 w-4" />
                               Unduh PDF
@@ -612,7 +635,7 @@ export default function DiabetesMelitusPage() {
                               href={`https://www.youtube.com/watch?v=${it.video_id}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
+                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-700 hover:to-blue-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
                             >
                               <Video className="h-4 w-4" />
                               Tonton Video
@@ -639,7 +662,7 @@ export default function DiabetesMelitusPage() {
                               <>
                                 <span className="text-gray-300">•</span>
                                 <div className="flex items-center gap-1.5">
-                                  <Clock className="h-3.5 w-3.5 text-blue-600" />
+                                  <Clock className="h-3.5 w-3.5 text-emerald-600" />
                                   <span className="font-medium">
                                     Diperbarui:{" "}
                                     {new Date(it.updated_at).toLocaleDateString("id-ID", {

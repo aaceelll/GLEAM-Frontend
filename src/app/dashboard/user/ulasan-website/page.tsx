@@ -89,28 +89,19 @@ export default function UlasanWebsitePage() {
   const allAnswered = Object.keys(answers).length === questions.length;
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Decorative Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-teal-400/10 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
-      </div>
-
-      <div className="relative max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header Section */}
-        <div className="text-center mb-12 space-y-4">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 rounded-full mb-4">
-            <Sparkles className="w-4 h-4 text-emerald-600" />
-            <span className="text-sm font-medium text-emerald-700">System Usability Scale</span>
+    <div className="min-h-screen bg-white p-6">
+      <div className="max-w-7xl mx-auto lg:ml-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
+              <MessageCircle className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-emerald-800">Ulasan Website</h1>
+              <p className="text-gray-600 mt-0.5">Bantu kami meningkatkan pengalaman Anda. Setiap masukan sangat berarti untuk pengembangan platform ini.</p>
+            </div>
           </div>
-          
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-emerald-700 via-teal-600 to-cyan-600 bg-clip-text text-transparent mb-4">
-            Ulasan Website
-          </h1>
-          
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Bantu kami meningkatkan pengalaman Anda. Setiap masukan sangat berarti untuk pengembangan platform ini.
-          </p>
         </div>
 
         {/* Progress Section */}
