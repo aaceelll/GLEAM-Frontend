@@ -234,7 +234,7 @@ const getRiskTheme = (probStr: string | number) => {
               <FileText className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-emerald-800">Edukasi & Hasil Screening Diabetes Melitus</h1>
+              <h1 className="text-3xl md:text-4xl font-bold text-black-800">Edukasi & Hasil Screening Diabetes Melitus</h1>
               <p className="text-gray-600 mt-0.5">Lihat Hasil Screening Anda dan Pelajari Materi Edukasinya</p>
             </div>
           </div>

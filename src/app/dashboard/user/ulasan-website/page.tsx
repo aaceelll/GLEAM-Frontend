@@ -98,7 +98,7 @@ export default function UlasanWebsitePage() {
               <MessageCircle className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-emerald-800">Ulasan Website</h1>
+              <h1 className="text-3xl md:text-4xl font-bold text-black-800">Ulasan Website</h1>
               <p className="text-gray-600 mt-0.5">Bantu kami meningkatkan pengalaman Anda. Setiap masukan sangat berarti untuk pengembangan platform ini.</p>
             </div>
           </div>

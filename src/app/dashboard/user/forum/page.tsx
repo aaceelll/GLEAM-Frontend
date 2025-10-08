@@ -109,7 +109,7 @@ export default function ForumPage() {
               <Users className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-emerald-800">Forum Komunitas</h1>
+              <h1 className="text-3xl md:text-4xl font-bold text-black-800">Forum Komunitas</h1>
               <p className="text-gray-600 mt-0.5">Ruang berbagi & tanya jawab seputar diabetes</p>
             </div>
           </div>
@@ -321,12 +321,6 @@ function ThreadCard({
                 <MessageSquare className="w-4 h-4" />
                 <span className="font-medium">{thread.reply_count}</span> balasan
               </span>
-              {!thread.is_private && (
-                <span className={`flex items-center gap-1.5 ${thread.is_liked ? "text-red-600" : ""}`}>
-                  <Heart className={`w-4 h-4 ${thread.is_liked ? "fill-current" : ""}`} />
-                  <span className="font-medium">{thread.like_count}</span>
-                </span>
-              )}
             </div>
           </div>
         </div>

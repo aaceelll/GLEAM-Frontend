@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { api } from "@/lib/api";
 import {
   Plus,
-  FolderPlus,
   FolderOpen,
   Pencil,
   Trash2,
@@ -12,47 +11,182 @@ import {
   ListChecks,
   CheckCircle2,
   AlertCircle,
-  Eye,
   Info,
   X,
 } from "lucide-react";
 
 /** ====== Types ====== */
-type BankSoal = { id: string; nama: string; totalSoal: number; status?: "draft" | "publish"; updatedAt?: string };
-type Soal = { id: string; teks: string; tipe?: "pilihan_ganda" | "true_false" | "screening"; opsi?: { no: number; teks: string; skor?: number }[] };
+type BankSoal = {
+  id: string;
+  nama: string;
+  totalSoal: number;
+  status?: "draft" | "publish";
+  updatedAt?: string;
+};
+type Soal = {
+  id: string;
+  teks: string;
+  tipe?: "pilihan_ganda" | "true_false" | "screening";
+  opsi?: { no: number; teks: string; skor?: number }[];
+};
 type Msg = { type: "success" | "error"; text: string } | null;
 
 /** ====== FIXED ENDPOINTS ====== */
 const API_PATHS = {
-  bankList   : "/admin/bank-soal",
-  soalList   : (bankId: string) => `/admin/bank-soal/${bankId}/soal`,
-  soalCreate : (bankId: string) => `/admin/bank-soal/${bankId}/soal`,
-  soalDelete : (id: string | number) => `/admin/soal/${id}`,
-  tesList    : (bankId?: string) => bankId ? `/admin/tes?bankId=${bankId}` : "/admin/tes",
+  bankList: "/admin/bank-soal",
+  soalList: (bankId: string) => `/admin/bank-soal/${bankId}/soal`,
+  soalCreate: (bankId: string) => `/admin/bank-soal/${bankId}/soal`,
+  soalDelete: (id: string | number) => `/admin/soal/${id}`,
+  tesList: (bankId?: string) => (bankId ? `/admin/tes?bankId=${bankId}` : "/admin/tes"),
 };
 
+/* ------------------------- Reusable UI ------------------------- */
+const hoverCard =
+  "group relative overflow-hidden rounded-2xl border-2 border-emerald-100 bg-white " +
+  "transition-all duration-500 hover:border-emerald-400 " +
+  "hover:shadow-[0_10px_40px_rgba(16,185,129,0.15)] hover:-translate-y-1";
+
+function HeaderBar({
+  icon,
+  title,
+  subtitle,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow">
+        {icon}
+      </div>
+      <div>
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{title}</h1>
+        {subtitle ? <p className="text-gray-600 mt-0.5">{subtitle}</p> : null}
+      </div>
+    </div>
+  );
+}
+
+function ConfirmModal({
+  open,
+  title,
+  description,
+  confirmText = "Hapus",
+  onConfirm,
+  onClose,
+}: {
+  open: boolean;
+  title: string;
+  description: React.ReactNode;
+  confirmText?: string;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="w-full max-w-sm rounded-2xl bg-white border-2 border-gray-100 shadow-2xl">
+        <div className="px-5 py-4 border-b-2 border-gray-100 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-gray-100 transition"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+        <div className="px-5 py-4 text-sm text-gray-700">{description}</div>
+        <div className="px-5 py-4 flex items-center justify-end gap-3 border-t-2 border-gray-100">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold transition-all"
+          >
+            Batal
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold shadow-md hover:from-red-600 hover:to-rose-700 hover:shadow-lg transition-all"
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GreenModalFrame({
+  titleIcon,
+  title,
+  subtitle,
+  onClose,
+  children,
+  maxWidth = "max-w-xl",
+}: {
+  titleIcon: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  maxWidth?: string;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className={`bg-white rounded-3xl ${maxWidth} w-full shadow-2xl overflow-hidden`}>
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 px-6 py-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              {titleIcon}
+              {title}
+            </h2>
+            {subtitle ? <p className="text-emerald-100 text-sm mt-1">{subtitle}</p> : null}
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300"
+          >
+            <X className="h-6 w-6 text-white" />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ============================ PAGE ============================ */
 export default function AssessmentPage() {
   const [msg, setMsg] = useState<Msg>(null);
   const [banks, setBanks] = useState<BankSoal[]>([]);
   const [banksLoading, setBanksLoading] = useState(true);
   const [bankQuery, setBankQuery] = useState("");
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
+
   const [soal, setSoal] = useState<Soal[]>([]);
   const [soalLoading, setSoalLoading] = useState(false);
   const [soalQuery, setSoalQuery] = useState("");
+
+  // Modals
   const [openAddBank, setOpenAddBank] = useState(false);
-  
   const [addBankName, setAddBankName] = useState("");
   const [openRename, setOpenRename] = useState<{ id: string; nama: string } | null>(null);
+  const [confirmDeleteBank, setConfirmDeleteBank] = useState<{ id: string; nama: string } | null>(
+    null
+  );
   const [openAddSoal, setOpenAddSoal] = useState(false);
+  const [confirmDeleteSoal, setConfirmDeleteSoal] = useState<string | null>(null);
+
+  // Form Soal
   const [qText, setQText] = useState("");
   const [isScreening, setIsScreening] = useState(false);
   const [options, setOptions] = useState<{ label: string; skor: string }[]>([
     { label: "", skor: "" },
     { label: "", skor: "" },
   ]);
-  const [openDetail, setOpenDetail] = useState<Soal | null>(null);
 
+  /* ------------------------ Derived ------------------------ */
   const filteredBanks = useMemo(() => {
     const q = bankQuery.toLowerCase();
     return !q ? banks : banks.filter((b) => b.nama.toLowerCase().includes(q));
@@ -60,7 +194,13 @@ export default function AssessmentPage() {
 
   const filteredSoal = useMemo(() => {
     const q = soalQuery.toLowerCase();
-    return !q ? soal : soal.filter((s) => s.teks?.toLowerCase().includes(q) || s.opsi?.some((o) => o.teks.toLowerCase().includes(q)));
+    return !q
+      ? soal
+      : soal.filter(
+          (s) =>
+            s.teks?.toLowerCase().includes(q) ||
+            s.opsi?.some((o) => o.teks.toLowerCase().includes(q))
+        );
   }, [soal, soalQuery]);
 
   function showMsg(next: Msg) {
@@ -80,6 +220,7 @@ export default function AssessmentPage() {
     return fallback;
   }
 
+  /* ------------------------ Fetchers ------------------------ */
   const fetchBanks = useCallback(async () => {
     setBanksLoading(true);
     try {
@@ -115,11 +256,12 @@ export default function AssessmentPage() {
         id: String(it.id),
         teks: it.teks ?? it.pertanyaan ?? "",
         tipe: it.tipe ?? (it.is_screening ? "screening" : "pilihan_ganda"),
-        opsi: (it.opsi ?? it.options ?? it.pilihan ?? [])?.map((o: any, idx: number) => ({
-          no: Number(o.no ?? o.order ?? idx + 1),
-          teks: o.teks ?? o.label ?? "",
-          skor: o.skor ?? o.score ?? undefined,
-        })) ?? [],
+        opsi:
+          (it.opsi ?? it.options ?? it.pilihan ?? [])?.map((o: any, idx: number) => ({
+            no: Number(o.no ?? o.order ?? idx + 1),
+            teks: o.teks ?? o.label ?? "",
+            skor: o.skor ?? o.score ?? undefined,
+          })) ?? [],
       }));
       setSoal(mapped);
     } catch {
@@ -138,6 +280,7 @@ export default function AssessmentPage() {
     fetchSoal(selectedBankId);
   }, [selectedBankId, fetchSoal]);
 
+  /* ------------------------ CRUD: Bank ------------------------ */
   async function handleCreateBank() {
     if (!addBankName.trim()) return;
     try {
@@ -165,9 +308,9 @@ export default function AssessmentPage() {
     }
   }
 
-  async function handleDeleteBank(id: string, nama: string) {
-    const ok = confirm(`Hapus bank soal "${nama}" beserta seluruh soalnya?`);
-    if (!ok) return;
+  async function doDeleteBank() {
+    if (!confirmDeleteBank) return;
+    const { id } = confirmDeleteBank;
     try {
       await api.delete(`${API_PATHS.bankList}/${id}`);
       showMsg({ type: "success", text: "Bank soal dihapus!" });
@@ -176,9 +319,12 @@ export default function AssessmentPage() {
       await fetchSoal(null);
     } catch (err) {
       showMsg({ type: "error", text: parseErrText(err, "Gagal menghapus bank soal.") });
+    } finally {
+      setConfirmDeleteBank(null);
     }
   }
 
+  /* ------------------------ CRUD: Soal ------------------------ */
   function setOpt(i: number, patch: Partial<{ label: string; skor: string }>) {
     setOptions((prev) => {
       const next = [...prev];
@@ -186,15 +332,12 @@ export default function AssessmentPage() {
       return next;
     });
   }
-
   function addOption() {
     setOptions((prev) => [...prev, { label: "", skor: "" }]);
   }
-
   function removeOption(i: number) {
     setOptions((prev) => prev.filter((_, idx) => idx !== i));
   }
-
   function resetSoalForm() {
     setQText("");
     setIsScreening(false);
@@ -206,62 +349,55 @@ export default function AssessmentPage() {
 
   async function handleCreateSoal(e: FormEvent) {
     e.preventDefault();
-    
     if (!selectedBankId) {
       showMsg({ type: "error", text: "Pilih bank soal terlebih dahulu." });
       return;
     }
-    
     if (!qText.trim()) {
       showMsg({ type: "error", text: "Pertanyaan wajib diisi." });
       return;
     }
-
     if (!isScreening) {
       const hasEmptyOption = options.some((o) => o.label.trim() === "");
       const hasEmptyScore = options.some((o) => o.skor.trim() === "");
       if (hasEmptyOption || hasEmptyScore) {
-        showMsg({ type: "error", text: "Semua opsi & skor harus diisi untuk soal pilihan ganda." });
+        showMsg({
+          type: "error",
+          text: "Semua opsi & skor harus diisi untuk soal pilihan ganda.",
+        });
         return;
       }
     }
-
-    const opsi = isScreening ? [] : options.map((o, i) => ({
-      no: i + 1,
-      teks: o.label.trim(),
-      skor: Number(o.skor || 0),
-    }));
+    const opsi = isScreening
+      ? []
+      : options.map((o, i) => ({
+          no: i + 1,
+          teks: o.label.trim(),
+          skor: Number(o.skor || 0),
+        }));
 
     const payload = {
       teks: qText.trim(),
       tipe: isScreening ? "screening" : "pilihan_ganda",
       bobot: 1,
-      opsi: opsi,
+      opsi,
       kunci: null,
     };
 
-    console.log("🔍 Endpoint:", API_PATHS.soalCreate(selectedBankId));
-    console.log("🔍 Payload:", payload);
-
     try {
-      const response = await api.post(API_PATHS.soalCreate(selectedBankId), payload);
-      console.log("✅ Response:", response.data);
-      
+      await api.post(API_PATHS.soalCreate(selectedBankId), payload);
       showMsg({ type: "success", text: "Soal berhasil ditambahkan!" });
       setOpenAddSoal(false);
       resetSoalForm();
       await fetchSoal(selectedBankId);
       await fetchBanks();
     } catch (err) {
-      console.error("❌ Error:", err);
       showMsg({ type: "error", text: parseErrText(err, "Gagal menambahkan soal.") });
     }
   }
 
-  async function handleDeleteSoal(id: string) {
+  async function doDeleteSoal(id: string) {
     if (!selectedBankId) return;
-    const ok = confirm("Hapus soal ini?");
-    if (!ok) return;
     try {
       await api.delete(API_PATHS.soalDelete(id));
       showMsg({ type: "success", text: "Soal berhasil dihapus!" });
@@ -269,192 +405,293 @@ export default function AssessmentPage() {
       await fetchBanks();
     } catch (err) {
       showMsg({ type: "error", text: parseErrText(err, "Gagal menghapus soal.") });
+    } finally {
+      setConfirmDeleteSoal(null);
     }
   }
 
-  const gradients = [
-    "from-blue-500 to-cyan-500",
-    "from-purple-500 to-pink-500",
-    "from-emerald-500 to-teal-500",
-    "from-orange-500 to-red-500",
-    "from-indigo-500 to-purple-500",
-    "from-rose-500 to-pink-500",
-  ];
-
+  /* ------------------------ UI ------------------------ */
   return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-6">
       <div className="max-w-7xl mx-auto space-y-8">
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
-                <ListChecks className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-emerald-800 to-gray-900 bg-clip-text text-transparent">
-                  Assessment Manager
-                </h1>
-                <p className="text-gray-600 mt-0.5">Kelola bank soal & kuisioner skoring di satu halaman</p>
-              </div>
-            </div>
-          </div>
+        {/* Header */}
+        <header className="flex items-start justify-between gap-4">
+          <HeaderBar
+            icon={<ListChecks className="h-6 w-6 text-white" />}
+            title="Assessment Manager"
+            subtitle="Kelola bank soal & kuisioner skoring di satu halaman"
+          />
+          <button
+            className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-4 py-2.5 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
+            onClick={() => setOpenAddBank(true)}
+            aria-label="Tambah Bank Soal"
+          >
+            <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300" />
+            Tambah Bank Soal
+          </button>
         </header>
 
+        {/* Flash message */}
         {msg && (
-          <div className={`rounded-2xl px-5 py-4 flex items-start gap-3 shadow-lg border-2 ${msg.type === "success" ? "bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 text-emerald-900" : "bg-gradient-to-r from-red-50 to-pink-50 border-red-200 text-red-900"}`}>
-            {msg.type === "success" ? <CheckCircle2 className="h-6 w-6 flex-shrink-0 mt-0.5" /> : <AlertCircle className="h-6 w-6 flex-shrink-0 mt-0.5" />}
+          <div
+            className={`rounded-2xl px-5 py-4 flex items-start gap-3 shadow-lg border-2 ${
+              msg.type === "success"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                : "bg-rose-50 border-rose-200 text-rose-900"
+            }`}
+          >
+            {msg.type === "success" ? (
+              <CheckCircle2 className="h-6 w-6 flex-shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="h-6 w-6 flex-shrink-0 mt-0.5" />
+            )}
             <span className="font-semibold">{msg.text}</span>
           </div>
         )}
 
-        <section>
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl overflow-hidden">
-            <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <span className="w-1.5 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
-                    Bank Soal
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-1 ml-4">Contoh: Pre-Test Diabetes Melitus</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm font-medium text-gray-700">{banks.length} Bank</span>
-                  </div>
-                  <button className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-4 py-2.5 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold" onClick={() => setOpenAddBank(true)}>
-                    <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300" />
-                    Tambah Bank Soal
-                  </button>
-                </div>
+        {/* ----------------------- BANK SOAL ----------------------- */}
+        <section className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl overflow-hidden">
+          <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <span className="w-1.5 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
+                  Bank Soal
+                </h2>
+                <p className="text-sm text-gray-600 mt-1 ml-4">Kumpulan kategori/kelompok soal</p>
+              </div>
+              <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-gray-700">{banks.length} Bank</span>
               </div>
             </div>
+          </div>
 
-            <div className="px-6 py-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input value={bankQuery} onChange={(e) => setBankQuery(e.target.value)} placeholder="Cari bank soal..." className="w-full pl-9 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none" />
-              </div>
+          <div className="px-6 py-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                value={bankQuery}
+                onChange={(e) => setBankQuery(e.target.value)}
+                placeholder="Cari bank soal..."
+                className="w-full pl-9 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
+              />
             </div>
+          </div>
 
-            <div className="px-3 pb-4">
-              {banksLoading ? (
-                <div className="py-10 flex flex-col items-center justify-center">
-                  <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-                  <p className="text-sm text-gray-500 mt-4 font-medium">Memuat bank soal...</p>
+          <div className="px-4 pb-6">
+            {banksLoading ? (
+              <div className="py-10 flex flex-col items-center justify-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+                <p className="text-sm text-gray-500 mt-4 font-medium">Memuat bank soal...</p>
+              </div>
+            ) : filteredBanks.length === 0 ? (
+              <div className="py-16 text-center">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
+                  <FolderOpen className="h-10 w-10 text-gray-400" />
                 </div>
-              ) : filteredBanks.length === 0 ? (
-                <div className="py-16 text-center">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
-                    <FolderOpen className="h-10 w-10 text-gray-400" />
-                  </div>
-                  <p className="text-gray-700 font-bold text-lg">Belum Ada Bank Soal</p>
-                  <p className="text-sm text-gray-500">Klik tombol di atas untuk membuat bank soal pertama</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredBanks.map((bank, i) => (
-                    <div key={bank.id} onClick={() => setSelectedBankId(bank.id)} className={`group relative overflow-hidden rounded-2xl p-5 border-2 cursor-pointer transition-all hover:shadow-xl ${selectedBankId === bank.id ? "border-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 shadow-lg scale-105" : "border-gray-200 bg-white hover:border-emerald-300"}`}>
-                      <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${gradients[i % gradients.length]}`}></div>
-                      <div className="flex items-start justify-between mb-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedBankId === bank.id ? "bg-gradient-to-br from-emerald-500 to-teal-500" : "bg-gray-100 group-hover:bg-emerald-100"} transition-all`}>
-                          <FolderOpen className={`h-5 w-5 ${selectedBankId === bank.id ? "text-white" : "text-gray-600"}`} />
+                <p className="text-gray-700 font-bold text-lg">Belum Ada Bank Soal</p>
+                <p className="text-sm text-gray-500">Klik tombol di atas untuk membuat bank soal</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {filteredBanks.map((bank) => {
+                  const active = selectedBankId === bank.id;
+                  return (
+                    <div
+                      key={bank.id}
+                      className={`${hoverCard} ${
+                        active
+                          ? "border-emerald-500 ring-1 ring-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 shadow-md"
+                          : ""
+                      }`}
+                      onClick={() => setSelectedBankId(bank.id)}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      {/* sweep overlay — terlihat saat hover & saat active */}
+                      <div
+                        className={`absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 transition-opacity duration-500 ${
+                          active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                        }`}
+                      />
+                      <div className="relative p-5">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-11 h-11 rounded-xl grid place-items-center shadow ${
+                                active
+                                  ? "bg-gradient-to-br from-emerald-500 to-teal-500"
+                                  : "bg-emerald-50"
+                              }`}
+                            >
+                              <FolderOpen
+                                className={`h-6 w-6 ${
+                                  active ? "text-white" : "text-emerald-600"
+                                }`}
+                              />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-gray-900 leading-snug line-clamp-2">
+                                {bank.nama}
+                              </h3>
+                              <div className="text-xs text-gray-500">
+                                {bank.totalSoal} soal •{" "}
+                                <span
+                                  className={`px-2 py-0.5 rounded-full border ${
+                                    bank.status === "publish"
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      : "bg-gray-50 text-gray-600 border-gray-200"
+                                  }`}
+                                >
+                                  {bank.status}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* action buttons */}
+                          <div
+                            className="flex gap-1 z-10 pointer-events-auto"
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={() => setOpenRename({ id: bank.id, nama: bank.nama })}
+                              className="p-2 rounded-lg text-amber-600 bg-amber-50 hover:bg-amber-500 hover:text-white transition-colors shadow-sm"
+                              title="Ubah Nama"
+                              aria-label="Ubah Nama"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() =>
+                                setConfirmDeleteBank({ id: bank.id, nama: bank.nama })
+                              }
+                              className="p-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-500 hover:text-white transition-colors shadow-sm"
+                              title="Hapus"
+                              aria-label="Hapus"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={(e) => { e.stopPropagation(); setOpenRename({ id: bank.id, nama: bank.nama }); }} className="p-2 rounded-lg hover:bg-white transition-colors" title="Ubah Nama">
-                            <Pencil className="h-4 w-4 text-gray-600" />
-                          </button>
-                          <button onClick={(e) => { e.stopPropagation(); handleDeleteBank(bank.id, bank.nama); }} className="p-2 rounded-lg hover:bg-white transition-colors" title="Hapus">
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                          </button>
-                        </div>
-                      </div>
-                      <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{bank.nama}</h3>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 font-medium">{bank.totalSoal} soal</span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${bank.status === "publish" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
-                          {bank.status}
-                        </span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
 
-        <section>
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl overflow-hidden">
-            <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <span className="w-1.5 h-6 bg-gradient-to-b from-blue-500 to-indigo-500 rounded-full"></span>
-                    Daftar Soal
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-1 ml-4">
-                    {selectedBankId ? banks.find((b) => b.id === selectedBankId)?.nama : "Pilih salah satu bank soal"}
-                  </p>
-                </div>
-                <button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl flex items-center gap-2 px-4 py-2.5 shadow-md hover:shadow-lg hover:scale-105 transition-all font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled={!selectedBankId} onClick={() => setOpenAddSoal(true)}>
-                  <Plus className="h-4 w-4" />
-                  Tambah Soal
-                </button>
+        {/* ----------------------- DAFTAR SOAL (UI BARU) ----------------------- */}
+        <section className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl overflow-hidden">
+          <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <span className="w-1.5 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
+                  Daftar Soal
+                </h2>
+                <p className="text-sm text-gray-600 mt-1 ml-4">
+                  {selectedBankId
+                    ? banks.find((b) => b.id === selectedBankId)?.nama
+                    : "Pilih salah satu bank soal"}
+                </p>
               </div>
+              <button
+                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-4 py-2.5 shadow-md hover:shadow-lg hover:scale-105 transition-all font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!selectedBankId}
+                onClick={() => setOpenAddSoal(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Tambah Soal
+              </button>
             </div>
+          </div>
 
-            <div className="px-6 py-4">
-              {!selectedBankId ? (
-                <div className="py-16 text-center">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
-                    <ListChecks className="h-10 w-10 text-gray-400" />
-                  </div>
-                  <p className="text-gray-700 font-bold text-lg">Pilih Bank Soal</p>
-                  <p className="text-sm text-gray-500">Pilih bank soal dahulu untuk melihat pertanyaan</p>
+          <div className="px-6 py-4">
+            {!selectedBankId ? (
+              <div className="py-16 text-center">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
+                  <ListChecks className="h-10 w-10 text-gray-400" />
                 </div>
-              ) : soalLoading ? (
-                <div className="py-10 flex flex-col items-center justify-center">
-                  <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-                  <p className="text-sm text-gray-500 mt-4 font-medium">Memuat daftar soal...</p>
+                <p className="text-gray-700 font-bold text-lg">Pilih Bank Soal</p>
+                <p className="text-sm text-gray-500">
+                  Pilih bank soal dahulu untuk melihat pertanyaan
+                </p>
+              </div>
+            ) : soalLoading ? (
+              <div className="py-10 flex flex-col items-center justify-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+                <p className="text-sm text-gray-500 mt-4 font-medium">Memuat daftar soal...</p>
+              </div>
+            ) : filteredSoal.length === 0 ? (
+              <div className="py-16 text-center">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
+                  <Info className="h-10 w-10 text-gray-400" />
                 </div>
-              ) : filteredSoal.length === 0 ? (
-                <div className="py-16 text-center">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
-                    <Info className="h-10 w-10 text-gray-400" />
-                  </div>
-                  <p className="text-gray-700 font-bold text-lg">Belum Ada Soal</p>
-                  <p className="text-sm text-gray-500">Klik tombol &quot;Tambah Soal&quot; untuk membuat pertanyaan pertama</p>
+                <p className="text-gray-700 font-bold text-lg">Belum Ada Soal</p>
+                <p className="text-sm text-gray-500">
+                  Klik tombol &quot;Tambah Soal&quot; untuk membuat pertanyaan pertama
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Pencarian soal */}
+                <div className="relative mb-2">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    value={soalQuery}
+                    onChange={(e) => setSoalQuery(e.target.value)}
+                    placeholder="Cari di daftar soal..."
+                    className="w-full pl-9 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
+                  />
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {filteredSoal.map((q, idx) => (
-                    <div key={q.id} className="group relative overflow-hidden rounded-2xl border-2 border-gray-100 bg-white p-5 hover:border-blue-300 hover:shadow-lg transition-all">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-3">
-                            <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 text-white font-bold flex items-center justify-center shadow-sm text-sm">
-                              {idx + 1}
+
+                {filteredSoal.map((q, idx) => (
+                  <div
+                    key={q.id}
+                    className="relative overflow-hidden rounded-2xl border-2 border-gray-100 bg-white p-5 hover:border-emerald-300 hover:shadow-lg transition-all"
+                  >
+                    {/* Header - nomor + tipe sebagai pill */}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <span className="flex-shrink-0 w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 font-bold grid place-items-center shadow-inner">
+                          {idx + 1}
+                        </span>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold text-gray-900 leading-snug">
+                              {q.teks}
+                            </h3>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${
+                                q.tipe === "screening"
+                                  ? "bg-violet-50 text-violet-700 border-violet-200"
+                                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              }`}
+                            >
+                              {q.tipe === "screening" ? "Screening" : "Pilihan ganda"}
                             </span>
-                            {q.tipe === "screening" && (
-                              <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
-                                Screening
-                              </span>
-                            )}
                           </div>
-                          <p className="font-semibold text-gray-900 mb-3 leading-relaxed">{q.teks}</p>
+
+                          {/* opsi ditampilkan sebagai chips modern */}
                           {q.opsi && q.opsi.length > 0 && (
-                            <div className="space-y-2">
+                            <div className="mt-3 flex flex-wrap gap-2">
                               {q.opsi.map((opt) => (
-                                <div key={opt.no} className="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-100">
-                                  <span className="flex-shrink-0 w-6 h-6 rounded bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center">
+                                <div
+                                  key={opt.no}
+                                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-gray-50 border-gray-200"
+                                >
+                                  <span className="w-5 h-5 rounded-md bg-gray-200 text-gray-700 text-[10px] font-bold grid place-items-center">
                                     {opt.no}
                                   </span>
-                                  <span className="flex-1 text-sm text-gray-700">{opt.teks}</span>
+                                  <span className="text-sm text-gray-700">{opt.teks}</span>
                                   {opt.skor !== undefined && (
-                                    <span className="flex-shrink-0 px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-semibold">
-                                      Skor: {opt.skor}
+                                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold">
+                                      Skor {opt.skor}
                                     </span>
                                   )}
                                 </div>
@@ -462,193 +699,228 @@ export default function AssessmentPage() {
                             </div>
                           )}
                         </div>
-                        <div className="flex-shrink-0 flex flex-col gap-2">
-                          <button className="p-2.5 rounded-xl text-blue-600 bg-blue-50 hover:bg-gradient-to-br hover:from-blue-500 hover:to-indigo-500 hover:text-white transition-all hover:scale-110 shadow-sm" onClick={() => setOpenDetail(q)} title="Lihat Detail">
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          <button className="p-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-gradient-to-br hover:from-red-500 hover:to-pink-500 hover:text-white transition-all hover:scale-110 shadow-sm" onClick={() => handleDeleteSoal(q.id)} title="Hapus">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
                       </div>
+
+                      {/* Aksi (hapus saja sesuai permintaan) */}
+                      <button
+                        className="p-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-red-500 hover:text-white transition-all hover:scale-110 shadow-sm"
+                        onClick={() => setConfirmDeleteSoal(q.id)}
+                        title="Hapus Soal"
+                        aria-label="Hapus Soal"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </div>
 
+      {/* ----------------------- MODALS ----------------------- */}
+      {/* Tambah Bank Soal */}
       {openAddBank && (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl">
-      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 px-6 py-5 flex items-center justify-between rounded-t-3xl">
-        <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Plus className="h-6 w-6" />
-            Tambah Bank Soal
-          </h2>
-          <p className="text-emerald-100 text-sm mt-1">Buat bank soal baru untuk assessment</p>
-        </div>
-        <button onClick={() => setOpenAddBank(false)} className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300">
-          <X className="h-6 w-6 text-white" />
-        </button>
-      </div>
-      <div className="p-6 space-y-5">
-        <div className="space-y-2">
-          <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
-            Nama Bank Soal <span className="text-red-500">*</span>
-          </label>
-          <input autoFocus value={addBankName} onChange={(e) => setAddBankName(e.target.value)} placeholder="Contoh: Pre-Test Diabetes Melitus" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all" onKeyDown={(e) => e.key === "Enter" && handleCreateBank()} />
-        </div>
-        <div className="flex items-center gap-3 pt-4">
-          <button onClick={() => setOpenAddBank(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105">
-            Batal
-          </button>
-          <button onClick={handleCreateBank} className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg">
-            💾 Simpan
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+        <GreenModalFrame
+          titleIcon={<Plus className="h-6 w-6" />}
+          title="Tambah Bank Soal"
+          subtitle="Buat bank soal baru untuk assessment"
+          onClose={() => setOpenAddBank(false)}
+        >
+          <div className="p-6 space-y-5">
+            <div className="space-y-2">
+              <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
+                Nama Bank Soal <span className="text-red-500">*</span>
+              </label>
+              <input
+                autoFocus
+                value={addBankName}
+                onChange={(e) => setAddBankName(e.target.value)}
+                placeholder="Contoh: Pre-Test Diabetes Melitus"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all"
+                onKeyDown={(e) => e.key === "Enter" && handleCreateBank()}
+              />
+            </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setOpenAddBank(false)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleCreateBank}
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg"
+              >
+                Simpan
+              </button>
+            </div>
+          </div>
+        </GreenModalFrame>
+      )}
 
+      {/* Rename Bank Soal */}
+      {openRename && (
+        <GreenModalFrame
+          titleIcon={<Pencil className="h-6 w-6" />}
+          title="Ubah Nama Bank Soal"
+          subtitle="Perbarui nama agar lebih jelas"
+          onClose={() => setOpenRename(null)}
+        >
+          <div className="p-6 space-y-5">
+            <div className="space-y-2">
+              <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
+                Nama Bank Soal <span className="text-red-500">*</span>
+              </label>
+              <input
+                autoFocus
+                value={openRename.nama}
+                onChange={(e) => setOpenRename({ ...openRename, nama: e.target.value })}
+                placeholder="Contoh: Pre-Test Diabetes Melitus"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all"
+                onKeyDown={(e) => e.key === "Enter" && handleRenameBank()}
+              />
+            </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setOpenRename(null)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleRenameBank}
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg"
+              >
+                Simpan
+              </button>
+            </div>
+          </div>
+        </GreenModalFrame>
+      )}
+
+      {/* Konfirmasi Hapus Bank */}
+      <ConfirmModal
+        open={!!confirmDeleteBank}
+        title="Hapus Bank Soal?"
+        description={
+          <>
+            Apakah Anda yakin ingin menghapus{" "}
+            <span className="font-semibold">{confirmDeleteBank?.nama}</span> beserta seluruh
+            soalnya? Tindakan ini tidak dapat dibatalkan.
+          </>
+        }
+        confirmText="Hapus"
+        onConfirm={doDeleteBank}
+        onClose={() => setConfirmDeleteBank(null)}
+      />
+
+      {/* Tambah Soal (header hijau) */}
       {openAddSoal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-            <div className="bg-gradient-to-r from-green-600 via-indigo-500 to-blue-500 px-6 py-5 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <Plus className="h-6 w-6" />
-                  Tambah Soal Baru
-                </h2>
-                <p className="text-blue-100 text-sm mt-1">Lengkapi formulir di bawah</p>
-              </div>
-              <button onClick={() => setOpenAddSoal(false)} className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300">
-                <X className="h-6 w-6 text-white" />
-              </button>
+        <GreenModalFrame
+          titleIcon={<Plus className="h-6 w-6" />}
+          title="Tambah Soal Baru"
+          subtitle="Lengkapi formulir di bawah"
+          onClose={() => setOpenAddSoal(false)}
+          maxWidth="max-w-3xl"
+        >
+          <form
+            onSubmit={handleCreateSoal}
+            className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-100px)]"
+          >
+            <div className="space-y-2">
+              <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
+                Pertanyaan <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={qText}
+                onChange={(e) => setQText(e.target.value)}
+                placeholder="Tulis pertanyaan di sini..."
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all resize-none"
+              />
             </div>
-            <form onSubmit={handleCreateSoal} className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-100px)]">
-              <div className="space-y-2">
-                <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
-                  Pertanyaan <span className="text-red-500">*</span>
-                </label>
-                <textarea value={qText} onChange={(e) => setQText(e.target.value)} placeholder="Tulis pertanyaan di sini..." rows={3} className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all resize-none" />
-              </div>
 
-              <div className="flex items-start gap-3 p-4 rounded-xl border-2 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-                <input type="checkbox" id="isScreening" checked={isScreening} onChange={(e) => setIsScreening(e.target.checked)} className="mt-1 w-5 h-5 rounded border-purple-300 text-purple-600 focus:ring-purple-500" />
-                <div className="flex-1">
-                  <label htmlFor="isScreening" className="font-semibold text-gray-900 cursor-pointer">
-                    Soal Screening (Tanpa Opsi Jawaban)
-                  </label>
-                  <p className="text-xs text-gray-600 mt-1">Centang jika soal tidak memerlukan pilihan jawaban (hanya pertanyaan terbuka)</p>
+            {!isScreening && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-gray-900 text-sm">Opsi Jawaban *</label>
+                  <button
+                    type="button"
+                    onClick={addOption}
+                    className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Tambah Opsi
+                  </button>
                 </div>
-              </div>
-
-              {!isScreening && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="font-semibold text-gray-900 text-sm">Opsi Jawaban *</label>
-                    <button type="button" onClick={addOption} className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
-                      <Plus className="h-4 w-4" />
-                      Tambah Opsi
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    {options.map((opt, i) => (
-                      <div key={i} className="flex items-start gap-3">
-                        <div className="flex-1 space-y-2">
-                          <input type="text" value={opt.label} onChange={(e) => setOpt(i, { label: e.target.value })} placeholder={`Teks opsi ${i + 1}`} className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all" required />
-                        </div>
-                        <div className="w-28">
-                          <input type="number" value={opt.skor} onChange={(e) => setOpt(i, { skor: e.target.value })} placeholder="Skor" className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-green-500 focus:ring-4 focus:ring-green-100 outline-none transition-all" required />
-                        </div>
-                        {options.length > 2 && (
-                          <button type="button" onClick={() => removeOption(i)} className="p-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title={options.length <= 2 ? "Minimal 2 opsi" : "Hapus opsi"}>
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
+                <div className="space-y-3">
+                  {options.map((opt, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="flex-1 space-y-2">
+                        <input
+                          type="text"
+                          value={opt.label}
+                          onChange={(e) => setOpt(i, { label: e.target.value })}
+                          placeholder={`Teks opsi ${i + 1}`}
+                          className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all"
+                          required
+                        />
                       </div>
-                    ))}
-                  </div>
+                      <div className="w-28">
+                        <input
+                          type="number"
+                          value={opt.skor}
+                          onChange={(e) => setOpt(i, { skor: e.target.value })}
+                          placeholder="Skor"
+                          className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all"
+                          required
+                        />
+                      </div>
+                      {options.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => removeOption(i)}
+                          className="p-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                          title={options.length <= 2 ? "Minimal 2 opsi" : "Hapus opsi"}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              )}
-
-              <div className="flex items-center gap-3 pt-4 border-t-2 border-gray-100">
-                <button type="button" onClick={() => setOpenAddSoal(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105">
-                  Batal
-                </button>
-                <button type="submit" className="flex-1 bg-gradient-to-r from-green-600 to-indigo-400 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg">
-                  💾 Simpan Soal
-                </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+            )}
 
-      {openDetail && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl">
-            <div className="bg-gradient-to-r from-green-600 via-indigo-400 to-green-500 px-6 py-5 flex items-center justify-between rounded-t-3xl">
-              <div>
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <Eye className="h-6 w-6" />
-                  Detail Soal
-                </h2>
-                <p className="text-indigo-100 text-sm mt-1 capitalize">
-                  Tipe: {openDetail.tipe === "screening" ? "Screening (tanpa skor)" : openDetail.tipe === "true_false" ? "True/False" : "Pilihan ganda"}
-                </p>
-              </div>
-              <button onClick={() => setOpenDetail(null)} className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300">
-                <X className="h-6 w-6 text-white" />
+            <div className="flex items-center gap-3 pt-4 border-t-2 border-gray-100">
+              <button
+                type="button"
+                onClick={() => setOpenAddSoal(false)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg"
+              >
+                Simpan Soal
               </button>
             </div>
-            <div className="p-6 space-y-5">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-4">
-                <div className="text-sm font-semibold text-gray-600 mb-2">Pertanyaan:</div>
-                <div className="font-bold text-gray-900 text-lg leading-relaxed">{openDetail.teks}</div>
-              </div>
-
-              {openDetail.tipe !== "screening" && openDetail.opsi?.length ? (
-                <div>
-                  <div className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <span className="w-1.5 h-5 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
-                    Opsi Jawaban
-                  </div>
-                  <ul className="space-y-3">
-                    {openDetail.opsi.map((o) => (
-                      <li key={o.no} className="flex items-center gap-3 bg-white rounded-xl border-2 border-gray-100 p-4 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-bold flex items-center justify-center shadow-sm">
-                          {o.no}
-                        </div>
-                        <div className="text-gray-800 flex-1 font-medium">{o.teks}</div>
-                        <div className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 font-bold border-2 border-emerald-200">
-                          Skor: {typeof o.skor === "number" ? o.skor : "-"}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : (
-                <div className="bg-gradient-to-r from-gray-50 to-slate-50 border-2 border-gray-200 rounded-2xl p-6 text-center">
-                  <Info className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 font-medium">Soal screening tidak memiliki opsi jawaban</p>
-                </div>
-              )}
-
-              <div className="flex items-center gap-3 pt-4 border-t-2 border-gray-100">
-                <button onClick={() => setOpenDetail(null)} className="flex-1 bg-gradient-to-r from-green-600 to-indigo-500 hover:from-indigo-700 hover:to-green-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg">
-                  Tutup
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+          </form>
+        </GreenModalFrame>
       )}
+
+      {/* Konfirmasi Hapus Soal */}
+      <ConfirmModal
+        open={!!confirmDeleteSoal}
+        title="Hapus Soal?"
+        description="Apakah Anda yakin ingin menghapus soal ini? Tindakan ini tidak dapat dibatalkan."
+        onConfirm={() => confirmDeleteSoal && doDeleteSoal(confirmDeleteSoal)}
+        onClose={() => setConfirmDeleteSoal(null)}
+      />
     </div>
   );
 }

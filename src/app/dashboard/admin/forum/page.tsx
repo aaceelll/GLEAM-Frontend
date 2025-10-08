@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { MessageSquare, Search, Pin, Lock, Trash2, Users, Eye, Heart, Calendar, Shield } from "lucide-react"
+import { MessageSquare, Search, Pin, Lock, Trash2, Users, Calendar, Shield, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { api } from "@/lib/api"
 
@@ -39,10 +39,12 @@ export default function AdminForumPage() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState(true)
+  const [confirmDelete, setConfirmDelete] = useState<{ id: number; title: string } | null>(null)
 
   useEffect(() => {
     loadCategories()
   }, [])
+  
   useEffect(() => {
     loadThreads()
   }, [selectedCategory, searchQuery])
@@ -91,12 +93,12 @@ export default function AdminForumPage() {
     }
   }
 
-  const handleDeleteThread = async (threadId: number, title: string) => {
-    if (!confirm(`Hapus thread "${title}"?`)) return
+  const handleDeleteThread = async (threadId: number) => {
     try {
       await api.delete(`/admin/forum/threads/${threadId}/force`)
       alert("Thread berhasil dihapus")
       loadThreads()
+      setConfirmDelete(null)
     } catch (error: any) {
       alert(error.response?.data?.message || "Gagal menghapus thread")
     }
@@ -104,161 +106,153 @@ export default function AdminForumPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    })
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const mins = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days = Math.floor(diff / 86400000)
+    if (mins < 1) return "Baru saja"
+    if (mins < 60) return `${mins} menit yang lalu`
+    if (hours < 24) return `${hours} jam yang lalu`
+    if (days < 7) return `${days} hari yang lalu`
+    return date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
   }
 
+  const greenGrad = "from-emerald-500 to-teal-500"
+
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen bg-white p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header with icon */}
+        {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
+          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${greenGrad} flex items-center justify-center shadow-lg`}>
             <MessageSquare className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-emerald-800 to-gray-900 bg-clip-text text-transparent">
-              Kelola Forum Komunitas
-            </h1>
+            <h1 className="text-4xl font-bold text-gray-900">Kelola Forum Komunitas</h1>
             <p className="text-gray-600 mt-0.5">Moderasi diskusi publik</p>
           </div>
         </div>
 
         {/* Info Box */}
-        <Card className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border-l-4 border-blue-500">
-          <div className="flex items-center gap-3">
-            <Shield className="w-6 h-6 text-blue-600" />
+        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-2xl p-5">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+              <Shield className="w-5 h-5" />
+            </div>
             <div>
-              <p className="font-semibold text-blue-900">Akses Admin</p>
+              <p className="font-semibold text-blue-900 mb-1">Akses Admin</p>
               <p className="text-sm text-blue-700">
                 Anda hanya bisa melihat dan mengelola <strong>diskusi publik</strong>. Pertanyaan private tidak dapat
                 diakses oleh admin.
               </p>
             </div>
           </div>
-        </Card>
-
-        {/* Stats with hover effect */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="p-6 bg-gradient-to-br from-emerald-500 to-green-600 text-white border-none shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer">
-            <div className="flex items-center gap-3">
-              <MessageSquare className="w-8 h-8" />
-              <div>
-                <p className="text-3xl font-bold">{threads.length}</p>
-                <p className="text-emerald-100 text-sm">Total Diskusi</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6 bg-gradient-to-br from-yellow-500 to-orange-600 text-white border-none shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer">
-            <div className="flex items-center gap-3">
-              <Pin className="w-8 h-8" />
-              <div>
-                <p className="text-3xl font-bold">{threads.filter((t) => t.is_pinned).length}</p>
-                <p className="text-yellow-100 text-sm">Dipinned</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6 bg-gradient-to-br from-red-500 to-pink-600 text-white border-none shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer">
-            <div className="flex items-center gap-3">
-              <Lock className="w-8 h-8" />
-              <div>
-                <p className="text-3xl font-bold">{threads.filter((t) => t.is_locked).length}</p>
-                <p className="text-red-100 text-sm">Dikunci</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6 bg-gradient-to-br from-teal-500 to-cyan-600 text-white border-none shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer">
-            <div className="flex items-center gap-3">
-              <Users className="w-8 h-8" />
-              <div>
-                <p className="text-3xl font-bold">234</p>
-                <p className="text-teal-100 text-sm">Anggota Aktif</p>
-              </div>
-            </div>
-          </Card>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="p-6 border-none shadow-xl bg-white rounded-3xl">
-              <h3 className="font-bold text-lg mb-4 text-gray-800">Filter Kategori</h3>
-              <div className="space-y-2">
-                <Button
-                  onClick={() => setSelectedCategory(null)}
-                  variant={selectedCategory === null ? "default" : "ghost"}
-                  className={`w-full justify-start rounded-xl ${
-                    selectedCategory === null ? "bg-emerald-600 text-white shadow-md" : "hover:bg-emerald-50"
-                  }`}
-                >
-                  Semua Kategori
-                </Button>
-                {categories.map((cat) => (
-                  <Button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
-                    variant={selectedCategory === cat.id ? "default" : "ghost"}
-                    className={`w-full justify-start rounded-xl ${
-                      selectedCategory === cat.id ? "bg-emerald-600 text-white shadow-md" : "hover:bg-emerald-50"
-                    }`}
-                  >
-                    <span className="mr-2">{cat.icon}</span>
-                    <span className="flex-1 text-left text-sm">{cat.name}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {cat.thread_count}
-                    </Badge>
-                  </Button>
-                ))}
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-2xl hover:scale-105 hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-teal-500 group transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <MessageSquare className="w-10 h-10 text-gray-700 group-hover:text-white transition-colors" />
+              <div>
+                <p className="text-3xl font-bold text-gray-900 group-hover:text-white transition-colors">{threads.length}</p>
+                <p className="text-gray-600 text-sm group-hover:text-emerald-100 transition-colors">Total Diskusi</p>
               </div>
-            </Card>
+            </div>
           </div>
 
-          {/* Threads List */}
-          <div className="lg:col-span-3 space-y-4">
-            {/* Search */}
-            <Card className="p-4 border-none shadow-lg bg-white rounded-2xl">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
-                  placeholder="Cari diskusi..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-12 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                />
+          <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-2xl hover:scale-105 hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-teal-500 group transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <Pin className="w-10 h-10 text-gray-700 group-hover:text-white transition-colors" />
+              <div>
+                <p className="text-3xl font-bold text-gray-900 group-hover:text-white transition-colors">{threads.filter((t) => t.is_pinned).length}</p>
+                <p className="text-gray-600 text-sm group-hover:text-emerald-100 transition-colors">Dipinned</p>
               </div>
-            </Card>
+            </div>
+          </div>
+
+          <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-2xl hover:scale-105 hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-teal-500 group transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <Lock className="w-10 h-10 text-gray-700 group-hover:text-white transition-colors" />
+              <div>
+                <p className="text-3xl font-bold text-gray-900 group-hover:text-white transition-colors">{threads.filter((t) => t.is_locked).length}</p>
+                <p className="text-gray-600 text-sm group-hover:text-emerald-100 transition-colors">Dikunci</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Card */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl">
+          <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <span className="w-1.5 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
+                  Daftar Diskusi
+                </h2>
+                <p className="text-sm text-gray-600 mt-1 ml-4">
+                  {loading ? "Memuat…" : `${threads.length} diskusi tersedia`}
+                </p>
+              </div>
+              <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-gray-700">{threads.length} Diskusi</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-6">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-400" />
+              <Input
+                placeholder="Cari diskusi..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-11 rounded-xl border-2 border-emerald-100 focus:border-emerald-300 focus:ring-emerald-100"
+              />
+            </div>
 
             {/* Threads */}
             {loading ? (
-              <Card className="p-12 text-center border-none shadow-lg rounded-3xl">
-                <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-500">Memuat diskusi...</p>
-              </Card>
+              <div className="text-center py-20">
+                <div className="inline-block relative">
+                  <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+                </div>
+                <p className="text-sm text-gray-500 mt-4 font-medium">Memuat diskusi…</p>
+              </div>
             ) : threads.length === 0 ? (
-              <Card className="p-12 text-center border-none shadow-lg rounded-3xl">
-                <MessageSquare className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">Tidak ada diskusi ditemukan</p>
-              </Card>
+              <div className="text-center py-20">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4 shadow-inner">
+                  <MessageSquare className="h-10 w-10 text-gray-400" />
+                </div>
+                <p className="text-gray-700 font-bold text-lg mb-2">Tidak ada diskusi ditemukan</p>
+                <p className="text-sm text-gray-500">Coba ubah kata kunci pencarian Anda</p>
+              </div>
             ) : (
-              threads.map((thread) => (
-                <Card
-                  key={thread.id}
-                  className="p-6 border-none shadow-lg hover:shadow-2xl transition-all duration-300 rounded-3xl border-l-4 border-emerald-500"
-                >
-                  <div className="space-y-4">
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <div className="space-y-6">
+                {threads.map((thread, index) => (
+                  <div
+                    key={thread.id}
+                    className="group relative bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden"
+                  >
+                    {/* Overlay gradient */}
+                    <div className={`absolute inset-0 bg-gradient-to-r ${greenGrad} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${greenGrad} opacity-5 rounded-bl-full`} />
+
+                    <div className="relative flex items-start gap-5">
+                      {/* Badge nomor */}
+                      <div className={`flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${greenGrad} text-white font-bold shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                        {index + 1}
+                      </div>
+
+                      <div className="flex-1 min-w-0 space-y-3">
+                        {/* Badges */}
+                        <div className="flex items-center gap-2 flex-wrap">
                           {thread.is_pinned && (
-                            <Badge className="bg-yellow-500 text-white rounded-lg">
+                            <Badge className="bg-amber-500 text-white rounded-lg">
                               <Pin className="w-3 h-3 mr-1" />
                               Pinned
                             </Badge>
@@ -269,99 +263,137 @@ export default function AdminForumPage() {
                               Locked
                             </Badge>
                           )}
-                          <Badge
-                            style={{ backgroundColor: thread.category.color, color: "white" }}
-                            className="rounded-lg"
-                          >
-                            {thread.category.icon} {thread.category.name}
-                          </Badge>
+                          {thread.category && (
+                            <Badge
+                              style={{ backgroundColor: thread.category.color, color: "white" }}
+                              className="rounded-lg"
+                            >
+                              {thread.category.icon} {thread.category.name}
+                            </Badge>
+                          )}
                         </div>
-                        <Link href={`/dashboard/admin/forum/${thread.id}`}>
-                          <h3 className="font-bold text-lg text-gray-800 hover:text-emerald-600 transition-colors mb-2">
-                            {thread.title}
-                          </h3>
-                        </Link>
-                        <p className="text-gray-600 text-sm line-clamp-2 mb-3">{thread.content}</p>
+
+                        {/* Title */}
+                        <h3 className="font-bold text-gray-900 text-xl group-hover:text-emerald-700 transition-colors">
+                          {thread.title}
+                        </h3>
+
+                        {/* Content */}
+                        <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed">
+                          {thread.content}
+                        </p>
+
+                        {/* Meta Info */}
+                        <div className="flex items-center gap-4 flex-wrap text-xs text-gray-600 pt-2 border-t border-gray-100">
+                          <span className="flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5 text-emerald-600" />
+                            <strong className="text-gray-900">{thread.user.nama}</strong>
+                          </span>
+                          <span className="text-gray-300">•</span>
+                          <span className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                            {formatDate(thread.created_at)}
+                          </span>
+                          <span className="text-gray-300">•</span>
+                          <span className="flex items-center gap-1.5">
+                            <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                            <span className="font-medium">{thread.reply_count}</span> balasan
+                          </span>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2 pt-3 flex-wrap">
+                          <button
+                            onClick={() => handlePinThread(thread.id)}
+                            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow-md hover:scale-105 ${
+                              thread.is_pinned
+                                ? "bg-amber-100 text-amber-700 border-2 border-amber-300"
+                                : "bg-gray-100 text-gray-700 border-2 border-gray-200 hover:bg-amber-50 hover:border-amber-300"
+                            }`}
+                          >
+                            <Pin className="w-4 h-4 inline mr-1" />
+                            {thread.is_pinned ? "Unpin" : "Pin"}
+                          </button>
+
+                          <button
+                            onClick={() => handleLockThread(thread.id)}
+                            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow-md hover:scale-105 ${
+                              thread.is_locked
+                                ? "bg-red-100 text-red-700 border-2 border-red-300"
+                                : "bg-gray-100 text-gray-700 border-2 border-gray-200 hover:bg-red-50 hover:border-red-300"
+                            }`}
+                          >
+                            <Lock className="w-4 h-4 inline mr-1" />
+                            {thread.is_locked ? "Unlock" : "Lock"}
+                          </button>
+
+                          <button
+                            onClick={() => setConfirmDelete({ id: thread.id, title: thread.title })}
+                            className="px-4 py-2 rounded-xl text-sm font-semibold bg-gray-100 text-red-600 border-2 border-gray-200 hover:bg-red-50 hover:border-red-300 transition-all shadow-sm hover:shadow-md hover:scale-105"
+                          >
+                            <Trash2 className="w-4 h-4 inline mr-1" />
+                            Hapus
+                          </button>
+
+                          <Link href={`/dashboard/admin/forum/${thread.id}`} className="ml-auto">
+                            <button className={`px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r ${greenGrad} text-white shadow-md hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2`}>
+                              Lihat Detail
+                              <ArrowRight className="w-4 h-4" />
+                            </button>
+                          </Link>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Meta Info */}
-                    <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
-                      <span className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        <strong>{thread.user.nama}</strong>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {formatDate(thread.created_at)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Eye className="w-4 h-4" />
-                        {thread.view_count}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MessageSquare className="w-4 h-4" />
-                        {thread.reply_count} balasan
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Heart className="w-4 h-4" />
-                        {thread.like_count}
-                      </span>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 pt-3 border-t border-gray-200">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handlePinThread(thread.id)}
-                        className={`rounded-xl ${
-                          thread.is_pinned
-                            ? "bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100"
-                            : "hover:bg-yellow-50 hover:border-yellow-300"
-                        }`}
-                      >
-                        <Pin className="w-4 h-4 mr-1" />
-                        {thread.is_pinned ? "Unpin" : "Pin"}
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleLockThread(thread.id)}
-                        className={`rounded-xl ${
-                          thread.is_locked
-                            ? "bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
-                            : "hover:bg-red-50 hover:border-red-300"
-                        }`}
-                      >
-                        <Lock className="w-4 h-4 mr-1" />
-                        {thread.is_locked ? "Unlock" : "Lock"}
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeleteThread(thread.id, thread.title)}
-                        className="text-red-600 hover:bg-red-50 border-red-300 rounded-xl"
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Hapus
-                      </Button>
-
-                      <Link href={`/dashboard/admin/forum/${thread.id}`} className="ml-auto">
-                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md">
-                          Lihat Detail
-                        </Button>
-                      </Link>
-                    </div>
                   </div>
-                </Card>
-              ))
+                ))}
+              </div>
             )}
           </div>
         </div>
+
+        <div className="text-center py-6">
+          <p className="text-sm text-gray-500">
+            💡 Tip: Pin diskusi penting agar selalu muncul di atas, dan kunci diskusi untuk mencegah balasan baru
+          </p>
+        </div>
       </div>
+
+      {/* Modal Konfirmasi Hapus */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white border-2 border-gray-100 shadow-2xl">
+            <div className="px-5 py-4 border-b-2 border-gray-100 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-red-100 text-red-600 grid place-items-center">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Hapus Diskusi?</h3>
+            </div>
+
+            <div className="px-5 py-4 space-y-1.5">
+              <p className="text-sm text-gray-700">
+                Apakah Anda yakin ingin benar-benar menghapus{" "}
+                <span className="font-semibold">"{confirmDelete.title}"</span>?
+              </p>
+              <p className="text-xs text-gray-500">Tindakan ini tidak dapat dibatalkan.</p>
+            </div>
+
+            <div className="px-5 py-4 flex items-center justify-end gap-3 border-t-2 border-gray-100">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold transition-all"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => handleDeleteThread(confirmDelete.id)}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold shadow-md hover:from-red-600 hover:to-rose-700 hover:shadow-lg transition-all"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

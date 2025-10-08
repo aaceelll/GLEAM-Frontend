@@ -50,7 +50,7 @@ export default function SettingsPage() {
       <div className="max-w-5xl mx-auto">
         <div className="bg-white rounded-lg shadow-xl">
           <div className="border-b border-emerald-100 px-6 lg:px-8 py-6">
-            <h1 className="text-3xl font-bold text-emerald-700">Pengaturan</h1>
+            <h1 className="text-3xl font-bold text-black-700">Pengaturan</h1>
             <p className="text-gray-600 mt-2">
               Kelola informasi pribadi dan preferensi akun Anda
             </p>
