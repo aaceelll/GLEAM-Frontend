@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { api } from "@/lib/api";
 import {
   Plus,
@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Info,
-  X,
 } from "lucide-react";
 
 /** ====== Types ====== */
@@ -31,13 +30,12 @@ type Soal = {
 };
 type Msg = { type: "success" | "error"; text: string } | null;
 
-/** ====== FIXED ENDPOINTS ====== */
+/** ====== ENDPOINTS ====== */
 const API_PATHS = {
   bankList: "/admin/bank-soal",
   soalList: (bankId: string) => `/admin/bank-soal/${bankId}/soal`,
   soalCreate: (bankId: string) => `/admin/bank-soal/${bankId}/soal`,
   soalDelete: (id: string | number) => `/admin/soal/${id}`,
-  tesList: (bankId?: string) => (bankId ? `/admin/tes?bankId=${bankId}` : "/admin/tes"),
 };
 
 /* ------------------------- Reusable UI ------------------------- */
@@ -45,28 +43,6 @@ const hoverCard =
   "group relative overflow-hidden rounded-2xl border-2 border-emerald-100 bg-white " +
   "transition-all duration-500 hover:border-emerald-400 " +
   "hover:shadow-[0_10px_40px_rgba(16,185,129,0.15)] hover:-translate-y-1";
-
-function HeaderBar({
-  icon,
-  title,
-  subtitle,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle?: string;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow">
-        {icon}
-      </div>
-      <div>
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{title}</h1>
-        {subtitle ? <p className="text-gray-600 mt-0.5">{subtitle}</p> : null}
-      </div>
-    </div>
-  );
-}
 
 function ConfirmModal({
   open,
@@ -159,6 +135,7 @@ function GreenModalFrame({
 /* ============================ PAGE ============================ */
 export default function AssessmentPage() {
   const [msg, setMsg] = useState<Msg>(null);
+
   const [banks, setBanks] = useState<BankSoal[]>([]);
   const [banksLoading, setBanksLoading] = useState(true);
   const [bankQuery, setBankQuery] = useState("");
@@ -167,6 +144,12 @@ export default function AssessmentPage() {
   const [soal, setSoal] = useState<Soal[]>([]);
   const [soalLoading, setSoalLoading] = useState(false);
   const [soalQuery, setSoalQuery] = useState("");
+
+  // urutan tampil saat ini — supaya kartu tidak “loncat” saat refresh
+  const orderRef = useRef<string[]>([]);
+
+  // Toggle guard
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   // Modals
   const [openAddBank, setOpenAddBank] = useState(false);
@@ -205,7 +188,7 @@ export default function AssessmentPage() {
 
   function showMsg(next: Msg) {
     setMsg(next);
-    if (next) setTimeout(() => setMsg(null), 3000);
+    if (next) setTimeout(() => setMsg(null), 2500);
   }
 
   function parseErrText(err: any, fallback: string) {
@@ -221,6 +204,22 @@ export default function AssessmentPage() {
   }
 
   /* ------------------------ Fetchers ------------------------ */
+  const sortByOrderRef = useCallback((list: BankSoal[]) => {
+    if (orderRef.current.length === 0) return list;
+    const order = orderRef.current;
+    const idxOf = (id: string) => {
+      const i = order.indexOf(id);
+      return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+    };
+    const sorted = [...list].sort((a, b) => idxOf(a.id) - idxOf(b.id));
+    // update order (tambah id baru di belakang)
+    orderRef.current = [
+      ...order.filter((id) => sorted.some((x) => x.id === id)),
+      ...sorted.map((x) => x.id).filter((id) => !order.includes(id)),
+    ];
+    return sorted;
+  }, []);
+
   const fetchBanks = useCallback(async () => {
     setBanksLoading(true);
     try {
@@ -233,15 +232,24 @@ export default function AssessmentPage() {
         status: it.status ?? "draft",
         updatedAt: it.updatedAt ?? it.updated_at ?? undefined,
       }));
-      setBanks(mapped);
-      if (!selectedBankId && mapped.length) setSelectedBankId(mapped[0].id);
+
+      // set initial order (first load) atau pertahankan urutan tampilan saat ini
+      let next = mapped;
+      if (orderRef.current.length === 0 && banks.length === 0) {
+        orderRef.current = mapped.map((m) => m.id);
+      } else {
+        next = sortByOrderRef(mapped);
+      }
+
+      setBanks(next);
+      if (!selectedBankId && next.length) setSelectedBankId(next[0].id);
     } catch {
       showMsg({ type: "error", text: "Gagal memuat bank soal." });
       setBanks([]);
     } finally {
       setBanksLoading(false);
     }
-  }, [selectedBankId]);
+  }, [banks.length, selectedBankId, sortByOrderRef]);
 
   const fetchSoal = useCallback(async (bankId: string | null) => {
     if (!bankId) {
@@ -288,7 +296,7 @@ export default function AssessmentPage() {
       showMsg({ type: "success", text: "Bank soal berhasil ditambahkan!" });
       setAddBankName("");
       setOpenAddBank(false);
-      await fetchBanks();
+      await fetchBanks(); // urutan stabil karena sortByOrderRef
     } catch (err) {
       showMsg({ type: "error", text: parseErrText(err, "Gagal menambah bank soal.") });
     }
@@ -313,6 +321,8 @@ export default function AssessmentPage() {
     const { id } = confirmDeleteBank;
     try {
       await api.delete(`${API_PATHS.bankList}/${id}`);
+      // hapus id dari orderRef supaya urutan tetap konsisten
+      orderRef.current = orderRef.current.filter((x) => x !== id);
       showMsg({ type: "success", text: "Bank soal dihapus!" });
       if (selectedBankId === id) setSelectedBankId(null);
       await fetchBanks();
@@ -321,6 +331,42 @@ export default function AssessmentPage() {
       showMsg({ type: "error", text: parseErrText(err, "Gagal menghapus bank soal.") });
     } finally {
       setConfirmDeleteBank(null);
+    }
+  }
+
+  /** Toggle publish/draft:
+   * - cegah bubbling (biar gak dobel panggilan)
+   * - guard while toggling
+   * - optimistically update status lokal agar UI nggak “loncat”
+   * - setSelectedBankId ke bank yang baru di-toggle
+   * - refresh data (urutan tetap stabil karena sortByOrderRef)
+   */
+  async function toggleBankStatus(bank: BankSoal) {
+    if (togglingId) return; // ada proses lain berjalan
+    setTogglingId(bank.id);
+    try {
+      const nextStatus = bank.status === "publish" ? "draft" : "publish";
+      await api.patch(`${API_PATHS.bankList}/${bank.id}`, { status: nextStatus });
+
+      // Optimistic update (tidak mengubah urutan)
+      setBanks((prev) =>
+        prev.map((b) => (b.id === bank.id ? { ...b, status: nextStatus } : b))
+      );
+
+      // pilih kartu yang baru di-toggle
+      setSelectedBankId(bank.id);
+      await fetchSoal(bank.id);
+
+      // sinkronisasi data dari server (urutan tetap karena sortByOrderRef)
+      await fetchBanks();
+      showMsg({
+        type: "success",
+        text: nextStatus === "publish" ? "Bank dipublish" : "Bank dijadikan draft",
+      });
+    } catch (err) {
+      showMsg({ type: "error", text: parseErrText(err, "Gagal mengubah status bank.") });
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -412,32 +458,31 @@ export default function AssessmentPage() {
 
   /* ------------------------ UI ------------------------ */
   return (
-  <div className="min-h-screen bg-white p-6">
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
-              <ListChecks className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900">Assessment Manager</h1>
-              <p className="text-gray-600 mt-0.5">
-                Kelola bank soal & kuisioner skoring di satu halaman
-              </p>
+    <div className="min-h-screen bg-white p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
+                <ListChecks className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-gray-900">Assessment Manager</h1>
+                <p className="text-gray-600 mt-0.5">
+                  Kelola bank soal & kuisioner skoring di satu halaman
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-        <button
-          className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
-          onClick={() => setOpenAddBank(true)}
-        >
-          <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
-          Tambah Bank Soal
-        </button>
-      </header>
-      
+          <button
+            className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
+            onClick={() => setOpenAddBank(true)}
+          >
+            <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
+            Tambah Bank Soal
+          </button>
+        </header>
 
         {/* Flash message */}
         {msg && (
@@ -517,15 +562,16 @@ export default function AssessmentPage() {
                       role="button"
                       tabIndex={0}
                     >
-                      {/* sweep overlay — terlihat saat hover & saat active */}
+                      {/* sweep overlay */}
                       <div
                         className={`absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 transition-opacity duration-500 ${
                           active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                         }`}
                       />
                       <div className="relative p-5">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                          {/* kiri: icon + judul */}
+                          <div className="flex items-center gap-3 min-w-0">
                             <div
                               className={`w-11 h-11 rounded-xl grid place-items-center shadow ${
                                 active
@@ -539,31 +585,58 @@ export default function AssessmentPage() {
                                 }`}
                               />
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <h3 className="font-bold text-gray-900 leading-snug line-clamp-2">
                                 {bank.nama}
                               </h3>
-                              <div className="text-xs text-gray-500">
-                                {bank.totalSoal} soal •{" "}
-                                <span
-                                  className={`px-2 py-0.5 rounded-full border ${
-                                    bank.status === "publish"
-                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                      : "bg-gray-50 text-gray-600 border-gray-200"
-                                  }`}
-                                >
-                                  {bank.status}
-                                </span>
+                              <div className="text-xs text-gray-500 flex items-center gap-2 flex-wrap">
+                                <span>{bank.totalSoal} soal</span>
+                                <span className="text-gray-300">•</span>
+                                {bank.status === "publish" ? (
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    Ditampilkan ke pengguna
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-full bg-gray-50 text-gray-600 border border-gray-200">
+                                    Belum ditampilkan
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
 
-                          {/* action buttons */}
+                          {/* kanan: action area */}
                           <div
-                            className="flex gap-1 z-10 pointer-events-auto"
+                            className="flex items-center gap-2 z-10 pointer-events-auto"
                             onClick={(e) => e.stopPropagation()}
                             onMouseDown={(e) => e.stopPropagation()}
                           >
+                            {/* Toggle Publish/Draft — stop bubbling, ada guard, dan auto-select */}
+                            <button
+                              disabled={togglingId === bank.id}
+                              onClick={(e) => {
+                                e.stopPropagation(); // ⬅️ cegah klik kartu
+                                toggleBankStatus(bank);
+                              }}
+                              className={`px-4 py-2 rounded-lg text-xs font-semibold shadow-sm transition-colors ${
+                                togglingId === bank.id
+                                  ? "opacity-60 cursor-not-allowed"
+                                  : ""
+                              } ${
+                                bank.status === "publish"
+                                  ? "bg-rose-600 text-white hover:bg-rose-700"
+                                  : "bg-emerald-600 text-white hover:bg-emerald-700"
+                              }`}
+                              title={bank.status === "publish" ? "Jadikan Draft" : "Publish"}
+                              aria-label="Toggle visibility"
+                            >
+                              {togglingId === bank.id
+                                ? "Menyimpan..."
+                                : bank.status === "publish"
+                                ? "Jadikan Draft"
+                                : "Publish"}
+                            </button>
+
                             <button
                               onClick={() => setOpenRename({ id: bank.id, nama: bank.nama })}
                               className="p-2 rounded-lg text-amber-600 bg-amber-50 hover:bg-amber-500 hover:text-white transition-colors shadow-sm"
@@ -573,9 +646,7 @@ export default function AssessmentPage() {
                               <Pencil className="h-4 w-4" />
                             </button>
                             <button
-                              onClick={() =>
-                                setConfirmDeleteBank({ id: bank.id, nama: bank.nama })
-                              }
+                              onClick={() => setConfirmDeleteBank({ id: bank.id, nama: bank.nama })}
                               className="p-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-500 hover:text-white transition-colors shadow-sm"
                               title="Hapus"
                               aria-label="Hapus"
@@ -593,7 +664,7 @@ export default function AssessmentPage() {
           </div>
         </section>
 
-        {/* ----------------------- DAFTAR SOAL (UI BARU) ----------------------- */}
+        {/* ----------------------- DAFTAR SOAL ----------------------- */}
         <section className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl overflow-hidden">
           <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
             <div className="flex items-center justify-between flex-wrap gap-4">
@@ -685,7 +756,7 @@ export default function AssessmentPage() {
                             </span>
                           </div>
 
-                          {/* opsi ditampilkan sebagai chips modern */}
+                          {/* opsi sebagai chips */}
                           {q.opsi && q.opsi.length > 0 && (
                             <div className="mt-3 flex flex-wrap gap-2">
                               {q.opsi.map((opt) => (
@@ -709,7 +780,7 @@ export default function AssessmentPage() {
                         </div>
                       </div>
 
-                      {/* Aksi (hapus saja sesuai permintaan) */}
+                      {/* Aksi (hapus) */}
                       <button
                         className="p-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-red-500 hover:text-white transition-all hover:scale-110 shadow-sm"
                         onClick={() => setConfirmDeleteSoal(q.id)}
@@ -727,7 +798,6 @@ export default function AssessmentPage() {
         </section>
       </div>
 
-      {/* ----------------------- MODALS ----------------------- */}
       {/* Tambah Bank Soal */}
       {openAddBank && (
         <GreenModalFrame
@@ -824,7 +894,7 @@ export default function AssessmentPage() {
         onClose={() => setConfirmDeleteBank(null)}
       />
 
-      {/* Tambah Soal (header hijau) */}
+      {/* Tambah Soal */}
       {openAddSoal && (
         <GreenModalFrame
           titleIcon={<Plus className="h-6 w-6" />}
@@ -931,4 +1001,8 @@ export default function AssessmentPage() {
       />
     </div>
   );
+}
+
+function X(props: any) {
+  return <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>;
 }

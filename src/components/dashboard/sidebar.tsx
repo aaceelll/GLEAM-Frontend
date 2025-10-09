@@ -20,7 +20,7 @@ const menuItems = {
   admin: [
     { icon: Home, label: "Beranda", href: "/dashboard/admin" },
     { icon: BookOpen, label: "Konten Materi", href: "/dashboard/admin/materi" },
-    { icon: ClipboardList, label: "Assessment", href: "/dashboard/admin/assessment" },
+    { icon: ClipboardList, label: "Assessment Manager", href: "/dashboard/admin/assessment" },
     { icon: Users, label: "Akun & Peran", href: "/dashboard/admin/users" },
     { icon: MessageSquare, label: "Forum Komunitas", href: "/dashboard/admin/forum" },
     { icon: Settings, label: "Pengaturan", href: "/dashboard/admin/settings" },
@@ -42,7 +42,7 @@ const menuItems = {
     { icon: Home, label: "Beranda", href: "/dashboard/user" },
     { icon: Activity, label: "Diabetes Melitus", href: "/dashboard/user/diabetes-melitus" },
     { icon: BookOpen, label: "Penjelasan Umum", href: "/dashboard/user/education" },
-    { icon: History, label: "Riwayat", href: "/dashboard/user/riwayat" },
+    { icon: History, label: "Riwayat Quiz", href: "/dashboard/user/riwayat" },
     { icon: FileText, label: "Ulasan Website", href: "/dashboard/user/ulasan-website" },
     { icon: MessageSquare, label: "Forum Komunitas", href: "/dashboard/user/forum" },
     { icon: Settings, label: "Pengaturan", href: "/dashboard/user/settings" },

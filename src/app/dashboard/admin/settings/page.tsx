@@ -168,7 +168,6 @@ export default function PengaturanPage() {
           })}
         </div>
 
-
         {/* Profile Tab */}
         {activeTab === "profile" && (
           <Card className="p-6 border-2 border-gray-100 rounded-3xl bg-white shadow-xl">

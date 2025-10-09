@@ -12,6 +12,15 @@ type QuizResult = {
   tipe: "pre" | "post";
 };
 
+function normalizeKey(raw: string) {
+  return (raw || "")
+    .toLowerCase()
+    .replace(/\b(pre|post)\b/g, "")
+    .replace(/\b(test|kuis|quiz|kuisioner)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export default function KuisionerPage() {
   const params = useParams();
   const router = useRouter();
@@ -42,12 +51,16 @@ export default function KuisionerPage() {
       const res = await api.get(`/materi/tes-by-bank/${params.id}`);
       setSoal(res.data.soal || []);
       setBankName(res.data.nama || "");
-    } catch (err) {
+    } catch (err: any) {
+      // Kalau server memblokir (misal 403: pre belum dikerjakan), tampilkan modal yang ramah
+      const msg =
+        err?.response?.data?.message ||
+        "Silakan selesaikan Pre Test terlebih dahulu sebelum mengerjakan Post Test.";
       setModal({
         open: true,
         tone: "error",
-        title: "Gagal memuat soal",
-        desc: "Silakan coba beberapa saat lagi.",
+        title: "Tidak dapat membuka kuisioner",
+        desc: msg,
       });
     } finally {
       setLoading(false);
@@ -58,8 +71,7 @@ export default function KuisionerPage() {
     setAnswers((prev) => ({ ...prev, [soalId]: value }));
   }
 
-  const progressPct =
-    soal.length > 0 ? (Object.keys(answers).length / soal.length) * 100 : 0;
+  const progressPct = soal.length > 0 ? (Object.keys(answers).length / soal.length) * 100 : 0;
 
   function handleNext() {
     if (currentIndex < soal.length - 1) setCurrentIndex((i) => i + 1);
@@ -89,18 +101,25 @@ export default function KuisionerPage() {
       });
       const result: QuizResult = response.data.data;
 
+      // Simpan progress lokal biar halaman daftar bisa langsung "membuka" post test
+      const baseKey = normalizeKey(bankName);
+      if (result?.tipe === "pre") {
+        localStorage.setItem(`quiz_done_pre_${baseKey}`, "true");
+      } else if (result?.tipe === "post") {
+        localStorage.setItem(`quiz_done_post_${baseKey}`, "true");
+      }
+
       setModal({
-      open: true,
-      tone: "success",
-      title: "Quiz selesai!",
-      desc: undefined,
-      result: {
-        total_score: response.data.data.total_score,
-        max_score: response.data.data.max_score,
-        percentage: response.data.data.percentage,
-        tipe: response.data.data.tipe, // "pre" | "post"
-      },
-    });
+        open: true,
+        tone: "success",
+        title: "Quiz selesai!",
+        result: {
+          total_score: result.total_score,
+          max_score: result.max_score,
+          percentage: result.percentage,
+          tipe: result.tipe,
+        },
+      });
     } catch (error: any) {
       setModal({
         open: true,
@@ -120,6 +139,7 @@ export default function KuisionerPage() {
       </div>
     );
   }
+
   if (soal.length === 0) {
     return (
       <div className="min-h-screen bg-white px-6 md:px-10 py-6">
@@ -158,7 +178,9 @@ export default function KuisionerPage() {
           {/* Header */}
           <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{bankName}</h1>
-            <p className="text-gray-600">Soal {currentIndex + 1} dari {soal.length}</p>
+            <p className="text-gray-600">
+              Soal {currentIndex + 1} dari {soal.length}
+            </p>
 
             {/* Progress */}
             <div className="mt-4">
@@ -282,33 +304,31 @@ export default function KuisionerPage() {
             </div>
 
             <div className="px-6 py-5">
-            {modal.result ? (
-              <ul className="space-y-2 text-gray-800">
-                <li>
-                  <span className="text-gray-600">Skor</span>:{" "}
-                  <strong>{modal.result.total_score}/{modal.result.max_score}</strong>
-                </li>
-                <li>
-                  <span className="text-gray-600">Persentase</span>:{" "}
-                  <strong>{modal.result.percentage}%</strong>
-                </li>
-                <li>
-                  <span className="text-gray-600">Tipe</span>:{" "}
-                  <strong>{modal.result.tipe === "pre" ? "Pre Test" : "Post Test"}</strong>
-                </li>
-              </ul>
-            ) : (
-              modal.desc && <p className="text-gray-700">{modal.desc}</p>
-            )}
-          </div>
-
+              {modal.result ? (
+                <ul className="space-y-2 text-gray-800">
+                  <li>
+                    <span className="text-gray-600">Skor</span>:{" "}
+                    <strong>{modal.result.total_score}/{modal.result.max_score}</strong>
+                  </li>
+                  <li>
+                    <span className="text-gray-600">Persentase</span>:{" "}
+                    <strong>{modal.result.percentage}%</strong>
+                  </li>
+                  <li>
+                    <span className="text-gray-600">Tipe</span>:{" "}
+                    <strong>{modal.result.tipe === "pre" ? "Pre Test" : "Post Test"}</strong>
+                  </li>
+                </ul>
+              ) : (
+                modal.desc && <p className="text-gray-700">{modal.desc}</p>
+              )}
+            </div>
 
             <div className="px-6 py-4 border-t-2 border-gray-100 flex justify-end gap-3">
               <button
                 onClick={() => {
                   setModal((m) => ({ ...m, open: false }));
                   if (modal.tone === "success") {
-                    // selesai -> ke riwayat
                     router.push("/dashboard/user/riwayat");
                   }
                 }}

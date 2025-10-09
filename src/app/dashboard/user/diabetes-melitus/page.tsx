@@ -12,11 +12,10 @@ import {
   ClipboardList,
   Play,
   Activity,
-  Droplet,
-  Heart,
-  User,
   ChevronDown,
   ChevronUp,
+  Lock as LockIcon,
+  CheckCircle2,
 } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -60,6 +59,31 @@ type ScreeningResult = {
   created_at: string;
 };
 
+/* ================= Utils ================= */
+function normalizeKey(raw: string) {
+  return (raw || "")
+    .toLowerCase()
+    .replace(/\b(pre|post)\b/g, "")
+    .replace(/\b(test|kuis|quiz|kuisioner)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function detectType(name: string): "pre" | "post" | "unknown" {
+  const n = (name || "").toLowerCase();
+  if (/\bpost\b/.test(n)) return "post";
+  if (/\bpre\b/.test(n)) return "pre";
+  // fallback: kalau ada kata "post-test" dsb sudah ke-detect, kalau tidak biarkan unknown
+  return "unknown";
+}
+function isCompletedLike(x: any) {
+  // Terima berbagai bentuk properti
+  if (!x) return false;
+  if (x.done === true || x.is_done === true || x.completed === true) return true;
+  if (typeof x.status === "string" && x.status.toLowerCase() === "finished") return true;
+  if (typeof x.percentage === "number" && x.percentage >= 0) return true; // kadang API mengembalikan nilai
+  return false;
+}
+
 /* ============== Page ============== */
 export default function DiabetesMelitusPage() {
   const router = useRouter();
@@ -69,7 +93,10 @@ export default function DiabetesMelitusPage() {
   const [tes, setTes] = useState<TesItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+
+  // ====== QUIZ PROGRESS ======
   const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [preDoneMap, setPreDoneMap] = useState<Record<string, boolean>>({}); // key: baseKey
 
   // ====== SCREENING STATES ======
   const [latestResult, setLatestResult] = useState<ScreeningResult | null>(null);
@@ -77,18 +104,47 @@ export default function DiabetesMelitusPage() {
   const [loadingScreening, setLoadingScreening] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
 
-  // Fetch kuis bank
+  // Fetch kuis bank (untuk progress pre/post)
   useEffect(() => {
-    const fetchQuizzes = async () => {
+    (async () => {
       try {
         const response = await api.get("/user/quiz/banks");
-        if (response.data.success) setQuizzes(response.data.data);
+        const list = response?.data?.data ?? response?.data ?? [];
+        setQuizzes(Array.isArray(list) ? list : []);
       } catch (error) {
+        // aman: kalau gagal, kita masih punya fallback localStorage
         console.error(error);
       }
-    };
-    fetchQuizzes();
+    })();
   }, []);
+
+  // Bangun preDone map (server + localStorage fallback)
+  useEffect(() => {
+    const serverMap: Record<string, boolean> = {};
+    for (const item of quizzes) {
+      // coba deteksi key dasar dari nama/label/title
+      const rawName = item?.nama ?? item?.title ?? item?.label ?? "";
+      const tipe = (item?.tipe ?? item?.type ?? detectType(String(rawName))) as
+        | "pre"
+        | "post"
+        | "unknown";
+      const base = normalizeKey(String(rawName));
+      if (!base || tipe !== "pre") continue;
+      if (isCompletedLike(item)) serverMap[base] = true;
+    }
+
+    // fallback dari localStorage (misal user baru submit barusan)
+    const localMap: Record<string, boolean> = {};
+    Object.keys(localStorage).forEach((k) => {
+      // format: quiz_done_pre_<baseKey> = "true"
+      const m = k.match(/^quiz_done_pre_(.+)$/);
+      if (m && localStorage.getItem(k) === "true") {
+        localMap[m[1]] = true;
+      }
+    });
+
+    setPreDoneMap({ ...serverMap, ...localMap });
+  }, [quizzes]);
 
   // Fetch materi + tes
   useEffect(() => {
@@ -176,47 +232,40 @@ export default function DiabetesMelitusPage() {
   };
 
   // theme warna berbasis probabilitas
-const getRiskTheme = (probStr: string | number) => {
-  const prob = typeof probStr === "number" ? probStr : parseFloat(String(probStr).replace("%", ""));
-  if (Number.isNaN(prob)) {
+  const getRiskTheme = (probStr: string | number) => {
+    const prob = typeof probStr === "number" ? probStr : parseFloat(String(probStr).replace("%", ""));
+    if (Number.isNaN(prob)) {
+      return {
+        bg: "from-emerald-50 to-green-50",
+        border: "border-emerald-200",
+        accentText: "text-emerald-700",
+        badge: "bg-emerald-100 text-emerald-800",
+      };
+    }
+    if (prob >= 63) {
+      return {
+        bg: "from-red-50 to-rose-50",
+        border: "border-red-200",
+        accentText: "text-red-700",
+        badge: "bg-red-100 text-red-800",
+      };
+    }
+    if (prob >= 48) {
+      return {
+        bg: "from-amber-50 to-orange-50",
+        border: "border-amber-200",
+        accentText: "text-amber-700",
+        badge: "bg-amber-100 text-amber-800",
+      };
+    }
     return {
       bg: "from-emerald-50 to-green-50",
       border: "border-emerald-200",
       accentText: "text-emerald-700",
       badge: "bg-emerald-100 text-emerald-800",
     };
-  }
-  if (prob >= 63) {
-    return {
-      bg: "from-red-50 to-rose-50",
-      border: "border-red-200",
-      accentText: "text-red-700",
-      badge: "bg-red-100 text-red-800",
-    };
-  }
-  if (prob >= 48) {
-    return {
-      bg: "from-amber-50 to-orange-50",
-      border: "border-amber-200",
-      accentText: "text-amber-700",
-      badge: "bg-amber-100 text-amber-800",
-    };
-  }
-  return {
-    bg: "from-emerald-50 to-green-50",
-    border: "border-emerald-200",
-    accentText: "text-emerald-700",
-    badge: "bg-emerald-100 text-emerald-800",
   };
-};
 
-  // util warna risiko
-  const getRiskColor = (probability: string) => {
-    const prob = parseFloat(String(probability).replace("%", ""));
-    if (prob >= 63) return "text-red-700 bg-red-50 border-red-200";
-    if (prob >= 48) return "text-orange-700 bg-orange-50 border-orange-200";
-    return "text-green-700 bg-green-50 border-green-200";
-  };
   const getRiskBadge = (result: string) => {
     const r = result.toLowerCase();
     if (r.includes("tinggi") || r.includes("risiko")) return "bg-red-100 text-red-800";
@@ -239,9 +288,8 @@ const getRiskTheme = (probStr: string | number) => {
             </div>
           </div>
         </div>
-       
 
-        {/* =================== HASIL SCREENING (gabungan 1 card) =================== */}
+        {/* =================== HASIL SCREENING =================== */}
         <div className="bg-white rounded-3xl border-2 border-gray-100 shadow-xl">
           <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
             <div className="flex items-center gap-2">
@@ -267,7 +315,6 @@ const getRiskTheme = (probStr: string | number) => {
             </div>
           </div>
 
-          {/* Isi card gabungan */}
           <div className="p-8 space-y-6">
             {loadingScreening ? (
               <div className="text-center py-10">
@@ -318,82 +365,69 @@ const getRiskTheme = (probStr: string | number) => {
                   </div>
                 </div>
 
-          {/* DATA SCREENING */}
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 shadow-sm">
-            <p className="text-sm font-semibold text-gray-800 mb-3">Data Screening</p>
+                {/* DATA SCREENING */}
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 shadow-sm">
+                  <p className="text-sm font-semibold text-gray-800 mb-3">Data Screening</p>
 
-            {/* Satu grid untuk semua item */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
-              {/* 1 */}
-              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
-                <p className="text-xs text-gray-500 mb-1">NAMA PASIEN</p>
-                <p className="font-semibold text-gray-900">{latestResult.patient_name}</p>
-              </div>
-              {/* 2 */}
-              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
-                <p className="text-xs text-gray-500 mb-1">USIA</p>
-                <p className="font-semibold text-gray-900">{latestResult.age} tahun</p>
-              </div>
-              {/* 3 */}
-              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
-                <p className="text-xs text-gray-500 mb-1">JENIS KELAMIN</p>
-                <p className="font-semibold text-gray-900">{latestResult.gender || "—"}</p>
-              </div>
-              {/* 4 */}
-              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
-                <p className="text-xs text-gray-500 mb-1">BMI</p>
-                <p className="font-semibold text-gray-900">{latestResult.bmi}</p>
-              </div>
-              {/* 5 */}
-              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
-                <p className="text-xs text-gray-500 mb-1">TEKANAN DARAH</p>
-                <p className="font-semibold text-gray-900">
-                  {latestResult.systolic_bp}/{latestResult.diastolic_bp}
-                </p>
-              </div>
-              {/* 6 */}
-              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
-                <p className="text-xs text-gray-500 mb-1">RIWAYAT MEROKOK</p>
-                <p className="font-semibold text-gray-900">
-                  {latestResult.smoking_history || "Tidak Ada Data"}
-                </p>
-              </div>
-              {/* 7 */}
-              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
-                <p className="text-xs text-gray-500 mb-1">RIWAYAT JANTUNG</p>
-                <p className="font-semibold text-gray-900">
-                  {latestResult.heart_disease || "Tidak Ada Data"}
-                </p>
-              </div>
-              {/* 8 */}
-              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
-                <p className="text-xs text-gray-500 mb-1">KLASIFIKASI HIPERTENSI</p>
-                <p className="font-semibold text-gray-900">{latestResult.bp_classification}</p>
-              </div>
-              {/* 9 */}
-              <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
-                <p className="text-xs text-gray-500 mb-1">GULA DARAH</p>
-                <p className="font-semibold text-gray-900">
-                  {latestResult.blood_glucose_level} mg/dL
-                </p>
-              </div>
-            </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
+                    <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                      <p className="text-xs text-gray-500 mb-1">NAMA PASIEN</p>
+                      <p className="font-semibold text-gray-900">{latestResult.patient_name}</p>
+                    </div>
+                    <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                      <p className="text-xs text-gray-500 mb-1">USIA</p>
+                      <p className="font-semibold text-gray-900">{latestResult.age} tahun</p>
+                    </div>
+                    <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                      <p className="text-xs text-gray-500 mb-1">JENIS KELAMIN</p>
+                      <p className="font-semibold text-gray-900">{latestResult.gender || "—"}</p>
+                    </div>
+                    <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                      <p className="text-xs text-gray-500 mb-1">BMI</p>
+                      <p className="font-semibold text-gray-900">{latestResult.bmi}</p>
+                    </div>
+                    <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                      <p className="text-xs text-gray-500 mb-1">TEKANAN DARAH</p>
+                      <p className="font-semibold text-gray-900">
+                        {latestResult.systolic_bp}/{latestResult.diastolic_bp}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                      <p className="text-xs text-gray-500 mb-1">RIWAYAT MEROKOK</p>
+                      <p className="font-semibold text-gray-900">
+                        {latestResult.smoking_history || "Tidak Ada Data"}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                      <p className="text-xs text-gray-500 mb-1">RIWAYAT JANTUNG</p>
+                      <p className="font-semibold text-gray-900">
+                        {latestResult.heart_disease || "Tidak Ada Data"}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                      <p className="text-xs text-gray-500 mb-1">KLASIFIKASI HIPERTENSI</p>
+                      <p className="font-semibold text-gray-900">{latestResult.bp_classification}</p>
+                    </div>
+                    <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
+                      <p className="text-xs text-gray-500 mb-1">GULA DARAH</p>
+                      <p className="font-semibold text-gray-900">
+                        {latestResult.blood_glucose_level} mg/dL
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {latestResult.bp_recommendation && (
+                  <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
+                    <p className="font-semibold text-black-900 mb-1">💡 Rekomendasi</p>
+                    <p className="text-sm text-black-800">
+                      {latestResult.bp_recommendation}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
           </div>
-
-
-
-          {/* Rekomendasi */}
-          {latestResult.bp_recommendation && (
-            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
-              <p className="font-semibold text-black-900 mb-1">💡 Rekomendasi</p>
-              <p className="text-sm text-black-800">
-                {latestResult.bp_recommendation}
-              </p>
-            </div>
-          )} 
-        </>
-      )}
-    </div>
 
           {/* Riwayat + toggle */}
           <div className="px-6 py-5 border-t-2 border-gray-100">
@@ -472,7 +506,7 @@ const getRiskTheme = (probStr: string | number) => {
           </div>
         </div>
 
-        {/* =================== KUISONER / TES (warna hijau) =================== */}
+        {/* =================== KUISONER / TES =================== */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl">
           <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
             <div className="flex items-center justify-between">
@@ -509,54 +543,84 @@ const getRiskTheme = (probStr: string | number) => {
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
-                {tes.map((t, i) => (
-                  <div
-                    key={t.id}
-                    className="group relative bg-white border-2 border-gray-100 rounded-2xl p-5 hover:border-transparent hover:shadow-2xl transition-all overflow-hidden"
-                  >
-                    <div className={`absolute inset-0 bg-gradient-to-r ${greenGrad} opacity-0 group-hover:opacity-5 transition-opacity`} />
-                    <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${greenGrad} opacity-5 rounded-bl-full`} />
+                {tes.map((t) => {
+                  const tipe = detectType(t.nama);
+                  const baseKey = normalizeKey(t.nama);
+                  const isPost = tipe === "post";
+                  const mustLock = isPost && !preDoneMap[baseKey];
 
-                    <div className="relative flex items-start gap-4">
-                      <div className={`flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br ${greenGrad} text-white font-bold shadow`}>
-                        <ListChecks className="w-5 h-5" />
-                      </div>
+                  return (
+                    <div
+                      key={t.id}
+                      className="group relative bg-white border-2 border-gray-100 rounded-2xl p-5 hover:border-transparent hover:shadow-2xl transition-all overflow-hidden"
+                    >
+                      <div className={`absolute inset-0 bg-gradient-to-r ${greenGrad} opacity-0 group-hover:opacity-5 transition-opacity`} />
+                      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${greenGrad} opacity-5 rounded-bl-full`} />
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h3 className="font-bold text-gray-900 text-lg leading-snug">{t.nama}</h3>
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              {t.totalSoal ?? "-"} soal
-                              {t.durasiMenit ? ` • ${t.durasiMenit} menit` : ""}
-                            </p>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => mulaiTest(t)}
-                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-white bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-700 hover:to-yellow-700 transition-all shadow hover:shadow-lg text-sm font-semibold"
-                          >
-                            <Play className="h-4 w-4" />
-                            Mulai
-                          </button>
+                      <div className="relative flex items-start gap-4">
+                        <div className={`flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br ${greenGrad} text-white font-bold shadow`}>
+                          <ListChecks className="w-5 h-5" />
                         </div>
 
-                        {t.deskripsi && (
-                          <p className="text-sm text-gray-600 mt-2 line-clamp-2 break-words whitespace-pre-wrap [overflow-wrap:anywhere]">
-                            {t.deskripsi}
-                          </p>
-                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <h3 className="font-bold text-gray-900 text-lg leading-snug">{t.nama}</h3>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {t.totalSoal ?? "-"} soal
+                                {t.durasiMenit ? ` • ${t.durasiMenit} menit` : ""}
+                              </p>
+                              {/* status kecil di bawah judul */}
+                              {isPost && (
+                                <div className="mt-1">
+                                  {mustLock ? (
+                                    <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                                      <LockIcon className="w-3.5 h-3.5" />
+                                      Terkunci: Selesaikan Pre Test dulu
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      Siap dikerjakan
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => !mustLock && mulaiTest(t)}
+                              disabled={mustLock}
+                              className={[
+                                "inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all shadow",
+                                mustLock
+                                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                  : "text-white bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-700 hover:to-yellow-700 hover:shadow-lg",
+                              ].join(" ")}
+                              title={mustLock ? "Selesaikan Pre Test terlebih dahulu" : "Mulai"}
+                            >
+                              {mustLock ? <LockIcon className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                              {mustLock ? "Terkunci" : "Mulai"}
+                            </button>
+                          </div>
+
+                          {t.deskripsi && (
+                            <p className="text-sm text-gray-600 mt-2 line-clamp-2 break-words whitespace-pre-wrap [overflow-wrap:anywhere]">
+                              {t.deskripsi}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
 
-        {/* =================== DAFTAR KONTEN (warna hijau) =================== */}
+        {/* =================== DAFTAR KONTEN =================== */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl">
           <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
             <div className="flex items-center justify-between">
