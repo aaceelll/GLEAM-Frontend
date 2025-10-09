@@ -146,7 +146,7 @@ export default function UserDashboard() {
                 </Button>
               </Link>
 
-              <Link href="/dashboard/user/history" className="block">
+              <Link href="/dashboard/user/riwayat" className="block">
                 <Button className="w-full justify-start h-auto py-4 px-6 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white shadow-md hover:shadow-xl transition-all group">
                   <div className="flex items-center gap-4 w-full">
                     <div className="bg-white/20 p-3 rounded-xl group-hover:scale-110 transition-transform">
