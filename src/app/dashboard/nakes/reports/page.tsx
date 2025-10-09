@@ -1,185 +1,520 @@
-"use client"
+"use client";
 
-import { useMemo, useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { FileText, Search, Eye, Trash2, Download, SlidersHorizontal, TrendingUp, BarChart3 } from "lucide-react"
+import { useEffect, useMemo, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { FileText, Search, Calendar, X, Activity, RotateCcw } from "lucide-react";
+import { api } from "@/lib/api";
 
-type Row = { id: number | string; name: string; date: string; score: number }
-type TabKey = "dsmq" | "pretest" | "posttest"
+/* ============ Types ============ */
+type Row = {
+  id: string | number;
+  userId?: string | number;
+  name: string;
+  date: string;          // ISO / string dari backend
+  riskPct?: number;      // 0-100
+};
 
+type ScreeningDetail = {
+  id?: string | number;
+  created_at?: string;
+  updated_at?: string;
+
+  // tampilan header
+  riskPct?: number;
+  riskLabel?: string;
+
+  // data pasien
+  nama?: string;
+  name?: string;
+  usia?: string | number;
+  jenis_kelamin?: string;
+  gender?: string;
+
+  bmi?: string | number;
+  tekanan_darah?: string;
+  sistolik?: number | string;
+  diastolik?: number | string;
+
+  riwayat_merokok?: string;
+  smoker_status?: string;
+
+  riwayat_jantung?: string;
+  heart_history?: string;
+
+  klasifikasi_hipertensi?: string;
+  gula_darah?: string;
+  blood_sugar?: string | number;
+};
+
+/* ============ Helpers ============ */
+const TZ = "Asia/Jakarta";
+
+/** Format waktu ke lokal Indonesia + Asia/Jakarta secara konsisten */
+function formatIDTime(input?: string) {
+  if (!input) return "-";
+  let s = String(input).trim();
+
+  // contoh input: "2025-10-09 23:13:00" (tanpa offset)
+  const hasOffset = /[+-]\d{2}:\d{2}$/.test(s);
+  const hasZ = /Z$/.test(s);
+  const isoish = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(s);
+
+  // normalize ke ISO valid. Jika backend tidak sertakan offset, treat as UTC.
+  if (isoish && !hasOffset && !hasZ) {
+    s = s.replace(" ", "T") + "Z";
+  }
+
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return "-";
+
+  return new Intl.DateTimeFormat("id-ID", {
+    timeZone: TZ,
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+}
+
+const greenGrad = "from-emerald-500 to-teal-500";
+
+function first<T = any>(obj: any, keys: string[], fallback?: any): T | any {
+  for (const k of keys) {
+    const v = k.includes(".")
+      ? k.split(".").reduce((acc: any, key) => (acc ? acc[key] : undefined), obj)
+      : obj?.[k];
+    if (v !== undefined && v !== null) return v;
+  }
+  return fallback;
+}
+function toNumber(x: any): number | undefined {
+  const n = Number(String(x).replace("%", ""));
+  return Number.isFinite(n) ? n : undefined;
+}
+function coerceArray(root: any): any[] {
+  if (!root) return [];
+  if (Array.isArray(root)) return root;
+  if (Array.isArray(root?.data)) return root.data;
+  if (Array.isArray(root?.items)) return root.items;
+  if (Array.isArray(root?.results)) return root.results;
+  if (Array.isArray(root?.rows)) return root.rows;
+  return [];
+}
+function mapRow(x: any): Row {
+  const id =
+    x.id ?? x.screening_id ?? x.result_id ?? x._id ?? crypto.randomUUID();
+  const name =
+    first(x, ["user.nama", "user.name"]) ??
+    first(x, ["nama", "name", "patient_name"], "Tanpa Nama");
+  // urutan tanggal yang benar (jangan default ke now)
+  const date =
+    first(x, ["screened_at", "created_at", "date", "submitted_at"]) ?? "";
+  const risk =
+    toNumber(first(x, ["riskPct", "risk_percentage", "risk_percent"])) ??
+    toNumber(first(x, ["percentage", "score", "diabetes_probability"])) ??
+    undefined;
+
+  const userId = first(x, ["userId", "user_id", "user.id"]);
+
+  return { id, name, date, riskPct: risk, userId };
+}
+
+function mapDetail(root: any): ScreeningDetail {
+  const x = root?.data ?? root ?? {};
+  const riskPct =
+    toNumber(first(x, ["riskPct", "risk_percentage", "risk_percent"])) ??
+    toNumber(first(x, ["percentage", "score", "diabetes_probability"]));
+  const riskLabel =
+    first(x, ["riskLabel", "status_risiko", "status"]) ??
+    (typeof riskPct === "number" ? (riskPct >= 60 ? "Risiko Tinggi" : "Risiko Rendah") : "Status Risiko");
+
+  // tekanan darah
+  const sys = first(x, ["sistolik", "systolic", "systolic_bp", "blood_pressure_systolic"]);
+  const dia = first(x, ["diastolik", "diastolic", "diastolic_bp", "blood_pressure_diastolic"]);
+  const tekanan =
+    first(x, ["tekanan_darah"]) ??
+    (sys || dia ? `${sys ?? "-"} / ${dia ?? "-"}` : undefined);
+
+  // gula darah
+  const gula =
+    first(x, ["gula_darah"]) ??
+    (x.blood_glucose_level || x.blood_sugar ? `${x.blood_glucose_level ?? x.blood_sugar} mg/dL` : undefined);
+
+  // klasifikasi HT fallback kalau backend belum kirim
+  const klasHT =
+    first(x, ["klasifikasi_hipertensi", "htn_class"]) ??
+    classifyHypertension(toNumber(sys), toNumber(dia));
+
+  return {
+    id: first(x, ["id", "screening_id", "result_id"]),
+    created_at: first(x, ["created_at", "screened_at"]),
+    updated_at: first(x, ["updated_at"]),
+
+    riskPct,
+    riskLabel,
+
+    nama:
+      first(x, ["user.nama"]) ??
+      first(x, ["nama", "name", "patient_name", "user.name"]),
+    usia: first(x, ["usia", "age"]),
+    jenis_kelamin: first(x, ["jenis_kelamin", "gender"]),
+    gender: first(x, ["gender"]),
+
+    bmi: first(x, ["bmi"]),
+    tekanan_darah: tekanan,
+    sistolik: sys,
+    diastolik: dia,
+
+    riwayat_merokok: first(x, ["riwayat_merokok", "smoking_history", "smoker_status"]),
+    smoker_status: first(x, ["smoker_status"]),
+
+    riwayat_jantung: first(x, ["riwayat_jantung", "heart_disease", "heart_history"]),
+    heart_history: first(x, ["heart_history"]),
+
+    klasifikasi_hipertensi: klasHT,
+    gula_darah: gula,
+    blood_sugar: first(x, ["blood_glucose_level", "blood_sugar"]),
+  };
+}
+
+function classifyHypertension(s?: number, d?: number): string | undefined {
+  if (s == null && d == null) return undefined;
+  if ((s ?? 0) >= 180 || (d ?? 0) >= 120) return "Krisis Hipertensi";
+  if ((s ?? 0) >= 140 || (d ?? 0) >= 90) return "Hipertensi Derajat 2";
+  if ((s ?? 0) >= 130 || (d ?? 0) >= 80) return "Hipertensi Derajat 1";
+  if ((s ?? 0) >= 120 && (d ?? 0) < 80) return "Prahipertensi / Ditinggikan";
+  return "Normal";
+}
+
+/* ====== Endpoint list ====== */
+const LIST_PATH = "/nakes/diabetes-screenings";
+
+/* ============ Modal gabungan (Detail + Riwayat) ============ */
+function DetailModal({
+  open,
+  onClose,
+  detail,
+  history,
+}: {
+  open: boolean;
+  onClose: () => void;
+  detail?: ScreeningDetail | null;
+  history: Row[];
+}) {
+  const [showHistory, setShowHistory] = useState(false);
+  if (!open) return null;
+
+  const d = detail ?? {};
+  const pct = d.riskPct ?? 0;
+  const tone =
+    pct >= 60
+      ? "border-amber-300 bg-amber-50 text-amber-900"
+      : "border-emerald-300 bg-emerald-50 text-emerald-900";
+
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative w-full max-w-5xl mx-4 rounded-2xl bg-white border-2 border-gray-100 shadow-2xl">
+        {/* lock tinggi modal supaya tidak “membengkak”, konten di-scroll */}
+        <div className="max-h-[85vh] overflow-y-auto">
+          {/* header */}
+          <div className="flex items-center justify-between gap-3 px-6 py-4 border-b">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 grid place-items-center">
+                <Activity className="w-5 h-5 text-white" />
+              </div>
+              <p className="font-semibold text-gray-900">Detail Screening</p>
+            </div>
+            <button
+              aria-label="Tutup"
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-gray-100"
+            >
+              <X className="w-4 h-4 text-gray-600" />
+            </button>
+          </div>
+
+          {/* body */}
+          <div className="p-6 space-y-6">
+            {/* status risiko */}
+            <div className={`rounded-xl border ${tone} px-4 py-3`}>
+              <p className="font-semibold">
+                {d.riskLabel ?? "Status Risiko"}{" "}
+                <span className="opacity-70">({Math.round(pct)}%)</span>
+              </p>
+              <p className="text-sm opacity-70">Berdasarkan screening terbaru</p>
+            </div>
+
+            {/* grid data */}
+            <div className="rounded-2xl border-2 border-gray-100 bg-white">
+              <div className="px-5 py-4 border-b">
+                <p className="text-sm font-semibold text-gray-700">
+                  Data Screening Terbaru
+                </p>
+              </div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { label: "Nama Pasien", value: d.nama ?? d.name ?? "-" },
+                  { label: "Usia", value: d.usia ? `${d.usia} tahun` : "-" },
+                  { label: "Jenis Kelamin", value: d.jenis_kelamin ?? d.gender ?? "-" },
+                  { label: "BMI", value: d.bmi ?? "-" },
+                  {
+                    label: "Tekanan Darah",
+                    value:
+                      d.tekanan_darah ??
+                      (d.sistolik || d.diastolik
+                        ? `${d.sistolik ?? "-"} / ${d.diastolik ?? "-"}`
+                        : "-"),
+                  },
+                  { label: "Klasifikasi Hipertensi", value: d.klasifikasi_hipertensi ?? "-" },
+                  { label: "Riwayat Merokok", value: d.riwayat_merokok ?? d.smoker_status ?? "-" },
+                  { label: "Riwayat Jantung", value: d.riwayat_jantung ?? "-" },
+                  { label: "Gula Darah", value: d.gula_darah ?? d.blood_sugar ?? "-" },
+                ].map((it, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-3"
+                  >
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
+                      {it.label}
+                    </p>
+                    <p className="mt-1 font-semibold text-gray-900">
+                      {it.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Riwayat (collapsible) */}
+            <div className="rounded-2xl border-2 border-gray-100 bg-white">
+              <div className="px-5 py-4 border-b flex items-center justify-between">
+                <p className="text-sm font-semibold text-gray-700">
+                  Riwayat Screening
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowHistory((v) => !v)}
+                  className="px-4 py-2 rounded-xl font-semibold
+                             border-2 border-gray-100 text-gray-600 bg-white
+                             transition-all duration-300
+                             hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50
+                             hover:text-emerald-700 hover:shadow-md hover:scale-[1.02]"
+                  aria-expanded={showHistory}
+                  aria-controls="riwayat-panel"
+                >
+                  {showHistory ? "Sembunyikan" : "Tampilkan"}
+                </button>
+              </div>
+
+              {/* wrapper supaya tinggi card TETAP, list-nya yang scroll */}
+              <div
+                id="riwayat-panel"
+                className={`transition-[max-height] duration-200 ease-in-out overflow-hidden ${
+                  showHistory ? "max-h-[45vh]" : "max-h-0"
+                }`}
+              >
+                <div className="p-4 max-h-[45vh] overflow-y-auto">
+                  {history.length === 0 ? (
+                    <p className="text-center text-gray-500 py-10">
+                      Belum ada riwayat.
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-gray-100">
+                      {history.map((r, i) => (
+                        <li
+                          key={`${r.id}-${i}`}
+                          className="flex items-center justify-between py-3"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="w-7 h-7 rounded-lg bg-gray-100 text-gray-700 grid place-items-center font-semibold">
+                              {i + 1}
+                            </span>
+                            <div className="text-sm">
+                              <p className="font-semibold text-gray-900">
+                                {formatIDTime(r.date)}
+                              </p>
+                              <p className="text-xs text-gray-500">{r.name}</p>
+                            </div>
+                          </div>
+                          <RiskChip value={r.riskPct} />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+            {/* end riwayat */}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============ Page ============ */
 export default function LaporanKeseluruhan() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [active, setActive] = useState<TabKey>("dsmq")
+  const [search, setSearch] = useState("");
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // dummy data
-  const data = {
-    dsmq: [
-      { id: 1, name: "test", date: "Sabtu, 6 September 2025, 23:58", score: 85 },
-      { id: 2, name: "testing", date: "Senin, 25 Agustus 2025, 19:30", score: 72 },
-      { id: 3, name: "testing", date: "Selasa, 19 Agustus 2025, 22:55", score: 68 },
-      { id: 4, name: "testing", date: "Minggu, 17 Agustus 2025, 02:23", score: 91 },
-      { id: 5, name: "bagus", date: "Sabtu, 16 Agustus 2025, 11:15", score: 78 },
-    ] as Row[],
-    pretest: [
-      { id: 1, name: "Test", date: "Minggu, 07 September 2025, 00:14", score: 50 },
-      { id: 2, name: "Ahmad", date: "Sabtu, 06 September 2025, 15:30", score: 65 },
-      { id: 3, name: "Budi", date: "Jumat, 05 September 2025, 10:20", score: 72 },
-    ] as Row[],
-    posttest: [
-      { id: 1, name: "Test", date: "Minggu, 07 September 2025, 01:30", score: 85 },
-      { id: 2, name: "Ahmad", date: "Sabtu, 06 September 2025, 16:45", score: 88 },
-    ] as Row[],
+  // modal gabungan
+  const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState<ScreeningDetail | null>(null);
+  const [historyItems, setHistoryItems] = useState<Row[]>([]);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  async function fetchList() {
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      const res = await api.get(LIST_PATH);
+      const arr = coerceArray(res?.data ?? res);
+      const mapped: Row[] = arr.map(mapRow);
+
+      // gabung per user: ambil entri terbaru tiap user
+      const byUser = new Map<string | number, Row>();
+      for (const r of mapped) {
+        const key = r.userId ?? r.name; // fallback ke nama kalau userId kosong
+        const prev = byUser.get(key as any);
+        if (!prev) {
+          byUser.set(key as any, r);
+        } else {
+          const prevTime = prev.date ? Date.parse(prev.date) : 0;
+          const currTime = r.date ? Date.parse(r.date) : 0;
+          if (currTime > prevTime) byUser.set(key as any, r);
+        }
+      }
+      setRows(Array.from(byUser.values()).sort((a, b) => Date.parse(b.date) - Date.parse(a.date)));
+    } catch (e: any) {
+      console.error(e);
+      setErrorMsg(e?.message || "Gagal memuat riwayat screening.");
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const tabs: { key: TabKey; label: string; gradient: string; icon: string }[] = [
-    { key: "dsmq", label: "DSMQ", gradient: "from-emerald-500 to-teal-500", icon: "📊" },
-    { key: "pretest", label: "Pre Test", gradient: "from-blue-500 to-cyan-500", icon: "📝" },
-    { key: "posttest", label: "Post Test", gradient: "from-violet-500 to-fuchsia-500", icon: "✅" },
-  ]
+  useEffect(() => {
+    // load sekali (tanpa auto refresh)
+    fetchList();
+  }, []);
 
-  const q = searchQuery.trim().toLowerCase()
-  const rows = useMemo(() => {
-    const arr = data[active]
-    return q ? arr.filter((r) => r.name.toLowerCase().includes(q)) : arr
-  }, [q, active])
+  async function openDetail(userId?: string | number, fallbackName?: string) {
+    if (!userId && !fallbackName) return;
+    setOpen(true);
+    setDetail(null);
+    setHistoryItems([]);
+    setDetailLoading(true);
+    try {
+      // 1) ambil seluruh riwayat user
+      const { data } = await api.get(`/nakes/users/${userId}/diabetes-screenings`);
+      const items: Row[] = coerceArray(data)
+        .map(mapRow)
+        .sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
+      setHistoryItems(items);
 
-  const totals = {
-    dsmq: data.dsmq.length,
-    pretest: data.pretest.length,
-    posttest: data.posttest.length,
+      // 2) ambil detail screening TERBARU
+      if (items[0]) {
+        const det = await api.get(`/nakes/diabetes-screenings/${items[0].id}`);
+        setDetail(mapDetail(det.data));
+      } else {
+        setDetail({ nama: fallbackName, riskLabel: "Detail tidak ditemukan", riskPct: 0 });
+      }
+    } catch (e) {
+      console.error(e);
+      setDetail({ nama: fallbackName, riskLabel: "Detail tidak ditemukan", riskPct: 0 });
+    } finally {
+      setDetailLoading(false);
+    }
   }
 
-  const avgScore = rows.length > 0 ? Math.round(rows.reduce((sum, r) => sum + r.score, 0) / rows.length) : 0
+  const q = search.trim().toLowerCase();
+  const filtered = useMemo(
+    () => (q ? rows.filter((r) => r.name?.toLowerCase().includes(q)) : rows),
+    [q, rows]
+  );
 
   return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                <FileText className="h-8 w-8 text-white animate-pulse" />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent tracking-tight">
-                Laporan Keseluruhan
-              </h1>
-              <p className="text-base md:text-lg text-gray-600 mt-1 font-medium">Ringkasan hasil screening & tes</p>
-            </div>
+        <header className="flex items-center gap-4">
+          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${greenGrad} flex items-center justify-center shadow-xl`}>
+            <FileText className="h-7 w-7 text-white" />
           </div>
-          <Button className="group relative overflow-hidden rounded-2xl px-6 py-3 bg-gradient-to-r from-gray-900 to-black text-white shadow-2xl hover:shadow-gray-900/50 transition-all duration-500 hover:scale-105">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative flex items-center gap-2">
-              <Download className="h-5 w-5 transform group-hover:translate-y-1 transition-transform duration-300" />
-              <span className="font-bold">Ekspor Data</span>
-            </div>
-          </Button>
+          <div className="flex-1">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Laporan Keseluruhan</h1>
+            <p className="text-gray-600 mt-0.5">Riwayat Screening Pasien</p>
+          </div>
+
+          {/* tombol refresh */}
+          <button
+            onClick={fetchList}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold
+                       border-2 border-gray-100 text-gray-600 bg-white
+                       transition-all duration-300
+                       hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50
+                       hover:text-emerald-700 hover:shadow-md hover:scale-[1.02]"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Refresh
+          </button>
         </header>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 p-6 shadow-xl hover:shadow-2xl hover:shadow-emerald-300/50 transition-all duration-500 hover:scale-105 cursor-pointer">
-            <div className="absolute inset-0 bg-white/10 transform -skew-y-6 group-hover:skew-y-0 transition-transform duration-700"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <BarChart3 className="h-9 w-9 text-white/90" />
-                <span className="text-3xl">📊</span>
-              </div>
-              <p className="text-white/80 text-sm font-bold mb-1">Total DSMQ</p>
-              <p className="text-4xl font-black text-white mb-1">{totals.dsmq}</p>
-              <p className="text-white/70 text-xs">responden terdaftar</p>
-            </div>
+        {errorMsg && (
+          <div className="rounded-xl border-2 border-amber-200 bg-amber-50 text-amber-800 px-4 py-3">
+            {errorMsg}
           </div>
+        )}
 
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-400 to-cyan-500 p-6 shadow-xl hover:shadow-2xl hover:shadow-blue-300/50 transition-all duration-500 hover:scale-105 cursor-pointer">
-            <div className="absolute inset-0 bg-white/10 transform -skew-y-6 group-hover:skew-y-0 transition-transform duration-700"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <FileText className="h-9 w-9 text-white/90" />
-                <span className="text-3xl">📝</span>
-              </div>
-              <p className="text-white/80 text-sm font-bold mb-1">Total Pre Test</p>
-              <p className="text-4xl font-black text-white mb-1">{totals.pretest}</p>
-              <p className="text-white/70 text-xs">peserta mengikuti</p>
-            </div>
-          </div>
-
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-400 to-fuchsia-500 p-6 shadow-xl hover:shadow-2xl hover:shadow-purple-300/50 transition-all duration-500 hover:scale-105 cursor-pointer">
-            <div className="absolute inset-0 bg-white/10 transform -skew-y-6 group-hover:skew-y-0 transition-transform duration-700"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <TrendingUp className="h-9 w-9 text-white/90" />
-                <span className="text-3xl">✅</span>
-              </div>
-              <p className="text-white/80 text-sm font-bold mb-1">Total Post Test</p>
-              <p className="text-4xl font-black text-white mb-1">{totals.posttest}</p>
-              <p className="text-white/70 text-xs">peserta menyelesaikan</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs with enhanced design */}
-        <div className="relative rounded-3xl border-2 border-gray-200 bg-gradient-to-br from-gray-50 to-white shadow-xl p-3">
-          <div className="relative grid grid-cols-3 gap-3">
-            {tabs.map((t) => {
-              const activeTab = active === t.key
-              return (
-                <button
-                  key={t.key}
-                  onClick={() => setActive(t.key)}
-                  className={`group relative flex items-center justify-center gap-2 rounded-2xl px-5 py-4 transition-all duration-500 ${
-                    activeTab
-                      ? "text-white shadow-2xl transform scale-105"
-                      : "text-gray-700 hover:bg-gray-100 hover:scale-105"
-                  }`}
-                >
-                  {activeTab && (
-                    <>
-                      <span className={`absolute inset-0 rounded-2xl -z-10 bg-gradient-to-r ${t.gradient} shadow-2xl`} />
-                      <div className="absolute inset-0 bg-white/20 rounded-2xl -z-10 transform group-hover:scale-110 transition-transform duration-500"></div>
-                    </>
-                  )}
-                  <span className="text-2xl transform group-hover:scale-125 transition-transform duration-300">{t.icon}</span>
-                  <span className="text-sm md:text-base font-black">{t.label}</span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Main Table Card */}
-        <Card className="group relative overflow-hidden rounded-3xl border-2 border-gray-200 shadow-2xl hover:shadow-3xl transition-all duration-700 hover:scale-[1.01] bg-white">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-          <CardContent className="p-0 relative">
+        {/* Table Card */}
+        <Card className="rounded-3xl border-2 border-gray-100 shadow-2xl">
+          <CardContent className="p-0">
             {/* Toolbar */}
-            <div className="p-5 md:p-6 border-b-2 border-gray-200 bg-gradient-to-r from-white to-gray-50 flex flex-col md:flex-row gap-4 md:items-center">
-              <div className="relative flex-1 max-w-xl group/search">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-hover/search:text-blue-500 transition-colors duration-300" />
+            <div className="p-5 md:p-6 border-b-2 border-gray-100 flex flex-col md:flex-row gap-4 md:items-center">
+              {/* Search left */}
+              <div className="relative flex-1 max-w-xl">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={`Cari nama di ${tabs.find(t=>t.key===active)?.label}…`}
-                  className="pl-12 h-12 rounded-xl border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all duration-300 font-medium"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Cari nama…"
+                  className="pl-12 h-12 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                 />
+              </div>
+
+              {/* Total Screening (jumlah user unik yang tampil) */}
+              <div className="md:ml-auto">
+                <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-gray-100 bg-white/80 backdrop-blur shadow-sm">
+                  <span className="inline-flex w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-sm font-medium text-gray-700">Total Screening</span>
+                  <span className="text-sm font-bold text-gray-900">{rows.length}</span>
+                </div>
+                <div className="sm:hidden inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">
+                  <span className="inline-flex w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-semibold text-gray-900">{rows.length}</span>
+                </div>
               </div>
             </div>
 
             {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
-                <thead className="sticky top-0 z-10">
-                  <tr className="bg-gradient-to-r from-gray-100 to-gray-50 backdrop-blur-sm">
-                    {["No", "Nama", "Tanggal", "Skor", "Aksi"].map((h, i) => (
+                <thead>
+                  <tr className="bg-gray-50">
+                    {["No", "Nama", "Tanggal Terbaru", "Risiko", "Aksi"].map((h, i) => (
                       <th
-                        key={i}
-                        className={`text-left text-xs md:text-sm font-black text-gray-800 uppercase tracking-wider py-5 border-b-2 border-gray-200 ${
-                          i === 0 ? "pl-6" : i === 4 ? "pr-6 text-right" : ""
-                        }`}
+                        key={h}
+                        className={[
+                          "text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide py-4 border-b-2 border-gray-100",
+                          i === 0 ? "pl-6" : i === 4 ? "pr-6 text-right" : "",
+                        ].join(" ")}
                       >
                         {h}
                       </th>
@@ -187,41 +522,47 @@ export default function LaporanKeseluruhan() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.length === 0 ? (
+                  {loading ? (
                     <tr>
-                      <td colSpan={5} className="py-20 text-center">
-                        <div className="flex flex-col items-center text-gray-400">
-                          <div className="relative mb-4">
-                            <div className="absolute inset-0 bg-gray-300 rounded-full blur-xl opacity-30"></div>
-                            <FileText className="relative h-16 w-16 text-gray-300" />
-                          </div>
-                          <span className="font-bold text-lg">Tidak ada data ditemukan</span>
-                          <span className="text-sm mt-1">Coba ubah filter pencarian</span>
-                        </div>
+                      <td colSpan={5} className="py-16 text-center text-gray-500">
+                        Memuat…
+                      </td>
+                    </tr>
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-16 text-center text-gray-500">
+                        Tidak ada data.
                       </td>
                     </tr>
                   ) : (
-                    rows.map((r, i) => (
+                    filtered.map((r, i) => (
                       <tr
-                        key={r.id}
-                        className="group/row border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 cursor-pointer"
+                        key={`${r.userId ?? r.id}`}
+                        className="border-b border-gray-50 hover:bg-emerald-50/50 transition-colors"
                       >
-                        <td className="py-5 pl-6 font-bold text-gray-900">
-                          {i + 1}
+                        <td className="pl-6 py-4 font-semibold text-gray-900">{i + 1}</td>
+                        <td className="py-4 font-semibold text-gray-900">{r.name}</td>
+                        <td className="py-4 text-sm text-gray-600">
+                          <span className="inline-flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            {formatIDTime(r.date)}
+                          </span>
                         </td>
-                        <td className="py-5 font-bold text-gray-900 group-hover/row:text-blue-700 transition-colors duration-300">{r.name}</td>
-                        <td className="py-5 text-sm text-gray-600 font-medium">{r.date}</td>
-                        <td className="py-5">
-                          <ScoreChip value={r.score} />
+                        <td className="py-4">
+                          <RiskChip value={r.riskPct} />
                         </td>
-                        <td className="py-5 pr-6">
-                          <div className="flex items-center justify-end gap-2">
-                            <IconButton title="Detail" onClick={() => {}}>
-                              <Eye className="h-4 w-4" />
-                            </IconButton>
-                            <IconButton title="Hapus" tone="danger" onClick={() => {}}>
-                              <Trash2 className="h-4 w-4" />
-                            </IconButton>
+                        <td className="py-4 pr-6">
+                          <div className="flex items-center justify-end">
+                            <button
+                              onClick={() => openDetail(r.userId, r.name)}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold
+                                         border-2 border-gray-100 text-gray-600 bg-white
+                                         transition-all duration-300
+                                         hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50
+                                         hover:text-emerald-700 hover:shadow-md hover:scale-[1.02]"
+                            >
+                              Detail
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -233,55 +574,20 @@ export default function LaporanKeseluruhan() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal gabungan */}
+      <DetailModal open={open} onClose={() => setOpen(false)} detail={detail} history={historyItems} />
     </div>
-  )
+  );
 }
 
-/* ===== Subcomponents ===== */
-
-function ScoreChip({ value }: { value: number }) {
-  const config =
-    value >= 80 
-      ? { gradient: "from-emerald-500 to-teal-600", text: "text-white", shadow: "shadow-emerald-300/50" }
-      : value >= 60 
-      ? { gradient: "from-amber-500 to-orange-600", text: "text-white", shadow: "shadow-amber-300/50" }
-      : { gradient: "from-red-500 to-rose-600", text: "text-white", shadow: "shadow-red-300/50" }
-  
+/* ============ Small UI ============ */
+function RiskChip({ value }: { value?: number }) {
+  const pct = value ?? 0;
+  const theme = pct >= 60 ? "from-amber-500 to-orange-600" : "from-emerald-600 to-teal-600";
   return (
-    <div className="group/chip relative inline-block">
-      <div className={`absolute inset-0 bg-gradient-to-r ${config.gradient} rounded-full blur-md opacity-40 group-hover/chip:opacity-70 transition-opacity duration-300`}></div>
-      <span className={`relative inline-flex items-center px-5 py-2 rounded-full bg-gradient-to-r ${config.gradient} ${config.text} text-sm font-black shadow-lg ${config.shadow} transform group-hover/chip:scale-110 transition-all duration-300`}>
-        {value}
-      </span>
-    </div>
-  )
-}
-
-function IconButton({
-  children,
-  onClick,
-  title,
-  tone = "neutral",
-}: {
-  children: React.ReactNode
-  onClick: () => void
-  title?: string
-  tone?: "neutral" | "danger"
-}) {
-  const config = tone === "danger"
-    ? "group/btn p-2.5 rounded-xl border-2 text-red-600 hover:bg-gradient-to-r hover:from-red-500 hover:to-rose-600 hover:text-white border-red-200 hover:border-red-500 shadow-lg hover:shadow-red-300/50"
-    : "group/btn p-2.5 rounded-xl border-2 text-blue-600 hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-600 hover:text-white border-blue-200 hover:border-blue-500 shadow-lg hover:shadow-blue-300/50"
-  
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={`${config} transition-all duration-300 transform hover:scale-110 hover:rotate-6`}
-    >
-      <div className="transform group-hover/btn:scale-110 transition-transform duration-300">
-        {children}
-      </div>
-    </button>
-  )
+    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-white text-sm font-semibold bg-gradient-to-r ${theme}`}>
+      {Math.round(pct)}%
+    </span>
+  );
 }

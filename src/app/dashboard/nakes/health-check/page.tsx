@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, X, Loader2 } from "lucide-react";
+import { Activity, Search, X, Loader2 } from "lucide-react";
 import ScreeningResultModal, { ScreeningResultUI } from "@/components/nakes/screening-result-modal";
 
 /** ===== Types ===== */
@@ -250,9 +250,6 @@ export default function HealthCheckPage() {
         created_at: new Date().toISOString(),
       });
       setOpenResult(true);
-
-      // opsional: reset form
-      // clearSelection();
     } catch (error: any) {
       console.error("=== Error Submit ===", error);
       alert(error?.message || "Terjadi kesalahan");
@@ -261,36 +258,55 @@ export default function HealthCheckPage() {
     }
   };
 
-  return (
-    <div className="flex-1 overflow-auto bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-sm p-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">Form Screening Diabetes</h1>
+  /* ============================ UI ============================ */
+  const greenGrad = "from-emerald-500 to-teal-500";
+  const Star = () => <span className="ml-1 text-red-500">*</span>;
 
+  return (
+    <div className="min-h-screen bg-white px-6 md:px-10 py-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header seragam */}
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
+            <Activity className="h-6 w-6 text-white" />
+          </div>
+          <div>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+            Form Screening Diabetes
+          </h1>
+          <p className="text-gray-600 mt-0.5">
+            Cari Pasien Lalu Isi Data Screening
+          </p>
+        </div>
+      </div>
+
+        {/* Card utama */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl p-6 md:p-8">
+          {/* Pencarian Pasien */}
           {!selectedPatient ? (
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Cari Pasien</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <label className="block text-sm font-semibold text-gray-800 mb-2">Cari Pasien</label>
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  placeholder="Ketik nama pasien..."
+                  className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all"
+                  placeholder="Ketik nama pasien…"
                 />
               </div>
 
               {searchResults.length > 0 && (
-                <div className="mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 overflow-y-auto">
+                <div className="mt-2 bg-white rounded-2xl border-2 border-gray-100 shadow-xl max-h-64 overflow-y-auto">
                   {searchResults.map((patient) => (
                     <button
                       key={patient.id}
                       onClick={() => selectPatient(patient)}
                       type="button"
-                      className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                      className="w-full text-left px-4 py-3 hover:bg-emerald-50/50 border-b border-gray-100 last:border-b-0 transition-colors"
                     >
-                      <p className="font-medium text-gray-800">{patient.nama}</p>
+                      <p className="font-semibold text-gray-900">{patient.nama}</p>
                       <p className="text-sm text-gray-600">
                         {patient.umur} tahun • {patient.jenis_kelamin}
                       </p>
@@ -307,18 +323,19 @@ export default function HealthCheckPage() {
               )}
             </div>
           ) : (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <div className="mb-6 rounded-2xl border-2 border-blue-200 bg-blue-50 p-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-900 mb-1">Data Pasien Terpilih:</p>
-                  <p className="font-semibold text-lg text-blue-800">{selectedPatient.nama}</p>
-                  <p className="text-sm text-blue-700">Usia: {selectedPatient.umur} tahun</p>
-                  <p className="text-sm text-blue-700">Jenis Kelamin: {selectedPatient.jenis_kelamin}</p>
+                  <p className="text-sm font-medium text-blue-900 mb-1">Data Pasien Terpilih</p>
+                  <p className="font-bold text-lg text-blue-900">{selectedPatient.nama}</p>
+                  <p className="text-sm text-blue-800">Usia: {selectedPatient.umur} tahun</p>
+                  <p className="text-sm text-blue-800">Jenis Kelamin: {selectedPatient.jenis_kelamin}</p>
                 </div>
                 <button
                   onClick={clearSelection}
-                  className="text-blue-600 hover:text-blue-800 p-2 transition-colors"
+                  className="text-blue-700 hover:text-blue-900 p-2 rounded-lg hover:bg-blue-100 transition-colors"
                   type="button"
+                  aria-label="Hapus pilihan pasien"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -326,48 +343,58 @@ export default function HealthCheckPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          {/* FORM — field & logic tidak diubah */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Jenis Kelamin *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  Jenis Kelamin <Star />
+                </label>
                 <input
                   type="text"
                   value={formData.jenis_kelamin}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-green-50 text-gray-700"
+                  className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 bg-emerald-50 text-gray-800"
                   readOnly
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Umur (tahun) *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  Umur (tahun) <Star />
+                </label>
                 <input
                   type="text"
                   value={formData.umur}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-green-50 text-gray-700"
+                  className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 bg-emerald-50 text-gray-800"
                   readOnly
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tekanan Darah Sistol (mmHg) *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  Tekanan Darah Sistol (mmHg) <Star />
+                </label>
                 <input
                   type="number"
                   value={formData.tekanan_sistol}
                   onChange={(e) => handleChange("tekanan_sistol", e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all"
                   placeholder="120"
                   required
                   min={1}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tekanan Darah Diastol (mmHg) *</label>
+                
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  Tekanan Darah Diastol (mmHg) <Star />
+                </label>
                 <input
                   type="number"
                   value={formData.tekanan_diastol}
                   onChange={(e) => handleChange("tekanan_diastol", e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all"
                   placeholder="80"
                   required
                   min={1}
@@ -376,33 +403,37 @@ export default function HealthCheckPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Klasifikasi Hipertensi (Otomatis)</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">Klasifikasi Hipertensi (Otomatis)</label>
               <input
                 type="text"
                 value={formData.klasifikasi_hipertensi}
-                className="w-full px-4 py-2.5 border border-red-300 bg-red-50 text-red-800 font-medium rounded-lg"
+                className="w-full px-4 py-2.5 rounded-xl border-2 border-red-200 bg-red-50 text-red-800 font-semibold"
                 readOnly
                 placeholder="Akan terisi otomatis"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Riwayat Penyakit Jantung *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  Riwayat Penyakit Jantung <Star />
+                </label>
                 <input
                   type="text"
                   value={formData.riwayat_penyakit_jantung}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-green-50 text-gray-700"
+                  className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 bg-emerald-50 text-gray-800"
                   readOnly
                   placeholder="Data dari profil"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Riwayat Merokok *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  Riwayat Merokok <Star />
+                </label>
                 <input
                   type="text"
                   value={formData.riwayat_merokok}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-green-50 text-gray-700"
+                  className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 bg-emerald-50 text-gray-800"
                   readOnly
                   placeholder="Data dari profil"
                 />
@@ -410,44 +441,49 @@ export default function HealthCheckPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">BMI (Body Mass Index) *</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                BMI (Body Mass Index) <Star />
+              </label>
               <input
                 type="text"
                 value={formData.bmi}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-green-50 text-gray-700"
+                className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 bg-emerald-50 text-gray-800"
                 readOnly
                 placeholder="Data dari profil"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Gula Darah Sewaktu (mg/dL) *</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                Gula Darah Sewaktu (mg/dL) <Star />
+              </label>
               <input
                 type="number"
                 value={formData.gula_darah}
                 onChange={(e) => handleChange("gula_darah", e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all"
                 placeholder="170"
                 required
                 min={1}
               />
             </div>
 
-            <div className="flex gap-4 pt-4">
+            <div className="flex flex-col md:flex-row gap-4 pt-2">
               <button
                 type="button"
                 onClick={() => {
                   clearSelection();
                   setSearchTerm("");
                 }}
-                className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 px-6 py-3 rounded-xl font-semibold border-2 border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
               >
                 Reset
               </button>
+
               <button
                 type="submit"
                 disabled={loading || !selectedPatient}
-                className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+                className="flex-1 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -463,7 +499,7 @@ export default function HealthCheckPage() {
         </div>
       </div>
 
-      {/* ===== Modal Hasil (UI popup elegan) ===== */}
+      {/* ===== Modal Hasil (punyamu – tidak diubah) ===== */}
       <ScreeningResultModal
         open={openResult}
         onClose={() => setOpenResult(false)}

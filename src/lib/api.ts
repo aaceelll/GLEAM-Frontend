@@ -1,7 +1,8 @@
-import axios from "axios";
+// src/lib/api.ts
+import axios, { AxiosHeaders } from "axios";
 import type { ApiRegisterRequest } from "@/types";
 
-// Base URL API Laravel (punya /api di belakang)
+// Base URL API Laravel (sudah ada /api di belakang)
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 console.log("[API_BASE_URL]", API_BASE_URL);
@@ -51,16 +52,15 @@ export const api = axios.create({
     "Content-Type": "application/json",
     Accept: "application/json",
   },
-  // pakai Bearer token → tidak perlu cookie kredensial
-  withCredentials: false,
+  withCredentials: false, // pakai Bearer token, cookie nggak perlu
 });
 
-// Selipkan Authorization Bearer ke setiap request
+// Sisipkan Authorization Bearer ke setiap request (FIX Axios v1)
 api.interceptors.request.use((config) => {
   const token = getToken() || getCookieToken();
   if (token) {
-    config.headers = config.headers || {};
-    (config.headers as any).Authorization = `Bearer ${token}`;
+    const headers = (config.headers ??= new AxiosHeaders());
+    (headers as AxiosHeaders).set("Authorization", `Bearer ${token}`);
   }
   return config;
 });
