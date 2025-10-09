@@ -31,7 +31,6 @@ export default function PengaturanPage() {
   const [show, setShow] = useState({ old: false, new: false, confirm: false })
 
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
-
   const { setUser } = useAuth()
 
   useEffect(() => {
@@ -75,12 +74,9 @@ export default function PengaturanPage() {
     } catch (err) {
       const resData = (err as any)?.response?.data
       const errors = (resData?.errors as Record<string, string[] | string> | undefined) ?? undefined
-
       const first = errors ? Object.values(errors)[0] : undefined
       const firstMsg = Array.isArray(first) ? first[0] : first
-
       const text = (firstMsg as string) || resData?.message || "Gagal menyimpan profil."
-
       setMsg({ type: "error", text })
     }
   }
@@ -88,14 +84,8 @@ export default function PengaturanPage() {
   async function handleSavePassword(e: FormEvent) {
     e.preventDefault()
     setMsg(null)
-    if (!oldPass || !newPass || !confirmPass) {
-      setMsg({ type: "error", text: "Semua field password wajib diisi." })
-      return
-    }
-    if (newPass !== confirmPass) {
-      setMsg({ type: "error", text: "Konfirmasi password tidak cocok." })
-      return
-    }
+    if (!oldPass || !newPass || !confirmPass) return setMsg({ type: "error", text: "Semua field password wajib diisi." })
+    if (newPass !== confirmPass) return setMsg({ type: "error", text: "Konfirmasi password tidak cocok." })
 
     try {
       await api.patch("/profile/password", {
@@ -104,37 +94,33 @@ export default function PengaturanPage() {
         new_password_confirmation: confirmPass,
       })
       setMsg({ type: "success", text: "Password berhasil diperbarui." })
-      setOldPass("")
-      setNewPass("")
-      setConfirmPass("")
+      setOldPass(""); setNewPass(""); setConfirmPass("")
       setTimeout(() => setMsg(null), 3000)
     } catch (err) {
       const resData = (err as any)?.response?.data
       const errors = (resData?.errors as Record<string, string[] | string> | undefined) ?? undefined
-
       const first = errors ? Object.values(errors)[0] : undefined
       const firstMsg = Array.isArray(first) ? first[0] : first
-
       const text = (firstMsg as string) || resData?.message || "Gagal memperbarui password."
-
       setMsg({ type: "error", text })
     }
   }
 
   return (
-    <div className="min-h-screen bg-white px-6 md:px-10 py-6">
-      <div className="max-w-5xl mx-auto space-y-8">
-        {/* Header with icon */}
-        <header>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
-              <Settings className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-emerald-800 to-gray-900 bg-clip-text text-transparent">
-                Pengaturan Akun
-              </h1>
-              <p className="text-gray-600 mt-0.5">Kelola profil dan keamanan akun Anda</p>
+    <div className="min-h-screen bg-white p-6">
+      {/* samakan dengan halaman lain */}
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header — style seragam */}
+        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
+                <Settings className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-gray-900">Pengaturan Akun</h1>
+                <p className="text-gray-600 mt-0.5">Kelola profil dan keamanan akun Anda</p>
+              </div>
             </div>
           </div>
         </header>
@@ -142,93 +128,90 @@ export default function PengaturanPage() {
         {/* Notification */}
         {msg && (
           <div
-            className={`rounded-2xl px-5 py-4 flex items-start gap-3 backdrop-blur-sm animate-in slide-in-from-top-2 shadow-lg ${
+            className={`rounded-2xl px-5 py-4 flex items-start gap-3 shadow-lg border-2 ${
               msg.type === "success"
-                ? "bg-emerald-500/10 border-2 border-emerald-200 text-emerald-900"
-                : "bg-red-500/10 border-2 border-red-200 text-red-900"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                : "bg-rose-50 border-rose-200 text-rose-900"
             }`}
           >
             {msg.type === "success" ? (
-              <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" />
+              <CheckCircle2 className="h-6 w-6 flex-shrink-0 mt-0.5" />
             ) : (
-              <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="h-6 w-6 flex-shrink-0 mt-0.5" />
             )}
-            <span className="font-medium">{msg.text}</span>
+            <span className="font-semibold">{msg.text}</span>
           </div>
         )}
 
         {/* Navigation Pills */}
-        <div className="flex gap-3 p-0 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-100 shadow-lg">
-          <button
-            onClick={() => setActiveTab("profile")}
-            className={`flex-1 flex items-center justify-center gap-2 px-6 py-6 rounded-xl font-semibold transition-all duration-200 ${
-              activeTab === "profile"
-                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg scale-105"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            <User className="h-5 w-5" />
-            Profil Saya
-          </button>
-          <button
-            onClick={() => setActiveTab("security")}
-            className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold transition-all duration-200 ${
-              activeTab === "security"
-                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg scale-105"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            <Lock className="h-5 w-5" />
-            Keamanan
-          </button>
+        <div className="flex gap-3 p-1 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-100 shadow-lg">
+          {[
+            { key: "profile", label: "Profil Saya", icon: <User className="h-5 w-5" /> },
+            { key: "security", label: "Keamanan", icon: <Lock className="h-5 w-5" /> },
+          ].map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as "profile" | "security")}
+                className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold transition-all duration-300 
+                  ${
+                    isActive
+                      ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.03]"
+                      : "text-gray-600 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:text-emerald-700 hover:shadow-md"
+                  }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
+
         {/* Profile Tab */}
-        {activeTab === "profile" ? (
-          <Card className="p-8 border-2 border-gray-100 rounded-3xl bg-white shadow-xl">
+        {activeTab === "profile" && (
+          <Card className="p-6 border-2 border-gray-100 rounded-3xl bg-white shadow-xl">
             <div className="space-y-6">
-              <div className="flex items-center gap-3 pb-6 border-b-2 border-gray-100">
+              <div className="flex items-center gap-3 pb-5 border-b-2 border-gray-100">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
                   <User className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">Informasi Profil</h2>
-                  <p className="text-sm text-slate-600">Perbarui data pribadi Anda</p>
+                  <h2 className="text-2xl font-bold text-gray-900">Informasi Profil</h2>
+                  <p className="text-sm text-gray-600">Perbarui data pribadi Anda</p>
                 </div>
               </div>
 
               <form onSubmit={handleSaveProfile} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InputField
                   label="Nama Lengkap"
-                  icon={<User className="h-5 w-5 text-slate-400" />}
+                  icon={<User className="h-5 w-5 text-gray-400" />}
                   required
                   value={profile.nama}
                   onChange={(v) => setProfile((p) => ({ ...p, nama: v }))}
                   placeholder="Masukkan nama lengkap"
                 />
-
                 <InputField
                   label="Alamat Email"
-                  icon={<Mail className="h-5 w-5 text-slate-400" />}
+                  icon={<Mail className="h-5 w-5 text-gray-400" />}
                   required
                   type="email"
                   value={profile.email}
                   onChange={(v) => setProfile((p) => ({ ...p, email: v }))}
                   placeholder="nama@email.com"
                 />
-
                 <InputField
                   label="Username"
-                  icon={<User className="h-5 w-5 text-slate-400" />}
+                  icon={<User className="h-5 w-5 text-gray-400" />}
                   required
                   value={profile.username}
                   onChange={(v) => setProfile((p) => ({ ...p, username: v }))}
                   placeholder="username_anda"
                 />
-
                 <InputField
                   label="Nomor Telepon"
-                  icon={<Phone className="h-5 w-5 text-slate-400" />}
+                  icon={<Phone className="h-5 w-5 text-gray-400" />}
                   value={profile.nomor_telepon}
                   onChange={(v) => setProfile((p) => ({ ...p, nomor_telepon: v }))}
                   placeholder="+62 812 3456 7890"
@@ -246,19 +229,19 @@ export default function PengaturanPage() {
               </form>
             </div>
           </Card>
-        ) : null}
+        )}
 
         {/* Security Tab */}
-        {activeTab === "security" ? (
-          <Card className="p-8 border-2 border-gray-100 rounded-3xl bg-white shadow-xl">
+        {activeTab === "security" && (
+          <Card className="p-6 border-2 border-gray-100 rounded-3xl bg-white shadow-xl">
             <div className="space-y-6">
-              <div className="flex items-center gap-3 pb-6 border-b-2 border-gray-100">
+              <div className="flex items-center gap-3 pb-5 border-b-2 border-gray-100">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
                   <Lock className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">Ubah Password</h2>
-                  <p className="text-sm text-slate-600">Tingkatkan keamanan akun Anda</p>
+                  <h2 className="text-2xl font-bold text-gray-900">Ubah Password</h2>
+                  <p className="text-sm text-gray-600">Tingkatkan keamanan akun Anda</p>
                 </div>
               </div>
 
@@ -272,7 +255,6 @@ export default function PengaturanPage() {
                   onChange={setOldPass}
                   placeholder="Masukkan password lama"
                 />
-
                 <PasswordInput
                   label="Password Baru"
                   required
@@ -282,7 +264,6 @@ export default function PengaturanPage() {
                   onChange={setNewPass}
                   placeholder="Masukkan password baru"
                 />
-
                 <PasswordInput
                   label="Konfirmasi Password Baru"
                   required
@@ -305,11 +286,11 @@ export default function PengaturanPage() {
               </form>
             </div>
           </Card>
-        ) : null}
+        )}
       </div>
     </div>
-  ) // << penutup return
-} // << penutup komponen PengaturanPage
+  )
+}
 
 /* ==== Sub Components ==== */
 function InputField({
@@ -331,7 +312,7 @@ function InputField({
 }) {
   return (
     <div className="space-y-2">
-      <Label className="font-semibold text-slate-900 flex items-center gap-2 text-sm">
+      <Label className="font-semibold text-gray-900 flex items-center gap-2 text-sm">
         {label}
         {required && <span className="text-red-500">*</span>}
       </Label>
@@ -347,7 +328,7 @@ function InputField({
           placeholder={placeholder}
           autoComplete="off"
           spellCheck={false}
-          className="pl-12 py-6 rounded-xl border-2 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all duration-200 bg-white hover:border-slate-300"
+          className="pl-12 py-6 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200 bg-white hover:border-gray-300"
         />
       </div>
     </div>
@@ -373,13 +354,13 @@ function PasswordInput({
 }) {
   return (
     <div className="space-y-2">
-      <Label className="font-semibold text-slate-900 flex items-center gap-2 text-sm">
+      <Label className="font-semibold text-gray-900 flex items-center gap-2 text-sm">
         {label}
         {required && <span className="text-red-500">*</span>}
       </Label>
       <div className="relative group">
         <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none transition-colors group-focus-within:text-emerald-600">
-          <Lock className="h-5 w-5 text-slate-400" />
+          <Lock className="h-5 w-5 text-gray-400" />
         </div>
         <Input
           type={show ? "text" : "password"}
@@ -389,12 +370,12 @@ function PasswordInput({
           placeholder={placeholder}
           autoComplete="off"
           spellCheck={false}
-          className="pl-12 pr-12 py-6 rounded-xl border-2 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all duration-200 bg-white hover:border-slate-300"
+          className="pl-12 pr-12 py-6 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200 bg-white hover:border-gray-300"
         />
         <button
           type="button"
           onClick={onToggle}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition-colors p-1 rounded-lg hover:bg-emerald-50"
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors p-1 rounded-lg hover:bg-emerald-50"
         >
           {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
         </button>

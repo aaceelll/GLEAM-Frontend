@@ -162,7 +162,7 @@ export function PersonalInfoForm({
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 auto-rows-min">
         {/* Nama Lengkap */}
         <div className="space-y-2">
           <Label htmlFor="nama" className="text-emerald-700 font-semibold">
@@ -172,8 +172,8 @@ export function PersonalInfoForm({
             id="nama"
             value={formData.nama}
             onChange={(e) => onChange("nama", e.target.value)}
-            placeholder="Namira Nurfaliani"
-            className="border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500"
+            placeholder="Nama Anda"
+            className="w-full border-emerald-200 focus:border-emerald-500"
             required
           />
         </div>
@@ -187,8 +187,8 @@ export function PersonalInfoForm({
             id="pekerjaan"
             value={formData.pekerjaan}
             onChange={(e) => onChange("pekerjaan", e.target.value)}
-            placeholder="mahasiswa"
-            className="border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500"
+            placeholder="Pekerjaan Anda"
+            className="w-full border-emerald-200 focus:border-emerald-500"
           />
         </div>
 
@@ -202,7 +202,7 @@ export function PersonalInfoForm({
             value={formData.tempat_lahir}
             onChange={(e) => onChange("tempat_lahir", e.target.value)}
             placeholder="semarang"
-            className="border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500"
+            className="w-full border-emerald-200 focus:border-emerald-500"
           />
         </div>
 
@@ -216,7 +216,7 @@ export function PersonalInfoForm({
             type="date"
             value={formData.tanggal_lahir}
             onChange={(e) => onChange("tanggal_lahir", e.target.value)}
-            className="border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500"
+            className="w-full border-emerald-200 focus:border-emerald-500"
           />
         </div>
 
@@ -230,8 +230,8 @@ export function PersonalInfoForm({
             type="number"
             value={formData.umur}
             onChange={(e) => onChange("umur", e.target.value)}
-            placeholder="34"
-            className="border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500 bg-emerald-50"
+            placeholder="Umur Anda"
+            className="w-full border-emerald-200 focus:border-emerald-500"
             readOnly
           />
           <p className="text-xs text-gray-500">
@@ -248,7 +248,7 @@ export function PersonalInfoForm({
             value={formData.jenis_kelamin}
             onValueChange={(value) => onChange("jenis_kelamin", value)}
           >
-            <SelectTrigger className="border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500">
+            <SelectTrigger className="w-full border-emerald-200 focus:border-emerald-500">
               <SelectValue placeholder="Pilih jenis kelamin" />
             </SelectTrigger>
             <SelectContent>
@@ -268,7 +268,7 @@ export function PersonalInfoForm({
             onValueChange={(value) => onChange("pendidikan_terakhir", value)}
             required
           >
-            <SelectTrigger className="border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500">
+            <SelectTrigger className="w-full border-emerald-200 focus:border-emerald-500">
               <SelectValue placeholder="Pilih pendidikan terakhir" />
             </SelectTrigger>
             <SelectContent>
@@ -295,7 +295,7 @@ export function PersonalInfoForm({
             value={formData.riwayat_kesehatan}
             onChange={(e) => onChange("riwayat_kesehatan", e.target.value)}
             placeholder="puskesmas"
-            className="border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500"
+            className="w-full border-emerald-200 focus:border-emerald-500"
           />
         </div>
 
@@ -309,7 +309,7 @@ export function PersonalInfoForm({
             onValueChange={(value) => onChange("riwayat_merokok", value)}
             required
           >
-            <SelectTrigger className="border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500">
+            <SelectTrigger className="w-full border-emerald-200 focus:border-emerald-500">
               <SelectValue placeholder="Pilih riwayat merokok" />
             </SelectTrigger>
             <SelectContent>
@@ -333,7 +333,7 @@ export function PersonalInfoForm({
             value={formData.berat_badan}
             onChange={(e) => onChange("berat_badan", e.target.value)}
             placeholder="50"
-            className="border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500"
+            className="w-full border-emerald-200 focus:border-emerald-500"
             required
           />
         </div>
@@ -350,7 +350,7 @@ export function PersonalInfoForm({
             value={formData.tinggi_badan}
             onChange={(e) => onChange("tinggi_badan", e.target.value)}
             placeholder="155"
-            className="border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500"
+            className="w-full border-emerald-200 focus:border-emerald-500"
             required
           />
         </div>
@@ -364,7 +364,7 @@ export function PersonalInfoForm({
             id="indeks_bmi"
             value={formData.indeks_bmi}
             readOnly
-            className="border-emerald-200 bg-emerald-50 cursor-not-allowed font-semibold text-emerald-700"
+            className="w-full border-emerald-200 focus:border-emerald-500"
           />
           <p className="text-xs text-gray-500">
             * BMI dihitung otomatis berdasarkan berat & tinggi badan
@@ -381,7 +381,7 @@ export function PersonalInfoForm({
             onValueChange={(value) => onChange("riwayat_penyakit_jantung", value)}
             required
           >
-            <SelectTrigger className="border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500">
+            <SelectTrigger className="w-full border-emerald-200 focus:border-emerald-500">
               <SelectValue placeholder="Pilih riwayat penyakit jantung" />
             </SelectTrigger>
             <SelectContent>
@@ -392,7 +392,7 @@ export function PersonalInfoForm({
         </div>
 
         {/* Durasi Diagnosis */}
-        <div className="space-y-2 md:col-span-2">
+        <div className="space-y-2">
           <Label className="text-emerald-700 font-semibold">
             Berapa lama anda telah terdiagnosis Diabetes Melitus atau Hipertensi?
           </Label>
@@ -400,7 +400,7 @@ export function PersonalInfoForm({
             value={formData.durasi_diagnosis}
             onValueChange={(value) => onChange("durasi_diagnosis", value)}
           >
-            <SelectTrigger className="border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500">
+            <SelectTrigger className="w-full border-emerald-200 focus:border-emerald-500">
               <SelectValue placeholder="Pilih durasi" />
             </SelectTrigger>
             <SelectContent>
@@ -421,7 +421,7 @@ export function PersonalInfoForm({
             value={formData.berobat_ke_dokter}
             onValueChange={(value) => onChange("berobat_ke_dokter", value)}
           >
-            <SelectTrigger className="border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500">
+            <SelectTrigger className="w-full border-emerald-200 focus:border-emerald-500">
               <SelectValue placeholder="Pilih jawaban" />
             </SelectTrigger>
             <SelectContent>

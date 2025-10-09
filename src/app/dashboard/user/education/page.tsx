@@ -133,7 +133,7 @@ export default function EducationPage() {
 
   return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-6">
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header (posisi kiri, tidak terlalu kanan) */}
         <header className="space-y-3">
           <div className="flex items-center gap-3">

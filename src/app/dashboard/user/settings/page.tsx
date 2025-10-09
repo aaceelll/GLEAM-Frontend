@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { PersonalInfoForm } from "@/components/forms/personal-info-form";
 import { api } from "@/lib/api";
+import { Settings } from "lucide-react";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -31,32 +32,38 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100">
-        <p className="text-emerald-600">Memuat...</p>
+      <div className="flex h-screen items-center justify-center bg-white">
+        <p className="text-emerald-700">Memuat...</p>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100">
+      <div className="flex h-screen items-center justify-center bg-white">
         <p className="text-red-600">Gagal memuat data pengguna.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-emerald-50 to-teal-100 p-6">
-      <div className="max-w-5xl mx-auto">
-        <div className="bg-white rounded-lg shadow-xl">
-          <div className="border-b border-emerald-100 px-6 lg:px-8 py-6">
-            <h1 className="text-3xl font-bold text-black-700">Pengaturan</h1>
-            <p className="text-gray-600 mt-2">
-              Kelola informasi pribadi dan preferensi akun Anda
-            </p>
+    <div className="min-h-screen bg-white px-6 md:px-10 py-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <header className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 grid place-items-center shadow">
+            <Settings className="w-6 h-6 text-white" />
           </div>
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Pengaturan</h1>
+            <p className="text-gray-600 mt-0.5">Kelola informasi pribadi & preferensi akun Anda</p>
+          </div>
+        </header>
 
-          <div className="p-6 lg:p-8">
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl overflow-hidden">
+          <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
+            <h2 className="text-xl font-bold text-gray-900">Informasi Akun</h2>
+          </div>
+          <div className="px-6 py-6">
             <PersonalInfoForm
               onComplete={handleComplete}
               initialData={user}

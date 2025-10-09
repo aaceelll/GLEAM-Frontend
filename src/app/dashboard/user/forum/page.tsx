@@ -100,8 +100,8 @@ export default function ForumPage() {
   const currentThreads = activeTab === "public" ? publicThreads : privateThreads;
 
   return (
-    <div className="min-h-screen bg-white p-6">
-      <div className="max-w-7xl mx-auto lg:ml-6 space-y-6">
+    <div className="min-h-screen bg-white px-6 md:px-10 py-6">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">

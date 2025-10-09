@@ -76,7 +76,6 @@ export default function UsersPage() {
     load();
   }, []);
 
-  // bersihkan search text saat kembali via history
   useEffect(() => {
     const handler = (e: PageTransitionEvent) => {
       // @ts-ignore
@@ -86,7 +85,6 @@ export default function UsersPage() {
     return () => window.removeEventListener("pageshow", handler as any);
   }, []);
 
-  // search
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredRows(rows);
@@ -122,9 +120,10 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white px-6 md:px-10 py-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
+    // ⬇️ sama persis dengan Materi: p-6 + container spacing 6
+    <div className="min-h-screen bg-white p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header — match Materi (ikon hijau, judul 4xl, subjudul, gap) */}
         <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
@@ -132,18 +131,16 @@ export default function UsersPage() {
                 <Users className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-                  Manajemen Akun dan Peran
-                </h1>
+                <h1 className="text-4xl font-bold text-gray-900">Manajemen Akun dan Peran</h1>
                 <p className="text-gray-600 mt-0.5">Kelola Akun Staff</p>
               </div>
             </div>
           </div>
           <button
             onClick={() => setShowAdd(true)}
-            className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-4 py-2.5 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
+            className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
           >
-            <UserPlus className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
+            <UserPlus className="h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
             Tambah Akun
           </button>
         </header>
@@ -151,16 +148,15 @@ export default function UsersPage() {
         {/* Table card */}
         <section>
           <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl overflow-hidden">
-            <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50">
+            {/* header card — match Materi: emerald→teal */}
+            <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <span className="w-1.5 h-6 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></span>
+                    <span className="w-1.5 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
                     Daftar Akun
                   </h2>
-                  <p className="text-sm text-gray-600 mt-1 ml-4">
-                    Kelola Akun Pengguna GLEAM
-                  </p>
+                  <p className="text-sm text-gray-600 mt-1 ml-4">Kelola Akun Pengguna GLEAM</p>
                 </div>
               </div>
             </div>
@@ -190,30 +186,18 @@ export default function UsersPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
-                      <th className="text-left p-4 text-sm font-semibold text-gray-700">
-                        Nama
-                      </th>
-                      <th className="text-left p-4 text-sm font-semibold text-gray-700">
-                        Username
-                      </th>
-                      <th className="text-left p-4 text-sm font-semibold text-gray-700">
-                        Email
-                      </th>
-                      <th className="text-left p-4 text-sm font-semibold text-gray-700">
-                        Nomor Telepon
-                      </th>
-                      <th className="text-left p-4 text-sm font-semibold text-gray-700">
-                        Role
-                      </th>
-                      <th className="text-center p-4 text-sm font-semibold text-gray-700">
-                        Aksi
-                      </th>
+                      <th className="text-left p-4 text-sm font-semibold text-gray-700">Nama</th>
+                      <th className="text-left p-4 text-sm font-semibold text-gray-700">Username</th>
+                      <th className="text-left p-4 text-sm font-semibold text-gray-700">Email</th>
+                      <th className="text-left p-4 text-sm font-semibold text-gray-700">Nomor Telepon</th>
+                      <th className="text-left p-4 text-sm font-semibold text-gray-700">Role</th>
+                      <th className="text-center p-4 text-sm font-semibold text-gray-700">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td className="p-8 text-center text-gray-500" colSpan={6}>
+                        <td className="p-8 text-center text-gray-5 00" colSpan={6}>
                           <div className="flex flex-col items-center justify-center gap-3">
                             <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
                             <p className="text-sm font-medium">Memuat data...</p>
@@ -228,21 +212,15 @@ export default function UsersPage() {
                               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
                                 <Search className="h-8 w-8 text-gray-400" />
                               </div>
-                              <p className="text-gray-700 font-bold">
-                                Tidak ada hasil pencarian
-                              </p>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Coba kata kunci lain
-                              </p>
+                              <p className="text-gray-700 font-bold">Tidak ada hasil pencarian</p>
+                              <p className="text-sm text-gray-500 mt-1">Coba kata kunci lain</p>
                             </div>
                           ) : (
                             <div className="py-8">
                               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
                                 <Users className="h-8 w-8 text-gray-400" />
                               </div>
-                              <p className="text-gray-700 font-bold">
-                                Belum ada data user
-                              </p>
+                              <p className="text-gray-700 font-bold">Belum ada data user</p>
                               <p className="text-sm text-gray-500 mt-1">
                                 Klik tombol &quot;Tambah Akun&quot; untuk memulai
                               </p>
@@ -368,42 +346,31 @@ export default function UsersPage() {
       </div>
 
       {/* Modals */}
-      {showAdd && (
-        <AddUserModal onCreated={load} onClose={() => setShowAdd(false)} />
-      )}
+      {showAdd && <AddUserModal onCreated={load} onClose={() => setShowAdd(false)} />}
       {editUser && (
-        <EditUserModal
-          user={editUser}
-          onUpdated={load}
-          onClose={() => setEditUser(null)}
-        />
+        <EditUserModal user={editUser} onUpdated={load} onClose={() => setEditUser(null)} />
       )}
 
-      {/* Confirm Delete — style sama seperti halaman lain (ada garis pemisah) */}
+      {/* Confirm Delete */}
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent className="rounded-3xl p-0 overflow-hidden">
-          {/* Header */}
           <AlertDialogHeader className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-red-100 text-red-600 grid place-items-center">
                 <Trash2 className="w-5 h-5" />
               </div>
-              <AlertDialogTitle className="text-lg font-bold">
-                Hapus Akun?
-              </AlertDialogTitle>
+              <AlertDialogTitle className="text-lg font-bold">Hapus Akun?</AlertDialogTitle>
             </div>
           </AlertDialogHeader>
 
-          {/* Body */}
           <div className="px-6 py-4 border-b border-gray-100">
             <AlertDialogDescription className="text-gray-600">
               Apakah Anda yakin ingin menghapus akun{" "}
-              <b className="text-gray-900">“{toDelete?.nama}”</b>? Tindakan ini
-              tidak dapat dibatalkan.
+              <b className="text-gray-900">“{toDelete?.nama}”</b>? Tindakan ini tidak dapat
+              dibatalkan.
             </AlertDialogDescription>
           </div>
 
-          {/* Footer */}
           <AlertDialogFooter className="px-6 py-4">
             <AlertDialogCancel className="rounded-xl">Batal</AlertDialogCancel>
             <AlertDialogAction

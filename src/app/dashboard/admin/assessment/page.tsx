@@ -412,24 +412,32 @@ export default function AssessmentPage() {
 
   /* ------------------------ UI ------------------------ */
   return (
-    <div className="min-h-screen bg-white px-6 md:px-10 py-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <header className="flex items-start justify-between gap-4">
-          <HeaderBar
-            icon={<ListChecks className="h-6 w-6 text-white" />}
-            title="Assessment Manager"
-            subtitle="Kelola bank soal & kuisioner skoring di satu halaman"
-          />
-          <button
-            className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-4 py-2.5 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
-            onClick={() => setOpenAddBank(true)}
-            aria-label="Tambah Bank Soal"
-          >
-            <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300" />
-            Tambah Bank Soal
-          </button>
-        </header>
+  <div className="min-h-screen bg-white p-6">
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
+              <ListChecks className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900">Assessment Manager</h1>
+              <p className="text-gray-600 mt-0.5">
+                Kelola bank soal & kuisioner skoring di satu halaman
+              </p>
+            </div>
+          </div>
+        </div>
+        <button
+          className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
+          onClick={() => setOpenAddBank(true)}
+        >
+          <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
+          Tambah Bank Soal
+        </button>
+      </header>
+      
 
         {/* Flash message */}
         {msg && (

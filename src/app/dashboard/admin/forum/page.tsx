@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
 import { MessageSquare, Search, Pin, Lock, Trash2, Users, Calendar, Shield, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { api } from "@/lib/api"
@@ -76,7 +77,9 @@ export default function AdminForumPage() {
   const handlePinThread = async (threadId: number) => {
     try {
       await api.post(`/admin/forum/threads/${threadId}/pin`)
-      alert("Status pin berhasil diubah")
+      toast.success("Status pin berhasil diubah", {
+        description: "Thread berhasil diperbarui di daftar forum.",
+      })
       loadThreads()
     } catch (error: any) {
       alert(error.response?.data?.message || "Gagal mengubah status pin")
@@ -86,7 +89,9 @@ export default function AdminForumPage() {
   const handleLockThread = async (threadId: number) => {
     try {
       await api.post(`/admin/forum/threads/${threadId}/lock`)
-      alert("Status lock berhasil diubah")
+      toast.success("Status lock berhasil diubah", {
+        description: "Thread berhasil dikunci atau dibuka.",
+      })
       loadThreads()
     } catch (error: any) {
       alert(error.response?.data?.message || "Gagal mengubah status lock")
@@ -96,7 +101,9 @@ export default function AdminForumPage() {
   const handleDeleteThread = async (threadId: number) => {
     try {
       await api.delete(`/admin/forum/threads/${threadId}/force`)
-      alert("Thread berhasil dihapus")
+      toast.success("Thread berhasil dihapus", {
+        description: "Diskusi sudah dihapus secara permanen.",
+      })
       loadThreads()
       setConfirmDelete(null)
     } catch (error: any) {
@@ -119,6 +126,11 @@ export default function AdminForumPage() {
   }
 
   const greenGrad = "from-emerald-500 to-teal-500"
+  const hoverCard =
+  "group relative overflow-hidden rounded-2xl border-2 border-emerald-100 bg-white " +
+  "transition-all duration-500 hover:border-emerald-400 " +
+  "hover:shadow-[0_10px_40px_rgba(16,185,129,0.15)] hover:-translate-y-1 cursor-pointer";
+
 
   return (
     <div className="min-h-screen bg-white p-6">
@@ -151,36 +163,76 @@ export default function AdminForumPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-2xl hover:scale-105 hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-teal-500 group transition-all duration-300">
-            <div className="flex items-center gap-3">
-              <MessageSquare className="w-10 h-10 text-gray-700 group-hover:text-white transition-colors" />
-              <div>
-                <p className="text-3xl font-bold text-gray-900 group-hover:text-white transition-colors">{threads.length}</p>
-                <p className="text-gray-600 text-sm group-hover:text-emerald-100 transition-colors">Total Diskusi</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Total Diskusi */}
+          <Card className={hoverCard}>
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Total Diskusi</h3>
+                <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
+                  <MessageSquare className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-3 mb-3">
+                <div className="text-5xl font-bold text-gray-900">{threads.length}</div>
+              </div>
+              <div className="inline-flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-200">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-emerald-700">
+                  {loading ? "Memuat…" : "Terdata saat ini"}
+                </span>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-2xl hover:scale-105 hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-teal-500 group transition-all duration-300">
-            <div className="flex items-center gap-3">
-              <Pin className="w-10 h-10 text-gray-700 group-hover:text-white transition-colors" />
-              <div>
-                <p className="text-3xl font-bold text-gray-900 group-hover:text-white transition-colors">{threads.filter((t) => t.is_pinned).length}</p>
-                <p className="text-gray-600 text-sm group-hover:text-emerald-100 transition-colors">Dipinned</p>
+          {/* Dipinned */}
+          <Card className={hoverCard}>
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Dipin</h3>
+                <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
+                  <Pin className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-3 mb-3">
+                <div className="text-5xl font-bold text-gray-900">
+                  {threads.filter((t) => t.is_pinned).length}
+                </div>
+              </div>
+              <div className="inline-flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-200">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-emerald-700">
+                  {loading ? "Memuat…" : "Aktif diprioritaskan"}
+                </span>
               </div>
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-2xl hover:scale-105 hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-teal-500 group transition-all duration-300">
-            <div className="flex items-center gap-3">
-              <Lock className="w-10 h-10 text-gray-700 group-hover:text-white transition-colors" />
-              <div>
-                <p className="text-3xl font-bold text-gray-900 group-hover:text-white transition-colors">{threads.filter((t) => t.is_locked).length}</p>
-                <p className="text-gray-600 text-sm group-hover:text-emerald-100 transition-colors">Dikunci</p>
+          {/* Dikunci */}
+          <Card className={hoverCard}>
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Dikunci</h3>
+                <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
+                  <Lock className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-3 mb-3">
+                <div className="text-5xl font-bold text-gray-900">
+                  {threads.filter((t) => t.is_locked).length}
+                </div>
+              </div>
+              <div className="inline-flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-200">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-emerald-700">
+                  {loading ? "Memuat…" : "Tidak menerima balasan"}
+                </span>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Main Content Card */}
@@ -320,7 +372,7 @@ export default function AdminForumPage() {
                             className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow-md hover:scale-105 ${
                               thread.is_locked
                                 ? "bg-red-100 text-red-700 border-2 border-red-300"
-                                : "bg-gray-100 text-gray-700 border-2 border-gray-200 hover:bg-red-50 hover:border-red-300"
+                                : "bg-gray-100 text-gray-700 border-2 border-gray-200 hover:bg-blue-50 hover:border-blue-300"
                             }`}
                           >
                             <Lock className="w-4 h-4 inline mr-1" />
