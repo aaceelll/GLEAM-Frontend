@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { api } from "@/lib/api"
+import 'leaflet/dist/leaflet.css'
 
 interface PersonalInfoFormProps {
   onComplete: () => void

@@ -265,22 +265,21 @@ export function UserRegistrationForm() {
             </div>
 
             {/* Jenis Kelamin */}
-            <div className="space-y-2">
-              <RequiredLabel>Jenis Kelamin</RequiredLabel>
-              <Select
-                value={form.jenis_kelamin}
-                onValueChange={(value) => onChange("jenis_kelamin", value)}
-              >
-                <SelectTrigger className="h-11 w-full rounded-xl border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500">
-                  <SelectValue placeholder="Pilih jenis kelamin" />
-                </SelectTrigger>
-                <SelectContent>
-  <SelectItem value="Laki-laki">Laki-laki</SelectItem>
-  <SelectItem value="Perempuan">Perempuan</SelectItem>
-</SelectContent>
-
-              </Select>
-            </div>
+<div className="space-y-2">
+  <RequiredLabel>Jenis Kelamin</RequiredLabel>
+  <Select
+    value={form.jenis_kelamin}
+    onValueChange={(value) => onChange("jenis_kelamin", value)}
+  >
+    <SelectTrigger className="h-11 rounded-xl border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500">
+      <SelectValue placeholder="Pilih jenis kelamin" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="Laki-laki">Laki-laki</SelectItem>
+      <SelectItem value="Perempuan">Perempuan</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
 
             {/* Alamat */}
             <div className="space-y-2">

@@ -3,22 +3,31 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { Settings, User, Lock, Eye, EyeOff, Save, CheckCircle2, AlertCircle, Mail, Phone } from "lucide-react";
+import { Settings, User, Lock, Eye, EyeOff, Save, CheckCircle2, AlertCircle, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { PersonalInfoForm } from "@/components/forms/personal-info-form";
+import { LocationSelector } from "@/components/forms/location-selector";
 
 export default function SettingsPage() {
   const router = useRouter();
   
   // Tab state
-  const [activeTab, setActiveTab] = React.useState<"profile" | "security">("profile");
+  const [activeTab, setActiveTab] = React.useState<"profile" | "location" | "security">("profile");
   
   // User data
-  const [user, setUser] = React.useState(null);
+  const [user, setUser] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
+  
+  // Location states
+  const [kelurahan, setKelurahan] = React.useState("");
+  const [rw, setRw] = React.useState("");
+  const [latitude, setLatitude] = React.useState("");
+  const [longitude, setLongitude] = React.useState("");
+  const [address, setAddress] = React.useState("");
+  const [savingLocation, setSavingLocation] = React.useState(false);
   
   // Password states
   const [oldPass, setOldPass] = React.useState("");
@@ -32,7 +41,15 @@ export default function SettingsPage() {
   const loadUserData = async () => {
     try {
       const response = await api.get("/profile");
-      setUser(response.data.data);
+      const userData = response.data.data;
+      setUser(userData);
+      
+      // Load location data
+      setKelurahan(userData.kelurahan || "");
+      setRw(userData.rw || "");
+      setLatitude(userData.latitude || "");
+      setLongitude(userData.longitude || "");
+      setAddress(userData.address || "");
     } catch (error) {
       console.error("Failed to load user data:", error);
       setMsg({ type: "error", text: "Gagal memuat data pengguna." });
@@ -49,6 +66,69 @@ export default function SettingsPage() {
     loadUserData();
     setMsg({ type: "success", text: "Profil berhasil diperbarui." });
     setTimeout(() => setMsg(null), 3000);
+  };
+
+  const handleLocationChange = (
+    field: "kelurahan" | "rw" | "latitude" | "longitude" | "address",
+    value: string
+  ) => {
+    if (field === "kelurahan") {
+      setKelurahan(value);
+      setRw(""); // Reset RW saat kelurahan berubah
+    } else if (field === "rw") setRw(value);
+    else if (field === "latitude") setLatitude(value);
+    else if (field === "longitude") setLongitude(value);
+    else if (field === "address") setAddress(value);
+  };
+
+  const handleSaveLocation = async () => {
+    if (!kelurahan || !rw) {
+      setMsg({ type: "error", text: "Mohon lengkapi Kelurahan dan RW" });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    setSavingLocation(true);
+    setMsg(null);
+
+    try {
+      const response = await api.put("/profile", {
+        kelurahan,
+        rw,
+        latitude: latitude || null,
+        longitude: longitude || null,
+        address: address || null,
+      });
+
+      setMsg({ type: "success", text: "✓ Lokasi berhasil diperbarui!" });
+      setTimeout(() => setMsg(null), 3000);
+      
+      // Update localStorage
+      const currentUser = JSON.parse(localStorage.getItem("user_data") || "{}");
+      const updatedUser = { 
+        ...currentUser, 
+        kelurahan, 
+        rw, 
+        latitude, 
+        longitude, 
+        address 
+      };
+      localStorage.setItem("user_data", JSON.stringify(updatedUser));
+      setUser(updatedUser);
+    } catch (error: any) {
+      const resData = error?.response?.data;
+      
+      if (resData?.errors) {
+        const errors = resData.errors;
+        const errorMessages = Object.values(errors).flat().join(", ");
+        setMsg({ type: "error", text: errorMessages });
+      } else {
+        const text = resData?.message || "Gagal menyimpan lokasi";
+        setMsg({ type: "error", text });
+      }
+    } finally {
+      setSavingLocation(false);
+    }
   };
 
   const handleSavePassword = async (e: React.FormEvent) => {
@@ -90,7 +170,10 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-white">
-        <p className="text-emerald-700">Memuat...</p>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-emerald-700 font-medium">Memuat data...</p>
+        </div>
       </div>
     );
   }
@@ -98,7 +181,10 @@ export default function SettingsPage() {
   if (!user) {
     return (
       <div className="flex h-screen items-center justify-center bg-white">
-        <p className="text-red-600">Gagal memuat data pengguna.</p>
+        <div className="text-center">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600 font-semibold">Gagal memuat data pengguna.</p>
+        </div>
       </div>
     );
   }
@@ -142,7 +228,7 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Navigation Pills - Sama persis kayak admin */}
+        {/* Navigation Pills */}
         <div className="flex gap-3 p-0 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-100 shadow-lg">
           <button
             onClick={() => setActiveTab("profile")}
@@ -154,6 +240,17 @@ export default function SettingsPage() {
           >
             <User className="h-5 w-5" />
             Profil Saya
+          </button>
+          <button
+            onClick={() => setActiveTab("location")}
+            className={`flex-1 flex items-center justify-center gap-2 px-6 py-6 rounded-xl font-semibold transition-all duration-200 ${
+              activeTab === "location"
+                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg scale-105"
+                : "text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            <MapPin className="h-5 w-5" />
+            Lokasi
           </button>
           <button
             onClick={() => setActiveTab("security")}
@@ -187,6 +284,58 @@ export default function SettingsPage() {
                 initialData={user}
                 isEditMode={true}
               />
+            </div>
+          </Card>
+        )}
+
+        {/* Location Tab */}
+        {activeTab === "location" && (
+          <Card className="p-8 border-2 border-gray-100 rounded-3xl bg-white shadow-xl">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 pb-6 border-b-2 border-gray-100">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+                  <MapPin className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">Lokasi Tempat Tinggal</h2>
+                  <p className="text-sm text-slate-600">Perbarui kelurahan dan RW tempat tinggal Anda</p>
+                </div>
+              </div>
+
+              <LocationSelector
+                kelurahan={kelurahan}
+                rw={rw}
+                latitude={latitude}
+                longitude={longitude}
+                address={address}
+                onChange={handleLocationChange}
+                required={false}
+                showHeader={false}
+                showMap={true}
+              />
+
+              {/* Info Box */}
+              <div className="bg-emerald-50 border-2 border-emerald-200 rounded-xl p-4">
+                <p className="text-sm text-emerald-800 flex items-start gap-2">
+                  <span className="text-lg">ℹ️</span>
+                  <span>
+                    Data lokasi digunakan untuk monitoring kesehatan wilayah dan memudahkan 
+                    koordinasi dengan tenaga kesehatan di kelurahan Anda.
+                  </span>
+                </p>
+              </div>
+
+              {/* Button Simpan Lokasi */}
+              <div className="flex justify-end pt-4 border-t-2 border-gray-100">
+                <Button
+                  onClick={handleSaveLocation}
+                  disabled={savingLocation || !kelurahan || !rw}
+                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Save className="h-5 w-5 mr-2" />
+                  {savingLocation ? "Menyimpan..." : "Simpan Lokasi"}
+                </Button>
+              </div>
             </div>
           </Card>
         )}
