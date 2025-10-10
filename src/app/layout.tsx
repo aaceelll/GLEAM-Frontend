@@ -2,6 +2,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "./providers";
+import "leaflet/dist/leaflet.css";  // 👈 TAMBAHKAN INI
+import "leaflet.markercluster/dist/MarkerCluster.css";  // 👈 TAMBAHKAN INI
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";  // 👈
 
 // ⬇️ pastikan file ini ada: src/components/ui/toaster.tsx (shadcn toast)
 import { Toaster } from "@/components/ui/toaster";

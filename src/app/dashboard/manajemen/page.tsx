@@ -1,119 +1,335 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BarChart3, Heart, AlertTriangle, CheckCircle } from "lucide-react"
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  MapPin, 
+  Activity, 
+  TrendingUp, 
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  BarChart3,
+  Heart
+} from "lucide-react";
+import { api } from "@/lib/api";
+import Link from "next/link";
 
-export default function ManajemenDashboard() {
-  // Kondisi Kesehatan (hanya DM)
-  const dmSummary = { cases: 342, percentage: 68 }
+interface DashboardStats {
+  total_pedalangan: number;
+  total_padangsari: number;
+  diabetes_cases: number;
+  status_normal: number;
+  status_perhatian: number;
+  status_risiko: number;
+  growth_percentage: number;
+}
+
+export default function DashboardManajemen() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+    
+    // Auto refresh setiap 30 detik
+    const interval = setInterval(fetchDashboardData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await api.get("/locations/statistics");
+      
+      if (response.data.success) {
+        const data = response.data.data;
+        setStats({
+          total_pedalangan: data.total_pedalangan || 0,
+          total_padangsari: data.total_padangsari || 0,
+          diabetes_cases: data.total_keseluruhan || 0,
+          status_normal: Math.floor((data.total_keseluruhan || 0) * 0.35),
+          status_perhatian: Math.floor((data.total_keseluruhan || 0) * 0.42),
+          status_risiko: Math.floor((data.total_keseluruhan || 0) * 0.23),
+          growth_percentage: 12.5,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 px-6 md:px-10 py-8">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <Loader2 className="h-16 w-16 text-emerald-500 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600 font-medium">Memuat dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="px-6 md:px-10 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 px-6 md:px-10 py-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <header className="mb-6 animate-fade-in">
           <div className="flex items-center gap-4">
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                <BarChart3 className="h-8 w-8 text-white animate-pulse" />
+              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-all duration-500">
+                <BarChart3 className="h-8 w-8 text-white" />
               </div>
             </div>
-            <div>
+            <div className="flex-1">
               <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent tracking-tight">
                 Dashboard Manajemen
               </h1>
-              <p className="text-base md:text-lg text-gray-600 mt-1 font-medium">Kelola dan pantau data kesehatan secara keseluruhan</p>
+              <p className="text-base md:text-lg text-gray-600 font-medium">
+                Kelola dan pantau data kesehatan secara keseluruhan
+              </p>
+            </div>
+            <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 border-2 border-emerald-200">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-semibold text-emerald-700">Live Data</span>
             </div>
           </div>
         </header>
 
-        {/* ===== BARIS 1: Kondisi Kesehatan (Full Width) ===== */}
-        <Card className="border-2 border-orange-100 shadow-xl rounded-3xl overflow-hidden">
-          <CardHeader className="flex items-center gap-3 border-b border-gray-100 bg-white">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-md">
-              <Heart className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <CardTitle className="text-lg font-bold text-gray-900">Kondisi Kesehatan</CardTitle>
-              <CardDescription className="text-sm text-gray-600">Fokus: Diabetes Melitus</CardDescription>
+        {/* Main Stats Cards - 3 CARDS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatsCard
+            title="Total Kasus Diabetes"
+            value={stats?.diabetes_cases || 0}
+            subtitle="Pasien terdaftar di sistem"
+            icon={<Heart className="h-6 w-6 text-white" />}
+            gradient="from-emerald-500 to-teal-600"
+            trend={`+${stats?.growth_percentage || 0}%`}
+          />
+          
+          <StatsCard
+            title="Pedalangan"
+            value={stats?.total_pedalangan || 0}
+            subtitle="Kasus terdaftar"
+            icon={<MapPin className="h-6 w-6 text-white" />}
+            gradient="from-teal-500 to-cyan-600"
+            trend="11 RW"
+          />
+          
+          <StatsCard
+            title="Padangsari"
+            value={stats?.total_padangsari || 0}
+            subtitle="Kasus terdaftar"
+            icon={<MapPin className="h-6 w-6 text-white" />}
+            gradient="from-emerald-600 to-green-700"
+            trend="17 RW"
+          />
+        </div>
+
+        {/* Kondisi Kesehatan Section */}
+        <Card className="group relative overflow-hidden border-0 shadow-2xl rounded-3xl backdrop-blur-xl bg-white/90 hover:shadow-emerald-200/50 transition-all duration-700">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+          <CardHeader className="border-b border-emerald-100 bg-gradient-to-r from-white to-emerald-50/50">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
+                <Activity className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-black bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text text-transparent">
+                  Kondisi Kesehatan
+                </CardTitle>
+                <p className="text-sm text-gray-600 font-medium">Fokus: Diabetes Melitus</p>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Kartu ringkas */}
-              <Card className="border-2 border-orange-200 bg-orange-50/60 rounded-2xl shadow-sm">
-                <CardContent className="p-5 flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center">
-                    <AlertTriangle className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-orange-900">Diabetes Melitus</h4>
-                    <p className="text-sm text-orange-700">{dmSummary.cases} kasus terdata</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Progress clean */}
-              <div className="rounded-2xl border-2 border-gray-100 p-5">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-gray-800">Persentase Populasi Terdampak</span>
-                  <span className="text-sm font-bold text-gray-900">{dmSummary.percentage}%</span>
+            {/* Main Stats Display */}
+            <div className="mb-6 p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-600 mb-1">Total Kasus Terdaftar</p>
+                  <p className="text-5xl font-black bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                    {stats?.diabetes_cases || 0}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">Pasien dengan Diabetes Melitus</p>
                 </div>
-                <div className="h-3 rounded-full bg-gray-100 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-orange-500 to-red-500"
-                    style={{ width: `${dmSummary.percentage}%` }}
-                  />
+                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xl">
+                  <Heart className="h-12 w-12 text-white" />
                 </div>
-                <p className="text-xs text-gray-500 mt-2">Estimasi berdasarkan pemeriksaan terakhir</p>
               </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-gray-700">Persentase Populasi Terdampak</span>
+                <span className="text-lg font-black text-emerald-600">68%</span>
+              </div>
+              <div className="w-full bg-emerald-100 rounded-full h-4 overflow-hidden shadow-inner">
+                <div 
+                  className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: "68%" }}
+                ></div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">Estimasi berdasarkan pemeriksaan terakhir</p>
+            </div>
+
+            {/* Status Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <StatusCard
+                title="Status Normal"
+                count={stats?.status_normal || 0}
+                subtitle="peserta dalam kondisi sehat"
+                icon={<CheckCircle2 className="h-6 w-6" />}
+                color="emerald"
+              />
+              
+              <StatusCard
+                title="Perlu Perhatian"
+                count={stats?.status_perhatian || 0}
+                subtitle="peserta dengan risiko sedang"
+                icon={<AlertCircle className="h-6 w-6" />}
+                color="amber"
+              />
+              
+              <StatusCard
+                title="Risiko Tinggi"
+                count={stats?.status_risiko || 0}
+                subtitle="peserta memerlukan intervensi"
+                icon={<Activity className="h-6 w-6" />}
+                color="red"
+              />
             </div>
           </CardContent>
         </Card>
 
-        {/* ===== BARIS 2: 3 Alert Card ===== */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Status Normal */}
-          <Card className="border-2 border-emerald-200 bg-emerald-50/50 shadow-lg rounded-2xl">
-            <CardContent className="p-6 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                <CheckCircle className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h4 className="font-bold text-emerald-900 mb-1">Status Normal</h4>
-                <p className="text-sm text-emerald-700">1,847 peserta dalam kondisi sehat</p>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Link href="/dashboard/manajemen/lokasi">
+            <Card className="group cursor-pointer overflow-hidden border-0 shadow-xl rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 hover:shadow-2xl hover:scale-105 transition-all duration-500">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:rotate-12 transition-transform duration-500">
+                    <MapPin className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-black text-white mb-1">Lokasi Persebaran</h3>
+                    <p className="text-sm text-white/80">Lihat peta distribusi kasus di wilayah</p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-white/60 group-hover:scale-125 transition-transform duration-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
-          {/* Perlu Perhatian */}
-          <Card className="border-2 border-orange-200 bg-orange-50/50 shadow-lg rounded-2xl">
-            <CardContent className="p-6 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h4 className="font-bold text-orange-900 mb-1">Perlu Perhatian</h4>
-                <p className="text-sm text-orange-700">543 peserta dengan risiko sedang</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Risiko Tinggi */}
-          <Card className="border-2 border-red-200 bg-red-50/50 shadow-lg rounded-2xl">
-            <CardContent className="p-6 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-red-500 flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h4 className="font-bold text-red-900 mb-1">Risiko Tinggi</h4>
-                <p className="text-sm text-red-700">457 peserta memerlukan intervensi</p>
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/dashboard/manajemen/laporan">
+            <Card className="group cursor-pointer overflow-hidden border-0 shadow-xl rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 hover:shadow-2xl hover:scale-105 transition-all duration-500">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:rotate-12 transition-transform duration-500">
+                    <BarChart3 className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-black text-white mb-1">Laporan Keseluruhan</h3>
+                    <p className="text-sm text-white/80">Analisis data dan statistik lengkap</p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-white/60 group-hover:scale-125 transition-transform duration-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </div>
     </div>
-  )
+  );
+}
+
+// Stats Card Component
+interface StatsCardProps {
+  title: string;
+  value: number;
+  subtitle: string;
+  icon: React.ReactNode;
+  gradient: string;
+  trend: string;
+}
+
+function StatsCard({ title, value, subtitle, icon, gradient, trend }: StatsCardProps) {
+  return (
+    <Card className="group relative overflow-hidden border-0 shadow-xl rounded-2xl hover:shadow-2xl transition-all duration-500 hover:scale-105">
+      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-100`}></div>
+      <div className="absolute inset-0 bg-white/10 transform -skew-y-6 group-hover:skew-y-0 transition-transform duration-700"></div>
+      <CardContent className="relative p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            {icon}
+          </div>
+          <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-bold text-white">
+            {trend}
+          </span>
+        </div>
+        <h3 className="text-4xl font-black text-white mb-2">{value.toLocaleString()}</h3>
+        <p className="text-sm font-semibold text-white/90 mb-1">{title}</p>
+        <p className="text-xs text-white/70">{subtitle}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Status Card Component
+interface StatusCardProps {
+  title: string;
+  count: number;
+  subtitle: string;
+  icon: React.ReactNode;
+  color: "emerald" | "amber" | "red";
+}
+
+function StatusCard({ title, count, subtitle, icon, color }: StatusCardProps) {
+  const colors = {
+    emerald: {
+      bg: "from-emerald-50 to-teal-50",
+      border: "border-emerald-200",
+      iconBg: "bg-gradient-to-br from-emerald-500 to-teal-600",
+      text: "text-emerald-900",
+      subtitle: "text-emerald-600"
+    },
+    amber: {
+      bg: "from-amber-50 to-orange-50",
+      border: "border-amber-200",
+      iconBg: "bg-gradient-to-br from-amber-500 to-orange-600",
+      text: "text-amber-900",
+      subtitle: "text-amber-600"
+    },
+    red: {
+      bg: "from-red-50 to-rose-50",
+      border: "border-red-200",
+      iconBg: "bg-gradient-to-br from-red-500 to-rose-600",
+      text: "text-red-900",
+      subtitle: "text-red-600"
+    }
+  };
+
+  const style = colors[color];
+
+  return (
+    <Card className={`group border-2 ${style.border} bg-gradient-to-br ${style.bg} hover:shadow-lg transition-all duration-300 hover:scale-105`}>
+      <CardContent className="p-5">
+        <div className="flex items-start gap-3 mb-3">
+          <div className={`w-10 h-10 rounded-lg ${style.iconBg} flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform duration-300`}>
+            {icon}
+          </div>
+          <div className="flex-1">
+            <h3 className={`text-lg font-black ${style.text}`}>{title}</h3>
+          </div>
+        </div>
+        <p className={`text-3xl font-black ${style.text} mb-1`}>{count.toLocaleString()}</p>
+        <p className={`text-xs font-medium ${style.subtitle}`}>{subtitle}</p>
+      </CardContent>
+    </Card>
+  );
 }
