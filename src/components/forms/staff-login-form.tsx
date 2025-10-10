@@ -15,11 +15,11 @@ export function StaffLoginForm() {
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ login: "", password: "" });
   const [error, setError] = useState<string | null>(null);
 
   const handleChange =
-    (field: "email" | "password") =>
+    (field: "login" | "password") =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((p) => ({ ...p, [field]: e.target.value }));
       setError(null);
@@ -30,7 +30,7 @@ export function StaffLoginForm() {
     setSubmitting(true);
     setError(null);
     try {
-      const user = await login({ email: form.email, password: form.password });
+      const user = await login({ login: form.login, password: form.password });
 
       // Auto route by role
       const role = user.role as string;
@@ -57,23 +57,21 @@ export function StaffLoginForm() {
 
       <CardContent className="p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Email/Username (pakai email untuk auth) */}
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium">
+            <Label htmlFor="login" className="text-sm font-medium">
               Username atau Email <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="email"
+              id="login"
               type="text"
               placeholder="Masukkan username/email"
-              value={form.email}
-              onChange={handleChange("email")}
+              value={form.login}
+              onChange={handleChange("login")}
               className="h-12 rounded-xl"
               required
             />
           </div>
 
-          {/* Password */}
           <div className="space-y-2">
             <Label htmlFor="password" className="text-sm font-medium">
               Password <span className="text-red-500">*</span>
@@ -104,14 +102,12 @@ export function StaffLoginForm() {
             </div>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
               {error}
             </div>
           )}
 
-          {/* Submit */}
           <Button
             type="submit"
             disabled={submitting}
@@ -120,7 +116,6 @@ export function StaffLoginForm() {
             {submitting ? "Memproses..." : "Masuk"}
           </Button>
 
-          {/* Register link dihapus kalau memang staff tidak daftar sendiri */}
           <p className="text-center text-sm text-muted-foreground">
             Lupa password?{" "}
             <Link href="/forgot-password" className="text-primary hover:text-primary/80 font-medium">
