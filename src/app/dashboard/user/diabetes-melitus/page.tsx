@@ -42,18 +42,18 @@ type TesItem = {
 };
 
 type ScreeningResult = {
-  id: number;
+  id: number | string;
   patient_name: string;
-  age: number;
+  age: number | string;
   gender: string;
-  systolic_bp: number;
-  diastolic_bp: number;
+  systolic_bp: number | string;
+  diastolic_bp: number | string;
   heart_disease: string;
   smoking_history: string;
-  bmi: number;
-  blood_glucose_level: number;
-  diabetes_probability: string;
-  diabetes_result: string;
+  bmi: number | string;
+  blood_glucose_level: number | string;
+  diabetes_probability: string; // "48.03%"
+  diabetes_result: string;      // teks backend – diabaikan kalau persen valid
   bp_classification: string;
   bp_recommendation: string;
   created_at: string;
@@ -72,81 +72,193 @@ function detectType(name: string): "pre" | "post" | "unknown" {
   const n = (name || "").toLowerCase();
   if (/\bpost\b/.test(n)) return "post";
   if (/\bpre\b/.test(n)) return "pre";
-  // fallback: kalau ada kata "post-test" dsb sudah ke-detect, kalau tidak biarkan unknown
   return "unknown";
 }
 function isCompletedLike(x: any) {
-  // Terima berbagai bentuk properti
   if (!x) return false;
   if (x.done === true || x.is_done === true || x.completed === true) return true;
   if (typeof x.status === "string" && x.status.toLowerCase() === "finished") return true;
-  if (typeof x.percentage === "number" && x.percentage >= 0) return true; // kadang API mengembalikan nilai
+  if (typeof x.percentage === "number" && x.percentage >= 0) return true;
   return false;
+}
+function first<T = any>(obj: any, keys: string[], fallback?: any): T | any {
+  for (const k of keys) {
+    const v = k.includes(".")
+      ? k.split(".").reduce((acc: any, key) => (acc ? acc[key] : undefined), obj)
+      : obj?.[k];
+    if (v !== undefined && v !== null && v !== "") return v;
+  }
+  return fallback;
+}
+function pct(v: any): string {
+  if (v == null) return "-";
+  if (typeof v === "string" && v.includes("%")) return v;
+  const n = Number(v);
+  return Number.isFinite(n) ? `${n.toFixed(2)}%` : String(v);
+}
+function mapScreening(x: any): ScreeningResult {
+  const prob = first(x, [
+    "diabetes_probability",
+    "percentage",
+    "score",
+    "riskPct",
+    "risk_percentage",
+  ]);
+  return {
+    id:
+      first(x, ["id", "screening_id", "_id"], typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : String(Math.random())),
+    patient_name:
+      first(x, ["patient_name"]) ??
+      first(x, ["nama", "name"]) ??
+      first(x, ["user.nama", "user.name"], "-"),
+    age: first(x, ["age", "usia"], "-"),
+    gender: first(x, ["gender", "jenis_kelamin"], "-"),
+    systolic_bp: first(x, ["systolic_bp", "sistolik", "blood_pressure_systolic"], "-"),
+    diastolic_bp: first(x, ["diastolic_bp", "diastolik", "blood_pressure_diastolic"], "-"),
+    heart_disease: first(x, ["heart_disease", "riwayat_jantung"], "-"),
+    smoking_history: first(x, ["smoking_history", "riwayat_merokok"], "-"),
+    bmi: first(x, ["bmi"], "-"),
+    blood_glucose_level: first(x, ["blood_glucose_level", "blood_sugar", "gula_darah"], "-"),
+    diabetes_probability: pct(prob),
+    diabetes_result: first(x, ["diabetes_result", "riskLabel", "status"], ""),
+    bp_classification: first(
+      x,
+      [
+        "bp_classification",
+        "klasifikasi_hipertensi",
+        "hypertension_classification",
+        "hypertension_stage",
+        "hypertension_stage_name",
+        "hipertensi_derajat",
+        "stage",
+        "classification",
+      ],
+      "-"
+    ),
+    bp_recommendation: first(x, ["bp_recommendation", "rekomendasi", "recommendation"], ""),
+    created_at:
+      first(x, ["created_at", "screened_at", "submitted_at"]) ?? new Date().toISOString(),
+  };
+}
+
+/* ===== Risk helpers – SAMAA dengan NAKES ===== */
+function parseProb(p: string | number): number {
+  if (typeof p === "number") return p;
+  if (!p) return NaN;
+  const cleaned = String(p).replace("%", "").replace(",", ".").trim();
+  const n = parseFloat(cleaned);
+  return Number.isFinite(n) ? n : NaN;
+}
+function computeRisk(probStr: string | number, resultText?: string) {
+  const prob = parseProb(probStr);
+  let level: "low" | "mid" | "high";
+  if (Number.isFinite(prob)) {
+    if (prob >= 63) level = "high";
+    else if (prob >= 48) level = "mid";
+    else level = "low";
+  } else {
+    const t = (resultText || "").toLowerCase();
+    if (t.includes("tinggi")) level = "high";
+    else if (t.includes("sedang")) level = "mid";
+    else level = "low";
+  }
+  const label =
+    level === "high" ? "Risiko Tinggi" : level === "mid" ? "Risiko Sedang" : "Risiko Rendah";
+
+  const theme =
+    level === "high"
+      ? {
+          bg: "from-red-50 to-rose-50",
+          border: "border-red-200",
+          accentText: "text-red-700",
+          badge: "bg-red-100 text-red-800",
+        }
+      : level === "mid"
+      ? {
+          bg: "from-amber-50 to-orange-50",
+          border: "border-amber-200",
+          accentText: "text-amber-700",
+          badge: "bg-amber-100 text-amber-800",
+        }
+      : {
+          bg: "from-emerald-50 to-green-50",
+          border: "border-emerald-200",
+          accentText: "text-emerald-700",
+          badge: "bg-emerald-100 text-emerald-800",
+        };
+
+  const badgeClass =
+    level === "high"
+      ? "bg-red-100 text-red-800"
+      : level === "mid"
+      ? "bg-yellow-100 text-yellow-800"
+      : "bg-green-100 text-green-800";
+
+  return { prob, level, label, theme, badgeClass };
 }
 
 /* ============== Page ============== */
 export default function DiabetesMelitusPage() {
   const router = useRouter();
 
-  // ====== EDU CONTENT STATES ======
   const [konten, setKonten] = useState<MateriItem[]>([]);
   const [tes, setTes] = useState<TesItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
-  // ====== QUIZ PROGRESS ======
-  const [quizzes, setQuizzes] = useState<any[]>([]);
-  const [preDoneMap, setPreDoneMap] = useState<Record<string, boolean>>({}); // key: baseKey
+  const [preDoneMap, setPreDoneMap] = useState<Record<string, boolean>>({});
 
-  // ====== SCREENING STATES ======
   const [latestResult, setLatestResult] = useState<ScreeningResult | null>(null);
   const [historyResults, setHistoryResults] = useState<ScreeningResult[]>([]);
   const [loadingScreening, setLoadingScreening] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
 
-  // Fetch kuis bank (untuk progress pre/post)
+  /* Pre progress */
   useEffect(() => {
     (async () => {
       try {
-        const response = await api.get("/user/quiz/banks");
-        const list = response?.data?.data ?? response?.data ?? [];
-        setQuizzes(Array.isArray(list) ? list : []);
-      } catch (error) {
-        // aman: kalau gagal, kita masih punya fallback localStorage
-        console.error(error);
+        const tries = ["/quiz/history?type=pre", "/quiz/history?tipe=pre", "/quiz/history"];
+        let arr: any[] = [];
+        for (const url of tries) {
+          try {
+            const r = await api.get(url);
+            const raw = r?.data?.data ?? r?.data ?? [];
+            arr = Array.isArray(raw) ? raw : [];
+            if (arr.length || url !== "/quiz/history") break;
+          } catch {}
+        }
+        const preOnly = arr.filter((x) => {
+          const t = String(first(x, ["tipe", "type", "quiz_type"], "")).toLowerCase();
+          return t === "pre" || /(^|[^a-z])pre([^a-z]|$)/.test(t);
+        });
+        const done: Record<string, boolean> = {};
+        for (const x of preOnly) {
+          const rawName =
+            first(x, ["nama", "name", "title"]) ?? first(x, ["bank.nama", "bank.name"]) ?? "";
+          const base = normalizeKey(String(rawName));
+          if (!base) continue;
+          if (
+            isCompletedLike(x) ||
+            first(x, ["percentage", "score", "persentase"]) != null ||
+            first(x, ["total_score"]) != null
+          ) {
+            done[base] = true;
+          }
+        }
+        Object.keys(localStorage).forEach((k) => {
+          const m = k.match(/^quiz_done_pre_(.+)$/);
+          if (m && localStorage.getItem(k) === "true") done[m[1]] = true;
+        });
+        setPreDoneMap(done);
+      } catch {
+        setPreDoneMap({});
       }
     })();
   }, []);
 
-  // Bangun preDone map (server + localStorage fallback)
-  useEffect(() => {
-    const serverMap: Record<string, boolean> = {};
-    for (const item of quizzes) {
-      // coba deteksi key dasar dari nama/label/title
-      const rawName = item?.nama ?? item?.title ?? item?.label ?? "";
-      const tipe = (item?.tipe ?? item?.type ?? detectType(String(rawName))) as
-        | "pre"
-        | "post"
-        | "unknown";
-      const base = normalizeKey(String(rawName));
-      if (!base || tipe !== "pre") continue;
-      if (isCompletedLike(item)) serverMap[base] = true;
-    }
-
-    // fallback dari localStorage (misal user baru submit barusan)
-    const localMap: Record<string, boolean> = {};
-    Object.keys(localStorage).forEach((k) => {
-      // format: quiz_done_pre_<baseKey> = "true"
-      const m = k.match(/^quiz_done_pre_(.+)$/);
-      if (m && localStorage.getItem(k) === "true") {
-        localMap[m[1]] = true;
-      }
-    });
-
-    setPreDoneMap({ ...serverMap, ...localMap });
-  }, [quizzes]);
-
-  // Fetch materi + tes
+  /* Materi + tes */
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -199,19 +311,49 @@ export default function DiabetesMelitusPage() {
     };
   }, []);
 
-  // Fetch screening latest + history
+  /* Screening per-user */
   useEffect(() => {
     let alive = true;
     (async () => {
       setLoadingScreening(true);
       try {
-        const res = await fetch("/api/screenings/latest");
-        const data = await res.json();
+        const listRes = await api.get("/user/diabetes-screenings");
+        const raw = listRes?.data?.data ?? listRes?.data ?? [];
+        const arr: any[] = Array.isArray(raw) ? raw : [];
+        if (arr.length === 0) {
+          if (!alive) return;
+          setHistoryResults([]);
+          setLatestResult(null);
+          return;
+        }
+        arr.sort((a, b) => {
+          const ta = a?.created_at ?? a?.date ?? a?.screened_at ?? a?.submitted_at ?? 0;
+          const tb = b?.created_at ?? b?.date ?? b?.screened_at ?? b?.submitted_at ?? 0;
+          return Date.parse(String(tb)) - Date.parse(String(ta));
+        });
+        const history = arr.map(mapScreening);
         if (!alive) return;
-        setLatestResult(data?.latest || null);
-        setHistoryResults(data?.history || []);
-      } catch (e) {
-        console.error("Error fetching screening:", e);
+        setHistoryResults(history);
+
+        const firstId = arr[0]?.id;
+        if (firstId) {
+          try {
+            const detRes = await api.get(`/user/diabetes-screenings/${firstId}`);
+            const detData = detRes?.data?.data ?? detRes?.data ?? {};
+            if (!alive) return;
+            setLatestResult(mapScreening(detData));
+          } catch {
+            if (!alive) return;
+            setLatestResult(history[0]);
+          }
+        } else {
+          if (!alive) return;
+          setLatestResult(history[0] ?? null);
+        }
+      } catch {
+        if (!alive) return;
+        setHistoryResults([]);
+        setLatestResult(null);
       } finally {
         if (!alive) return;
         setLoadingScreening(false);
@@ -222,55 +364,11 @@ export default function DiabetesMelitusPage() {
     };
   }, []);
 
-  // Gradient hijau global (match card #3)
   const greenGrad = "from-emerald-500 to-teal-500";
-
   const gradients = useMemo(() => [greenGrad], [greenGrad]);
 
   const mulaiTest = (t: TesItem) => {
     router.push(`/dashboard/user/kuisioner/${t.id}`);
-  };
-
-  // theme warna berbasis probabilitas
-  const getRiskTheme = (probStr: string | number) => {
-    const prob = typeof probStr === "number" ? probStr : parseFloat(String(probStr).replace("%", ""));
-    if (Number.isNaN(prob)) {
-      return {
-        bg: "from-emerald-50 to-green-50",
-        border: "border-emerald-200",
-        accentText: "text-emerald-700",
-        badge: "bg-emerald-100 text-emerald-800",
-      };
-    }
-    if (prob >= 63) {
-      return {
-        bg: "from-red-50 to-rose-50",
-        border: "border-red-200",
-        accentText: "text-red-700",
-        badge: "bg-red-100 text-red-800",
-      };
-    }
-    if (prob >= 48) {
-      return {
-        bg: "from-amber-50 to-orange-50",
-        border: "border-amber-200",
-        accentText: "text-amber-700",
-        badge: "bg-amber-100 text-amber-800",
-      };
-    }
-    return {
-      bg: "from-emerald-50 to-green-50",
-      border: "border-emerald-200",
-      accentText: "text-emerald-700",
-      badge: "bg-emerald-100 text-emerald-800",
-    };
-  };
-
-  const getRiskBadge = (result: string) => {
-    const r = result.toLowerCase();
-    if (r.includes("tinggi") || r.includes("risiko")) return "bg-red-100 text-red-800";
-    if (r.includes("sedang")) return "bg-yellow-100 text-yellow-800";
-    return "bg-green-100 text-green-800";
   };
 
   return (
@@ -283,8 +381,12 @@ export default function DiabetesMelitusPage() {
               <FileText className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-black-800">Edukasi & Hasil Screening Diabetes Melitus</h1>
-              <p className="text-gray-600 mt-0.5">Lihat Hasil Screening Anda dan Pelajari Materi Edukasinya</p>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+                Edukasi & Hasil Screening Diabetes Melitus
+              </h1>
+              <p className="text-gray-600 mt-0.5">
+                Lihat Hasil Screening Anda dan Pelajari Materi Edukasinya
+              </p>
             </div>
           </div>
         </div>
@@ -329,41 +431,42 @@ export default function DiabetesMelitusPage() {
                   <ClipboardList className="h-8 w-8 text-gray-400" />
                 </div>
                 <p className="text-gray-700 font-semibold">Belum ada hasil screening</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Silakan lakukan screening diabetes untuk melihat hasil Anda
+                </p>
               </div>
             ) : (
               <>
-                {/* Banner status risiko */}
-                <div
-                  className={`rounded-2xl border-2 bg-gradient-to-r ${
-                    getRiskTheme(latestResult.diabetes_probability).bg
-                  } ${getRiskTheme(latestResult.diabetes_probability).border} p-5`}
-                >
-                  <div className="flex items-start gap-3">
+                {/* Banner status risiko – SUDAH konsisten */}
+                {(() => {
+                  const risk = computeRisk(
+                    latestResult.diabetes_probability,
+                    latestResult.diabetes_result
+                  );
+                  return (
                     <div
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                        getRiskTheme(latestResult.diabetes_probability).badge
-                      }`}
+                      className={`rounded-2xl border-2 bg-gradient-to-r ${risk.theme.bg} ${risk.theme.border} p-5`}
                     >
-                      <Activity className="w-5 h-5" />
+                      <div className="flex items-start gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${risk.theme.badge}`}>
+                          <Activity className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-600">Status Risiko</p>
+                          <p className={`text-lg font-bold ${risk.theme.accentText}`}>
+                            {risk.label}
+                            <span className="ml-2 text-gray-800 font-semibold">
+                              ({latestResult.diabetes_probability})
+                            </span>
+                          </p>
+                          <p className="text-xs text-gray-600 mt-0.5">
+                            Berdasarkan data screening terbaru
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-600">Status Risiko</p>
-                      <p
-                        className={`text-lg font-bold ${
-                          getRiskTheme(latestResult.diabetes_probability).accentText
-                        }`}
-                      >
-                        {latestResult.diabetes_result}
-                        <span className="ml-2 text-gray-800 font-semibold">
-                          ({latestResult.diabetes_probability})
-                        </span>
-                      </p>
-                      <p className="text-xs text-gray-600 mt-0.5">
-                        Berdasarkan data screening terbaru
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()}
 
                 {/* DATA SCREENING */}
                 <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 shadow-sm">
@@ -406,7 +509,9 @@ export default function DiabetesMelitusPage() {
                     </div>
                     <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
                       <p className="text-xs text-gray-500 mb-1">KLASIFIKASI HIPERTENSI</p>
-                      <p className="font-semibold text-gray-900">{latestResult.bp_classification}</p>
+                      <p className="font-semibold text-gray-900">
+                        {latestResult.bp_classification}
+                      </p>
                     </div>
                     <div className="rounded-xl bg-white border border-gray-200 p-4 shadow-sm h-full">
                       <p className="text-xs text-gray-500 mb-1">GULA DARAH</p>
@@ -419,10 +524,8 @@ export default function DiabetesMelitusPage() {
 
                 {latestResult.bp_recommendation && (
                   <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
-                    <p className="font-semibold text-black-900 mb-1">💡 Rekomendasi</p>
-                    <p className="text-sm text-black-800">
-                      {latestResult.bp_recommendation}
-                    </p>
+                    <p className="font-semibold text-gray-900 mb-1">💡 Rekomendasi</p>
+                    <p className="text-sm text-gray-800">{latestResult.bp_recommendation}</p>
                   </div>
                 )}
               </>
@@ -439,7 +542,7 @@ export default function DiabetesMelitusPage() {
               <button
                 type="button"
                 onClick={() => setShowHistory((v) => !v)}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-emerald-500 text-black-700 hover:bg-emerald-50 transition"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-emerald-500 text-gray-700 hover:bg-emerald-50 transition"
                 aria-expanded={showHistory}
               >
                 {showHistory ? (
@@ -458,46 +561,69 @@ export default function DiabetesMelitusPage() {
               <div className="text-center py-8 text-gray-500">Memuat riwayat…</div>
             ) : showHistory ? (
               historyResults.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">Belum ada riwayat screening sebelumnya</div>
+                <div className="text-center py-8 text-gray-500">
+                  Belum ada riwayat screening sebelumnya
+                </div>
               ) : (
                 <div className="overflow-x-auto mt-4">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200 text-left">
-                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">TANGGAL</th>
-                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">BMI</th>
-                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">GULA DARAH</th>
-                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">TEKANAN DARAH</th>
-                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">HASIL</th>
-                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">SKOR</th>
+                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
+                          TANGGAL
+                        </th>
+                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
+                          BMI
+                        </th>
+                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
+                          GULA DARAH
+                        </th>
+                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
+                          TEKANAN DARAH
+                        </th>
+                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
+                          HASIL
+                        </th>
+                        <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
+                          SKOR
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {historyResults.map((r) => (
-                        <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-4 text-sm text-gray-800">
-                            {new Date(r.created_at).toLocaleDateString("id-ID", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </td>
-                          <td className="py-4 text-sm text-gray-800">{r.bmi}</td>
-                          <td className="py-4 text-sm text-gray-800">{r.blood_glucose_level} mg/dL</td>
-                          <td className="py-4 text-sm text-gray-800">
-                            {r.systolic_bp}/{r.diastolic_bp}
-                            <div className="text-xs text-gray-500">{r.bp_classification}</div>
-                          </td>
-                          <td className="py-4">
-                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getRiskBadge(r.diabetes_result)}`}>
-                              {r.diabetes_result}
-                            </span>
-                          </td>
-                          <td className="py-4 text-sm font-semibold text-gray-800">{r.diabetes_probability}</td>
-                        </tr>
-                      ))}
+                      {historyResults.map((r) => {
+                        const risk = computeRisk(r.diabetes_probability, r.diabetes_result);
+                        return (
+                          <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-4 text-sm text-gray-800">
+                              {new Date(r.created_at).toLocaleDateString("id-ID", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </td>
+                            <td className="py-4 text-sm text-gray-800">{r.bmi}</td>
+                            <td className="py-4 text-sm text-gray-800">
+                              {r.blood_glucose_level} mg/dL
+                            </td>
+                            <td className="py-4 text-sm text-gray-800">
+                              {r.systolic_bp}/{r.diastolic_bp}
+                              <div className="text-xs text-gray-500">{r.bp_classification}</div>
+                            </td>
+                            <td className="py-4">
+                              <span
+                                className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${risk.badgeClass}`}
+                              >
+                                {risk.label}
+                              </span>
+                            </td>
+                            <td className="py-4 text-sm font-semibold text-gray-800">
+                              {r.diabetes_probability}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -554,23 +680,30 @@ export default function DiabetesMelitusPage() {
                       key={t.id}
                       className="group relative bg-white border-2 border-gray-100 rounded-2xl p-5 hover:border-transparent hover:shadow-2xl transition-all overflow-hidden"
                     >
-                      <div className={`absolute inset-0 bg-gradient-to-r ${greenGrad} opacity-0 group-hover:opacity-5 transition-opacity`} />
-                      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${greenGrad} opacity-5 rounded-bl-full`} />
+                      <div
+                        className={`absolute inset-0 bg-gradient-to-r ${greenGrad} opacity-0 group-hover:opacity-5 transition-opacity`}
+                      />
+                      <div
+                        className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${greenGrad} opacity-5 rounded-bl-full`}
+                      />
 
                       <div className="relative flex items-start gap-4">
-                        <div className={`flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br ${greenGrad} text-white font-bold shadow`}>
+                        <div
+                          className={`flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br ${greenGrad} text-white font-bold shadow`}
+                        >
                           <ListChecks className="w-5 h-5" />
                         </div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-3">
                             <div>
-                              <h3 className="font-bold text-gray-900 text-lg leading-snug">{t.nama}</h3>
+                              <h3 className="font-bold text-gray-900 text-lg leading-snug">
+                                {t.nama}
+                              </h3>
                               <p className="text-xs text-gray-500 mt-0.5">
                                 {t.totalSoal ?? "-"} soal
                                 {t.durasiMenit ? ` • ${t.durasiMenit} menit` : ""}
                               </p>
-                              {/* status kecil di bawah judul */}
                               {isPost && (
                                 <div className="mt-1">
                                   {mustLock ? (
@@ -600,7 +733,11 @@ export default function DiabetesMelitusPage() {
                               ].join(" ")}
                               title={mustLock ? "Selesaikan Pre Test terlebih dahulu" : "Mulai"}
                             >
-                              {mustLock ? <LockIcon className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                              {mustLock ? (
+                                <LockIcon className="h-4 w-4" />
+                              ) : (
+                                <Play className="h-4 w-4" />
+                              )}
                               {mustLock ? "Terkunci" : "Mulai"}
                             </button>
                           </div>
@@ -615,135 +752,6 @@ export default function DiabetesMelitusPage() {
                     </div>
                   );
                 })}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* =================== DAFTAR KONTEN =================== */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl">
-          <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <span className="w-1.5 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
-                  Daftar Konten
-                </h2>
-                <p className="text-sm text-gray-600 mt-1 ml-4">
-                  {loading ? "Memuat…" : `${konten.length} konten tersedia untuk dipelajari`}
-                </p>
-              </div>
-              <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-gray-700">{konten.length} Materi</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6">
-            {loading ? (
-              <div className="text-center py-20">
-                <div className="inline-block relative">
-                  <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
-                </div>
-                <p className="text-sm text-gray-500 mt-4 font-medium">Memuat materi edukasi…</p>
-              </div>
-            ) : konten.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4 shadow-inner">
-                  <FileText className="h-10 w-10 text-gray-400" />
-                </div>
-                <p className="text-gray-700 font-bold text-lg mb-2">Belum ada materi</p>
-                <p className="text-sm text-gray-500">Materi edukasi sedang dalam proses pembuatan</p>
-              </div>
-            ) : (
-              <div className="grid gap-6">
-                {konten.map((it, i) => (
-                  <div
-                    key={it.id}
-                    className="group relative bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden"
-                  >
-                    <div className={`absolute inset-0 bg-gradient-to-r ${greenGrad} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${greenGrad} opacity-5 rounded-bl-full`} />
-
-                    <div className="relative flex items-start gap-5">
-                      <div
-                        className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${greenGrad} text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
-                      >
-                        {i + 1}
-                      </div>
-
-                      <div className="flex-1 min-w-0 space-y-4">
-                        <h3 className="font-bold text-gray-900 text-2xl group-hover:text-emerald-700 transition-colors">
-                          {it.judul}
-                        </h3>
-
-                        <p className="text-gray-600 text-base leading-relaxed break-words whitespace-pre-wrap [overflow-wrap:anywhere]">
-                          {it.deskripsi}
-                        </p>
-
-                        <div className="flex flex-wrap items-center gap-3">
-                          {it.file_url && (
-                            <a
-                              href={it.file_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-700 hover:to-yellow-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
-                            >
-                              <Download className="h-4 w-4" />
-                              Unduh PDF
-                            </a>
-                          )}
-                          {it.video_id && (
-                            <a
-                              href={`https://www.youtube.com/watch?v=${it.video_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-700 hover:to-blue-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
-                            >
-                              <Video className="h-4 w-4" />
-                              Tonton Video
-                            </a>
-                          )}
-                        </div>
-
-                        {(it.created_at || it.updated_at) && (
-                          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
-                            {it.created_at && (
-                              <div className="flex items-center gap-1.5">
-                                <Calendar className="h-3.5 w-3.5 text-emerald-600" />
-                                <span className="font-medium">
-                                  Dibuat:{" "}
-                                  {new Date(it.created_at).toLocaleDateString("id-ID", {
-                                    day: "numeric",
-                                    month: "short",
-                                    year: "numeric",
-                                  })}
-                                </span>
-                              </div>
-                            )}
-                            {it.updated_at && (
-                              <>
-                                <span className="text-gray-300">•</span>
-                                <div className="flex items-center gap-1.5">
-                                  <Clock className="h-3.5 w-3.5 text-emerald-600" />
-                                  <span className="font-medium">
-                                    Diperbarui:{" "}
-                                    {new Date(it.updated_at).toLocaleDateString("id-ID", {
-                                      day: "numeric",
-                                      month: "short",
-                                      year: "numeric",
-                                    })}
-                                  </span>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
               </div>
             )}
           </div>
