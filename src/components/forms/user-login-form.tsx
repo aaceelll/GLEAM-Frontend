@@ -1,4 +1,3 @@
-// src/components/forms/user-login-form.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -8,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 
 interface LoginData {
-  email: string;
+  login: string;
   password: string;
 }
 
@@ -19,7 +18,7 @@ export const UserLoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<any>({});
-  const [formData, setFormData] = useState<LoginData>({ email: "", password: "" });
+  const [formData, setFormData] = useState<LoginData>({ login: "", password: "" });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -29,10 +28,15 @@ export const UserLoginForm: React.FC = () => {
 
   const validateForm = () => {
     const newErrors: any = {};
-    if (!formData.email.trim()) newErrors.email = "Email wajib diisi";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-      newErrors.email = "Format email tidak valid";
-    if (!formData.password) newErrors.password = "Password wajib diisi";
+    
+    if (!formData.login.trim()) {
+      newErrors.login = "Email atau Username wajib diisi";
+    }
+    
+    if (!formData.password) {
+      newErrors.password = "Password wajib diisi";
+    }
+    
     return newErrors;
   };
 
@@ -45,8 +49,8 @@ export const UserLoginForm: React.FC = () => {
 
     try {
       setLoading(true);
-      await login(formData);               // <— centralized login (sets LS + cookie)
-      router.replace("/dashboard/user");   // <— navigate once token is set
+      await login(formData);
+      router.replace("/dashboard/user");
     } catch (error: any) {
       console.error(error);
       const msg =
@@ -74,17 +78,17 @@ export const UserLoginForm: React.FC = () => {
         </label>
         <input
           type="text"
-          name="email"
-          value={formData.email}
+          name="login"
+          value={formData.login}
           onChange={handleInputChange}
           className={`w-full px-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all duration-200 ${
-            errors.email
+            errors.login
               ? "border-red-300 focus:ring-red-500 focus:border-red-500"
               : "border-gray-300 focus:ring-green-500 focus:border-green-500"
           }`}
           placeholder="Masukkan email atau username"
         />
-        {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+        {errors.login && <p className="mt-1 text-sm text-red-600">{errors.login}</p>}
       </div>
 
       <div>
