@@ -1,185 +1,383 @@
-"use client"
+"use client";
 
-import { useMemo, useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { FileText, Search, Eye, Trash2, Download, SlidersHorizontal, TrendingUp, BarChart3 } from "lucide-react"
+import { useEffect, useMemo, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { FileText, Search, Calendar, RotateCcw, X, ClipboardList } from "lucide-react";
+import { api } from "@/lib/api";
 
-type Row = { id: number | string; name: string; date: string; score: number }
-type TabKey = "dsmq" | "pretest" | "posttest"
+/* ============ Types ============ */
+type TabKey = "pre" | "post";
 
+type Row = {
+  id: string | number;
+  userId?: string | number;
+  name: string;
+  date: string;      // ISO/string
+  score: number;     // 0-100
+  type: "pre" | "post";
+};
+
+type SubmissionDetail = {
+  id?: string | number;
+  type?: "pre" | "post";
+  nama?: string;
+  submitted_at?: string;
+  percentage?: number;
+  total_score?: number;
+  max_score?: number;
+  answers?: any;
+};
+
+/* ============ Helpers ============ */
+const TZ = "Asia/Jakarta";
+
+function formatIDTime(input?: string) {
+  if (!input) return "-";
+  let s = String(input).trim();
+  const hasOffset = /[+-]\d{2}:\d{2}$/.test(s);
+  const hasZ = /Z$/.test(s);
+  const isoish = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(s);
+  if (isoish && !hasOffset && !hasZ) s = s.replace(" ", "T") + "Z";
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return "-";
+  return new Intl.DateTimeFormat("id-ID", {
+    timeZone: TZ,
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+}
+
+function first<T = any>(obj: any, keys: string[], fallback?: any): T | any {
+  for (const k of keys) {
+    const v = k.includes(".")
+      ? k.split(".").reduce((acc: any, key) => (acc ? acc[key] : undefined), obj)
+      : obj?.[k];
+    if (v !== undefined && v !== null) return v;
+  }
+  return fallback;
+}
+
+function toPct(x: any, total?: any): number | undefined {
+  const p = Number(String(x).replace("%", ""));
+  if (Number.isFinite(p)) return p;
+  const t = Number(total);
+  if (Number.isFinite(t) && Number.isFinite(Number(x)) && t > 0) {
+    return Math.round((Number(x) / t) * 100);
+  }
+  return undefined;
+}
+
+function coerceArray(root: any): any[] {
+  if (!root) return [];
+  // bentuk umum laravel
+  if (Array.isArray(root)) return root;
+  if (Array.isArray(root?.data)) return root.data;
+  if (Array.isArray(root?.data?.data)) return root.data.data; // paginator
+  if (Array.isArray(root?.items)) return root.items;
+  if (Array.isArray(root?.results)) return root.results;
+  if (Array.isArray(root?.rows)) return root.rows;
+  return [];
+}
+
+function mapRow(x: any): Row {
+  const id = first(x, ["id", "_id"]);
+  const name =
+    first(x, ["user.nama", "user.name"]) ??
+    first(x, ["nama", "name"], "Tanpa Nama");
+  const date = first(x, ["submitted_at", "created_at", "updated_at"]) ?? "";
+
+  const percentage =
+    toPct(first(x, ["percentage", "score", "persentase"]), first(x, ["max_score"])) ??
+    toPct(Number(first(x, ["total_score"])), Number(first(x, ["max_score"]))) ??
+    0;
+
+  // backend pakai 'tipe' => 'pre' | 'post'
+  const tRaw = String(first(x, ["tipe", "type", "quiz_type"], "pre")).toLowerCase();
+  const type: "pre" | "post" = tRaw.includes("post") ? "post" : "pre";
+
+  const userId = first(x, ["user_id", "userId", "user.id"]);
+  return { id, name, date, score: Math.max(0, Math.min(100, Math.round(percentage))), type, userId };
+}
+
+function mapDetail(root: any): SubmissionDetail {
+  const x = root?.data ?? root ?? {};
+  const percentage = toPct(
+    first(x, ["percentage", "score", "persentase"]),
+    first(x, ["max_score"])
+  ) ?? toPct(
+    Number(first(x, ["total_score"])),
+    Number(first(x, ["max_score"]))
+  );
+
+  return {
+    id: first(x, ["id", "_id"]),
+    type: (String(first(x, ["tipe", "type", "quiz_type"], "pre")).toLowerCase() === "post" ? "post" : "pre"),
+    nama:
+      first(x, ["user.nama"]) ??
+      first(x, ["nama", "name", "user.name"]),
+    submitted_at: first(x, ["submitted_at", "created_at"]),
+    percentage: percentage,
+    total_score: first(x, ["total_score"]),
+    max_score: first(x, ["max_score"]),
+    answers: first(x, ["answers", "jawaban", "detail"]),
+  };
+}
+
+/* ====== Endpoints (sesuai route list kamu) ====== */
+const LIST_PATH = "/quiz/history";     // GET list milik user login
+const DETAIL_PATH = "/quiz/history";   // GET /quiz/history/{id}
+
+/* ============ Modal Detail ============ */
+function DetailModal({
+  open,
+  onClose,
+  data,
+}: {
+  open: boolean;
+  onClose: () => void;
+  data?: SubmissionDetail | null;
+}) {
+  if (!open) return null;
+
+  const d = data ?? {};
+
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative w-full max-w-3xl mx-4 rounded-2xl bg-white border-2 border-gray-100 shadow-2xl">
+        <div className="max-h-[80vh] overflow-y-auto">
+          {/* header */}
+          <div className="flex items-center justify-between gap-3 px-6 py-4 border-b">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 grid place-items-center">
+                <ClipboardList className="w-5 h-5 text-white" />
+              </div>
+              <p className="font-semibold text-gray-900">
+                Detail {d.type === "post" ? "Post Test" : "Pre Test"}
+              </p>
+            </div>
+            <button
+              aria-label="Tutup"
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-gray-100"
+            >
+              <X className="w-4 h-4 text-gray-600" />
+            </button>
+          </div>
+
+          {/* body */}
+          <div className="p-6 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                { k: "Nama", v: d.nama ?? "-" },
+                { k: "Jenis Tes", v: d.type === "post" ? "Post Test" : "Pre Test" },
+                { k: "Tanggal", v: formatIDTime(d.submitted_at) },
+                {
+                  k: "Skor",
+                  v:
+                    d.percentage != null
+                      ? `${Math.round(d.percentage)}%`
+                      : d.total_score != null && d.max_score != null
+                      ? `${d.total_score} / ${d.max_score}`
+                      : "-",
+                },
+              ].map((it) => (
+                <div key={it.k} className="rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">{it.k}</p>
+                  <p className="mt-1 font-semibold text-gray-900">{it.v}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* ringkas jawaban */}
+            <div className="rounded-2xl border-2 border-gray-100">
+              <div className="px-5 py-3 border-b">
+                <p className="text-sm font-semibold text-gray-700">Ringkasan Jawaban</p>
+              </div>
+              <div className="p-5 text-sm text-gray-700">
+                {d.answers ? (
+                  <pre className="text-xs bg-gray-50 border border-gray-100 rounded-lg p-3 overflow-x-auto">
+                    {typeof d.answers === "string"
+                      ? d.answers
+                      : JSON.stringify(d.answers, null, 2)}
+                  </pre>
+                ) : (
+                  <p className="text-gray-500 italic">Tidak ada data jawaban.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============ Page ============ */
 export default function LaporanKeseluruhan() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [active, setActive] = useState<TabKey>("dsmq")
+  const [tab, setTab] = useState<TabKey>("pre");
+  const [search, setSearch] = useState("");
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // dummy data
-  const data = {
-    dsmq: [
-      { id: 1, name: "test", date: "Sabtu, 6 September 2025, 23:58", score: 85 },
-      { id: 2, name: "testing", date: "Senin, 25 Agustus 2025, 19:30", score: 72 },
-      { id: 3, name: "testing", date: "Selasa, 19 Agustus 2025, 22:55", score: 68 },
-      { id: 4, name: "testing", date: "Minggu, 17 Agustus 2025, 02:23", score: 91 },
-      { id: 5, name: "bagus", date: "Sabtu, 16 Agustus 2025, 11:15", score: 78 },
-    ] as Row[],
-    pretest: [
-      { id: 1, name: "Test", date: "Minggu, 07 September 2025, 00:14", score: 50 },
-      { id: 2, name: "Ahmad", date: "Sabtu, 06 September 2025, 15:30", score: 65 },
-      { id: 3, name: "Budi", date: "Jumat, 05 September 2025, 10:20", score: 72 },
-    ] as Row[],
-    posttest: [
-      { id: 1, name: "Test", date: "Minggu, 07 September 2025, 01:30", score: 85 },
-      { id: 2, name: "Ahmad", date: "Sabtu, 06 September 2025, 16:45", score: 88 },
-    ] as Row[],
+  // modal detail
+  const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState<SubmissionDetail | null>(null);
+
+  /* --- FETCHERS --- */
+  async function fetchList(current: TabKey = tab) {
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      const res = await api.get(LIST_PATH); // /quiz/history (semua)
+      const all = coerceArray(res?.data ?? res).map(mapRow);
+      const filtered = all.filter((r) => r.type === current);
+      setRows(filtered);
+    } catch (e: any) {
+      console.error("API ERROR list:", e);
+      setErrorMsg(e?.response?.data?.message || e?.message || "Gagal memuat riwayat tes.");
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const tabs: { key: TabKey; label: string; gradient: string; icon: string }[] = [
-    { key: "dsmq", label: "DSMQ", gradient: "from-emerald-500 to-teal-500", icon: "📊" },
-    { key: "pretest", label: "Pre Test", gradient: "from-blue-500 to-cyan-500", icon: "📝" },
-    { key: "posttest", label: "Post Test", gradient: "from-violet-500 to-fuchsia-500", icon: "✅" },
-  ]
-
-  const q = searchQuery.trim().toLowerCase()
-  const rows = useMemo(() => {
-    const arr = data[active]
-    return q ? arr.filter((r) => r.name.toLowerCase().includes(q)) : arr
-  }, [q, active])
-
-  const totals = {
-    dsmq: data.dsmq.length,
-    pretest: data.pretest.length,
-    posttest: data.posttest.length,
+  async function openDetail(id: string | number) {
+    setOpen(true);
+    setDetail(null);
+    try {
+      const res = await api.get(`${DETAIL_PATH}/${id}`); // /quiz/history/:id
+      setDetail(mapDetail(res?.data ?? res));
+    } catch (e) {
+      console.error("API ERROR detail:", e);
+      setDetail({ id, type: tab, nama: "-", percentage: 0 });
+    }
   }
 
-  const avgScore = rows.length > 0 ? Math.round(rows.reduce((sum, r) => sum + r.score, 0) / rows.length) : 0
+  /* --- AUTO LOAD --- */
+  useEffect(() => {
+    // load pertama kali
+    fetchList("pre");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    // setiap tab berubah, refetch
+    fetchList(tab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
+  /* --- FILTER --- */
+  const q = search.trim().toLowerCase();
+  const filtered = useMemo(
+    () => (q ? rows.filter((r) => r.name?.toLowerCase().includes(q)) : rows),
+    [q, rows]
+  );
 
   return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                <FileText className="h-8 w-8 text-white animate-pulse" />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent tracking-tight">
-                Laporan Keseluruhan
-              </h1>
-              <p className="text-base md:text-lg text-gray-600 mt-1 font-medium">Ringkasan hasil screening & tes</p>
-            </div>
+        {/* Header seragam nakes */}
+        <header className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-xl">
+            <FileText className="h-7 w-7 text-white" />
           </div>
-          <Button className="group relative overflow-hidden rounded-2xl px-6 py-3 bg-gradient-to-r from-gray-900 to-black text-white shadow-2xl hover:shadow-gray-900/50 transition-all duration-500 hover:scale-105">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative flex items-center gap-2">
-              <Download className="h-5 w-5 transform group-hover:translate-y-1 transition-transform duration-300" />
-              <span className="font-bold">Ekspor Data</span>
-            </div>
-          </Button>
+          <div className="flex-1">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Laporan Keseluruhan</h1>
+            <p className="text-gray-600 mt-0.5">Riwayat Pre Test & Post Test</p>
+          </div>
+
+          {/* Refresh */}
+          <button
+            onClick={() => fetchList()}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold
+                       border-2 border-gray-100 text-gray-600 bg-white
+                       transition-all duration-300
+                       hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50
+                       hover:text-emerald-700 hover:shadow-md hover:scale-[1.02]"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Refresh
+          </button>
         </header>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 p-6 shadow-xl hover:shadow-2xl hover:shadow-emerald-300/50 transition-all duration-500 hover:scale-105 cursor-pointer">
-            <div className="absolute inset-0 bg-white/10 transform -skew-y-6 group-hover:skew-y-0 transition-transform duration-700"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <BarChart3 className="h-9 w-9 text-white/90" />
-                <span className="text-3xl">📊</span>
-              </div>
-              <p className="text-white/80 text-sm font-bold mb-1">Total DSMQ</p>
-              <p className="text-4xl font-black text-white mb-1">{totals.dsmq}</p>
-              <p className="text-white/70 text-xs">responden terdaftar</p>
-            </div>
+        {errorMsg && (
+          <div className="rounded-xl border-2 border-amber-200 bg-amber-50 text-amber-800 px-4 py-3">
+            {errorMsg}
           </div>
+        )}
 
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-400 to-cyan-500 p-6 shadow-xl hover:shadow-2xl hover:shadow-blue-300/50 transition-all duration-500 hover:scale-105 cursor-pointer">
-            <div className="absolute inset-0 bg-white/10 transform -skew-y-6 group-hover:skew-y-0 transition-transform duration-700"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <FileText className="h-9 w-9 text-white/90" />
-                <span className="text-3xl">📝</span>
-              </div>
-              <p className="text-white/80 text-sm font-bold mb-1">Total Pre Test</p>
-              <p className="text-4xl font-black text-white mb-1">{totals.pretest}</p>
-              <p className="text-white/70 text-xs">peserta mengikuti</p>
-            </div>
-          </div>
-
-          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-400 to-fuchsia-500 p-6 shadow-xl hover:shadow-2xl hover:shadow-purple-300/50 transition-all duration-500 hover:scale-105 cursor-pointer">
-            <div className="absolute inset-0 bg-white/10 transform -skew-y-6 group-hover:skew-y-0 transition-transform duration-700"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-3">
-                <TrendingUp className="h-9 w-9 text-white/90" />
-                <span className="text-3xl">✅</span>
-              </div>
-              <p className="text-white/80 text-sm font-bold mb-1">Total Post Test</p>
-              <p className="text-4xl font-black text-white mb-1">{totals.posttest}</p>
-              <p className="text-white/70 text-xs">peserta menyelesaikan</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs with enhanced design */}
-        <div className="relative rounded-3xl border-2 border-gray-200 bg-gradient-to-br from-gray-50 to-white shadow-xl p-3">
-          <div className="relative grid grid-cols-3 gap-3">
-            {tabs.map((t) => {
-              const activeTab = active === t.key
-              return (
-                <button
-                  key={t.key}
-                  onClick={() => setActive(t.key)}
-                  className={`group relative flex items-center justify-center gap-2 rounded-2xl px-5 py-4 transition-all duration-500 ${
-                    activeTab
-                      ? "text-white shadow-2xl transform scale-105"
-                      : "text-gray-700 hover:bg-gray-100 hover:scale-105"
+        {/* Tabs (Pre/Post) — gaya pills nakes */}
+        <div className="flex gap-3 p-1 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-100 shadow-lg">
+          {[
+            { key: "pre", label: "Pre Test" },
+            { key: "post", label: "Post Test" },
+          ].map((t) => {
+            const isActive = tab === (t.key as TabKey);
+            return (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key as TabKey)}
+                className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold transition-all duration-300 
+                  ${
+                    isActive
+                      ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.03]"
+                      : "text-gray-600 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:text-emerald-700 hover:shadow-md"
                   }`}
-                >
-                  {activeTab && (
-                    <>
-                      <span className={`absolute inset-0 rounded-2xl -z-10 bg-gradient-to-r ${t.gradient} shadow-2xl`} />
-                      <div className="absolute inset-0 bg-white/20 rounded-2xl -z-10 transform group-hover:scale-110 transition-transform duration-500"></div>
-                    </>
-                  )}
-                  <span className="text-2xl transform group-hover:scale-125 transition-transform duration-300">{t.icon}</span>
-                  <span className="text-sm md:text-base font-black">{t.label}</span>
-                </button>
-              )
-            })}
-          </div>
+              >
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Main Table Card */}
-        <Card className="group relative overflow-hidden rounded-3xl border-2 border-gray-200 shadow-2xl hover:shadow-3xl transition-all duration-700 hover:scale-[1.01] bg-white">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-          <CardContent className="p-0 relative">
+        {/* Card Tabel */}
+        <Card className="rounded-3xl border-2 border-gray-100 shadow-2xl">
+          <CardContent className="p-0">
             {/* Toolbar */}
-            <div className="p-5 md:p-6 border-b-2 border-gray-200 bg-gradient-to-r from-white to-gray-50 flex flex-col md:flex-row gap-4 md:items-center">
-              <div className="relative flex-1 max-w-xl group/search">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-hover/search:text-blue-500 transition-colors duration-300" />
+            <div className="p-5 md:p-6 border-b-2 border-gray-100 flex flex-col md:flex-row gap-4 md:items-center">
+              <div className="relative flex-1 max-w-xl">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={`Cari nama di ${tabs.find(t=>t.key===active)?.label}…`}
-                  className="pl-12 h-12 rounded-xl border-2 border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all duration-300 font-medium"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={`Cari nama di ${tab === "pre" ? "Pre Test" : "Post Test"}…`}
+                  className="pl-12 h-12 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                 />
+              </div>
+
+              {/* total */}
+              <div className="md:ml-auto">
+                <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-gray-100 bg-white/80 backdrop-blur shadow-sm">
+                  <span className="inline-flex w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-sm font-medium text-gray-700">Total {tab === "pre" ? "Pre Test" : "Post Test"}</span>
+                  <span className="text-sm font-bold text-gray-900">{filtered.length}</span>
+                </div>
+                <div className="sm:hidden inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">
+                  <span className="inline-flex w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-semibold text-gray-900">{filtered.length}</span>
+                </div>
               </div>
             </div>
 
             {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
-                <thead className="sticky top-0 z-10">
-                  <tr className="bg-gradient-to-r from-gray-100 to-gray-50 backdrop-blur-sm">
+                <thead>
+                  <tr className="bg-gray-50">
                     {["No", "Nama", "Tanggal", "Skor", "Aksi"].map((h, i) => (
                       <th
-                        key={i}
-                        className={`text-left text-xs md:text-sm font-black text-gray-800 uppercase tracking-wider py-5 border-b-2 border-gray-200 ${
-                          i === 0 ? "pl-6" : i === 4 ? "pr-6 text-right" : ""
-                        }`}
+                        key={h}
+                        className={[
+                          "text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide py-4 border-b-2 border-gray-100",
+                          i === 0 ? "pl-6" : i === 4 ? "pr-6 text-right" : "",
+                        ].join(" ")}
                       >
                         {h}
                       </th>
@@ -187,41 +385,43 @@ export default function LaporanKeseluruhan() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.length === 0 ? (
+                  {loading ? (
                     <tr>
-                      <td colSpan={5} className="py-20 text-center">
-                        <div className="flex flex-col items-center text-gray-400">
-                          <div className="relative mb-4">
-                            <div className="absolute inset-0 bg-gray-300 rounded-full blur-xl opacity-30"></div>
-                            <FileText className="relative h-16 w-16 text-gray-300" />
-                          </div>
-                          <span className="font-bold text-lg">Tidak ada data ditemukan</span>
-                          <span className="text-sm mt-1">Coba ubah filter pencarian</span>
-                        </div>
-                      </td>
+                      <td colSpan={5} className="py-16 text-center text-gray-500">Memuat…</td>
+                    </tr>
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-16 text-center text-gray-500">Tidak ada data.</td>
                     </tr>
                   ) : (
-                    rows.map((r, i) => (
+                    filtered.map((r, i) => (
                       <tr
-                        key={r.id}
-                        className="group/row border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 cursor-pointer"
+                        key={`${r.id}`}
+                        className="border-b border-gray-50 hover:bg-emerald-50/50 transition-colors"
                       >
-                        <td className="py-5 pl-6 font-bold text-gray-900">
-                          {i + 1}
+                        <td className="pl-6 py-4 font-semibold text-gray-900">{i + 1}</td>
+                        <td className="py-4 font-semibold text-gray-900">{r.name}</td>
+                        <td className="py-4 text-sm text-gray-600">
+                          <span className="inline-flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            {formatIDTime(r.date)}
+                          </span>
                         </td>
-                        <td className="py-5 font-bold text-gray-900 group-hover/row:text-blue-700 transition-colors duration-300">{r.name}</td>
-                        <td className="py-5 text-sm text-gray-600 font-medium">{r.date}</td>
-                        <td className="py-5">
+                        <td className="py-4">
                           <ScoreChip value={r.score} />
                         </td>
-                        <td className="py-5 pr-6">
-                          <div className="flex items-center justify-end gap-2">
-                            <IconButton title="Detail" onClick={() => {}}>
-                              <Eye className="h-4 w-4" />
-                            </IconButton>
-                            <IconButton title="Hapus" tone="danger" onClick={() => {}}>
-                              <Trash2 className="h-4 w-4" />
-                            </IconButton>
+                        <td className="py-4 pr-6">
+                          <div className="flex items-center justify-end">
+                            <button
+                              onClick={() => openDetail(r.id)}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold
+                                         border-2 border-gray-100 text-gray-600 bg-white
+                                         transition-all duration-300
+                                         hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50
+                                         hover:text-emerald-700 hover:shadow-md hover:scale-[1.02]"
+                            >
+                              Detail
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -233,55 +433,25 @@ export default function LaporanKeseluruhan() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal Detail */}
+      <DetailModal open={open} onClose={() => setOpen(false)} data={detail} />
     </div>
-  )
+  );
 }
 
-/* ===== Subcomponents ===== */
-
+/* ============ Small UI ============ */
 function ScoreChip({ value }: { value: number }) {
-  const config =
-    value >= 80 
-      ? { gradient: "from-emerald-500 to-teal-600", text: "text-white", shadow: "shadow-emerald-300/50" }
-      : value >= 60 
-      ? { gradient: "from-amber-500 to-orange-600", text: "text-white", shadow: "shadow-amber-300/50" }
-      : { gradient: "from-red-500 to-rose-600", text: "text-white", shadow: "shadow-red-300/50" }
-  
+  const v = Math.max(0, Math.min(100, Math.round(value)));
+  const theme =
+    v >= 80
+      ? "from-emerald-600 to-teal-600"
+      : v >= 60
+      ? "from-amber-500 to-orange-600"
+      : "from-rose-600 to-red-600";
   return (
-    <div className="group/chip relative inline-block">
-      <div className={`absolute inset-0 bg-gradient-to-r ${config.gradient} rounded-full blur-md opacity-40 group-hover/chip:opacity-70 transition-opacity duration-300`}></div>
-      <span className={`relative inline-flex items-center px-5 py-2 rounded-full bg-gradient-to-r ${config.gradient} ${config.text} text-sm font-black shadow-lg ${config.shadow} transform group-hover/chip:scale-110 transition-all duration-300`}>
-        {value}
-      </span>
-    </div>
-  )
-}
-
-function IconButton({
-  children,
-  onClick,
-  title,
-  tone = "neutral",
-}: {
-  children: React.ReactNode
-  onClick: () => void
-  title?: string
-  tone?: "neutral" | "danger"
-}) {
-  const config = tone === "danger"
-    ? "group/btn p-2.5 rounded-xl border-2 text-red-600 hover:bg-gradient-to-r hover:from-red-500 hover:to-rose-600 hover:text-white border-red-200 hover:border-red-500 shadow-lg hover:shadow-red-300/50"
-    : "group/btn p-2.5 rounded-xl border-2 text-blue-600 hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-600 hover:text-white border-blue-200 hover:border-blue-500 shadow-lg hover:shadow-blue-300/50"
-  
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={`${config} transition-all duration-300 transform hover:scale-110 hover:rotate-6`}
-    >
-      <div className="transform group-hover/btn:scale-110 transition-transform duration-300">
-        {children}
-      </div>
-    </button>
-  )
+    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-white text-sm font-semibold bg-gradient-to-r ${theme}`}>
+      {v}%
+    </span>
+  );
 }
