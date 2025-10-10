@@ -62,7 +62,7 @@ export default function DashboardManajemen() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 px-6 md:px-10 py-8">
+      <div className="min-h-screen bg-white">
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <Loader2 className="h-16 w-16 text-emerald-500 animate-spin mx-auto mb-4" />
@@ -74,7 +74,7 @@ export default function DashboardManajemen() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 px-6 md:px-10 py-8">
+    <div className="min-h-screen bg-white px-6 md:px-10 py-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <header className="mb-6 animate-fade-in">
@@ -92,10 +92,6 @@ export default function DashboardManajemen() {
               <p className="text-base md:text-lg text-gray-600 font-medium">
                 Kelola dan pantau data kesehatan secara keseluruhan
               </p>
-            </div>
-            <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 border-2 border-emerald-200">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-semibold text-emerald-700">Live Data</span>
             </div>
           </div>
         </header>
@@ -131,27 +127,26 @@ export default function DashboardManajemen() {
         </div>
 
         {/* Kondisi Kesehatan Section */}
-        <Card className="group relative overflow-hidden border-0 shadow-2xl rounded-3xl backdrop-blur-xl bg-white/90 hover:shadow-emerald-200/50 transition-all duration-700">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-          <CardHeader className="border-b border-emerald-100 bg-gradient-to-r from-white to-emerald-50/50">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
-                <Activity className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-2xl font-black bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text text-transparent">
-                  Kondisi Kesehatan
-                </CardTitle>
-                <p className="text-sm text-gray-600 font-medium">Fokus: Diabetes Melitus</p>
-              </div>
-            </div>
-          </CardHeader>
+      <div className="space-y-4">
+        {/* Judul dan icon di luar card */}
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+            <Activity className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Kondisi Kesehatan</h2>
+            <p className="text-sm text-emerald-700">Fokus: Diabetes Melitus</p>
+          </div>
+        </div>
+
+        {/* Card isi utama */}
+        <Card className="relative overflow-hidden border-2 border-emerald-100 bg-white rounded-3xl shadow-sm transition-all duration-500 hover:border-emerald-300 hover:shadow-[0_10px_40px_rgba(16,185,129,0.15)] hover:-translate-y-1">
           <CardContent className="p-6">
             {/* Main Stats Display */}
             <div className="mb-6 p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-600 mb-1">Total Kasus Terdaftar</p>
+                  <p className="text-sm font-semibold text-gray-700 mb-1">Total Kasus Terdaftar</p>
                   <p className="text-5xl font-black bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
                     {stats?.diabetes_cases || 0}
                   </p>
@@ -166,12 +161,14 @@ export default function DashboardManajemen() {
             {/* Progress Bar */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-gray-700">Persentase Populasi Terdampak</span>
+                <span className="text-sm font-semibold text-gray-700">
+                  Persentase Populasi Terdampak
+                </span>
                 <span className="text-lg font-black text-emerald-600">68%</span>
               </div>
-              <div className="w-full bg-emerald-100 rounded-full h-4 overflow-hidden shadow-inner">
-                <div 
-                  className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-full transition-all duration-1000 ease-out"
+              <div className="w-full bg-emerald-100 rounded-full h-4 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-full transition-all duration-700 ease-out"
                   style={{ width: "68%" }}
                 ></div>
               </div>
@@ -187,7 +184,7 @@ export default function DashboardManajemen() {
                 icon={<CheckCircle2 className="h-6 w-6" />}
                 color="emerald"
               />
-              
+
               <StatusCard
                 title="Perlu Perhatian"
                 count={stats?.status_perhatian || 0}
@@ -195,7 +192,7 @@ export default function DashboardManajemen() {
                 icon={<AlertCircle className="h-6 w-6" />}
                 color="amber"
               />
-              
+
               <StatusCard
                 title="Risiko Tinggi"
                 count={stats?.status_risiko || 0}
@@ -206,43 +203,7 @@ export default function DashboardManajemen() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Link href="/dashboard/manajemen/lokasi">
-            <Card className="group cursor-pointer overflow-hidden border-0 shadow-xl rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 hover:shadow-2xl hover:scale-105 transition-all duration-500">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:rotate-12 transition-transform duration-500">
-                    <MapPin className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-black text-white mb-1">Lokasi Persebaran</h3>
-                    <p className="text-sm text-white/80">Lihat peta distribusi kasus di wilayah</p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-white/60 group-hover:scale-125 transition-transform duration-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/dashboard/manajemen/laporan">
-            <Card className="group cursor-pointer overflow-hidden border-0 shadow-xl rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 hover:shadow-2xl hover:scale-105 transition-all duration-500">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:rotate-12 transition-transform duration-500">
-                    <BarChart3 className="h-8 w-8 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-black text-white mb-1">Laporan Keseluruhan</h3>
-                    <p className="text-sm text-white/80">Analisis data dan statistik lengkap</p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-white/60 group-hover:scale-125 transition-transform duration-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
+      </div>
       </div>
     </div>
   );
