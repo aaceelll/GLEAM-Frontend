@@ -450,7 +450,6 @@ export default function MateriPage() {
 
               <div className="space-y-2">
                 <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
-                  <Video className="h-4 w-4 text-purple-600" />
                   Video ID YouTube {!formData.tanpa_video && <span className="text-red-500">*</span>}
                 </label>
                 <input
@@ -462,7 +461,7 @@ export default function MateriPage() {
                 />
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-4">
                   <p className="text-xs text-blue-900">
-                    💡 <strong>Contoh:</strong> https://youtube.com/watch?v=
+                    <strong>Contoh:</strong> https://youtube.com/watch?v=
                     <span className="font-mono bg-white px-2 py-0.5 rounded">y55Wupx2ZDU</span>
                     <br />
                     Masukkan hanya: <span className="font-mono bg-white px-2 py-0.5 rounded">y55Wupx2ZDU</span>
@@ -489,7 +488,6 @@ export default function MateriPage() {
 
               <div className="space-y-2">
                 <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
-                  <Upload className="h-4 w-4 text-blue-600" />
                   File PDF {!editMode && <span className="text-red-500">*</span>}
                 </label>
                 <input
@@ -510,7 +508,6 @@ export default function MateriPage() {
 
               <div className="space-y-2">
                 <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
-                  <FileText className="h-4 w-4 text-emerald-600" />
                   Deskripsi <span className="text-red-500">*</span>
                 </label>
                 <textarea

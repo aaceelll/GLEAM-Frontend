@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usersAPI } from "@/lib/api";
 import { X } from "lucide-react";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ type Props = {
 
 export default function EditUserModal({ user, onUpdated, onClose }: Props) {
   const [saving, setSaving] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState({
     nama: user.nama,
@@ -32,6 +33,16 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
     password: "",
     password_confirmation: "",
   });
+
+  useEffect(() => {
+    // Lock scroll & trap focus
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    cardRef.current?.querySelector<HTMLInputElement>('input[name="nama"]')?.focus();
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   async function submit() {
     if (!form.nama.trim() || !form.username.trim() || !form.email.trim()) {
@@ -53,7 +64,6 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
         email: form.email.trim(),
         nomor_telepon: form.nomor_telepon?.trim() || undefined,
         role: form.role,
-        // kirim password hanya jika diisi
         ...(form.password
           ? {
               password: form.password,
@@ -62,30 +72,40 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
           : {}),
       });
       toast.success("Perubahan tersimpan");
-      onClose();
       onUpdated();
+      onClose();
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Gagal memperbarui akun");
+      const msg =
+        e?.response?.data?.message ||
+        (e?.response?.data?.errors && Object.values(e.response.data.errors).flat()[0]) ||
+        "Gagal memperbarui akun";
+      toast.error(String(msg));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center p-4">
+    <div
+      className="fixed inset-0 z-50 grid place-items-center p-4"
+      onKeyDown={(e) => e.stopPropagation()}
+    >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl">
+      <div
+        ref={cardRef}
+        className="relative bg-white rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         {/* Header hijau */}
         <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 px-6 py-5 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">Edit User</h2>
-            <p className="text-emerald-100 text-sm mt-1">
-              Perbarui data akun
-            </p>
+            <p className="text-emerald-100 text-sm mt-1">Perbarui data akun</p>
           </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300"
+            aria-label="Tutup"
           >
             <X className="h-6 w-6 text-white" />
           </button>
@@ -94,21 +114,19 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
         <div className="p-6 space-y-4 overflow-y-auto max-h-[80vh]">
           {/* Nama */}
           <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-900">
-              Nama 
-            </label>
+            <label className="text-sm font-semibold text-gray-900">Nama</label>
             <input
+              name="nama"
               value={form.nama}
               onChange={(e) => setForm({ ...form, nama: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
               placeholder="Nama lengkap"
             />
           </div>
+
           {/* Username */}
           <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-900">
-              Username 
-            </label>
+            <label className="text-sm font-semibold text-gray-900">Username</label>
             <input
               value={form.username}
               onChange={(e) => setForm({ ...form, username: e.target.value })}
@@ -116,11 +134,10 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
               placeholder="username"
             />
           </div>
+
           {/* Email */}
           <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-900">
-              Email 
-            </label>
+            <label className="text-sm font-semibold text-gray-900">Email</label>
             <input
               type="email"
               value={form.email}
@@ -129,26 +146,24 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
               placeholder="email@contoh.com"
             />
           </div>
+
           {/* Nomor Telepon */}
           <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-900">
-              Nomor Telepon
-            </label>
+            <label className="text-sm font-semibold text-gray-900">Nomor Telepon</label>
             <input
               value={form.nomor_telepon}
-              onChange={(e) =>
-                setForm({ ...form, nomor_telepon: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, nomor_telepon: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
               placeholder="08xxxxxxxxxx"
             />
           </div>
+
           {/* Role */}
           <div className="space-y-1">
             <label className="text-sm font-semibold text-gray-900">Role</label>
             <select
               value={form.role}
-              onChange={(e) => setForm({ ...form, role: e.target.value as any })}
+              onChange={(e) => setForm({ ...form, role: e.target.value as User["role"] })}
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
             >
               <option value="admin">Admin</option>
@@ -161,9 +176,7 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
           {/* Password Opsional */}
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-900">
-                Password Baru
-              </label>
+              <label className="text-sm font-semibold text-gray-900">Password Baru</label>
               <input
                 type="password"
                 value={form.password}
@@ -173,9 +186,7 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-900">
-                Konfirmasi Password Baru
-              </label>
+              <label className="text-sm font-semibold text-gray-900">Konfirmasi Password Baru</label>
               <input
                 type="password"
                 value={form.password_confirmation}

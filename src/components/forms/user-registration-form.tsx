@@ -6,14 +6,30 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 
-interface FormData {
+type FormData = {
   nama: string;
   email: string;
   username: string;
-  nomor_telepon: string
+  nomor_telepon: string;
   password: string;
   password_confirmation: string;
-}
+};
+
+type ApiSuccess = {
+  token?: string;
+  [k: string]: unknown;
+};
+
+type ApiError = {
+  message?: string;
+  errors?: Record<string, string[]>;
+  [k: string]: unknown;
+};
+
+type ErrorMap = Partial<Record<keyof FormData, string>>;
+
+const isApiError = (v: unknown): v is ApiError =>
+  typeof v === "object" && v !== null && ("message" in v || "errors" in v);
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -25,7 +41,7 @@ export function UserRegistrationForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showTermsPopup, setShowTermsPopup] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<ErrorMap>({});
 
   const [form, setForm] = useState<FormData>({
     nama: "",
@@ -41,18 +57,17 @@ export function UserRegistrationForm() {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Validasi
-    const requiredFields = [
+    const requiredFields: (keyof FormData)[] = [
       "nama",
       "email",
       "username",
       "nomor_telepon",
       "password",
       "password_confirmation",
-    ] as const;
+    ];
 
     for (const field of requiredFields) {
       if (!form[field]) {
@@ -71,7 +86,6 @@ export function UserRegistrationForm() {
       return;
     }
 
-    // Tampilkan popup terms
     setShowTermsPopup(true);
   };
 
@@ -99,31 +113,33 @@ export function UserRegistrationForm() {
         }),
       });
 
-      const data = await response.json();
+      const data: unknown = await response.json();
 
       if (!response.ok) {
+        const d = isApiError(data) ? data : undefined;
         const errorMsg =
-          data?.message ||
-          (typeof data?.errors === "object"
-            ? Object.values(data.errors).flat().join(", ")
+          d?.message ||
+          (d?.errors
+            ? Object.values(d.errors).flat().join(", ")
             : "Registrasi gagal");
         throw new Error(errorMsg);
       }
 
-      // Simpan token
-      if (data.token) {
-        localStorage.setItem("gleam_token", data.token);
-        document.cookie = `auth_token=${data.token}; Path=/; Max-Age=${
+      const ok = data as ApiSuccess;
+      if (ok.token) {
+        localStorage.setItem("gleam_token", ok.token);
+        document.cookie = `auth_token=${ok.token}; Path=/; Max-Age=${
           60 * 60 * 24 * 7
         }; SameSite=Lax`;
       }
 
-      // Redirect ke personal info page
       alert("Registrasi berhasil! Silakan lengkapi informasi pribadi Anda.");
       router.push("/dashboard/user/personal-info");
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      alert(error.message || "Terjadi kesalahan saat registrasi");
+    } catch (err: unknown) {
+      console.error("Registration error:", err);
+      const msg =
+        err instanceof Error ? err.message : "Terjadi kesalahan saat registrasi";
+      alert(msg);
     } finally {
       setLoading(false);
       setShowTermsPopup(false);
@@ -131,314 +147,187 @@ export function UserRegistrationForm() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-emerald-200 via-teal-200 to-cyan-200">
-      {/* ====== Background Layer ====== */}
-      
-      {/* Large animated gradient orbs */}
-      <div className="pointer-events-none absolute inset-0 -z-20">
-        <div className="absolute -top-20 -left-20 h-[50rem] w-[50rem] rounded-full bg-gradient-to-br from-emerald-300 via-teal-300 to-cyan-300 opacity-60 blur-3xl animate-pulse" 
-             style={{ animationDuration: '8s' }} />
-        <div className="absolute -bottom-32 -right-32 h-[50rem] w-[50rem] rounded-full bg-gradient-to-tr from-teal-200 via-emerald-300 to-lime-200 opacity-60 blur-3xl animate-pulse" 
-             style={{ animationDuration: '10s', animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 h-[40rem] w-[40rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-emerald-100 via-teal-200 to-cyan-200 opacity-60 blur-3xl" />
-        <div className="absolute top-1/4 right-1/4 h-[30rem] w-[30rem] rounded-full bg-gradient-to-bl from-cyan-200 via-teal-200 to-emerald-200 opacity-50 blur-3xl animate-pulse"
-             style={{ animationDuration: '12s', animationDelay: '2s' }} />
-        <div className="absolute bottom-1/3 left-1/3 h-[35rem] w-[35rem] rounded-full bg-gradient-to-tr from-lime-200 via-emerald-200 to-teal-200 opacity-55 blur-3xl animate-pulse"
-             style={{ animationDuration: '9s', animationDelay: '3s' }} />
-      </div>
+    <div className="w-full">
+      {/* Centered Card */}
+      <div className="w-full max-w-md mx-auto py-12 px-4">
+        <div className="relative overflow-hidden bg-white/85 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/60 p-8 before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/60 before:to-emerald-50/40 before:rounded-3xl before:pointer-events-none">
+          {/* Top glow line */}
+          <div className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
+          {/* Corner accent lights */}
+          <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br from-emerald-400/30 to-teal-400/30 blur-2xl" />
+          <div className="pointer-events-none absolute -left-10 -bottom-10 h-36 w-36 rounded-full bg-gradient-to-tr from-teal-400/30 to-emerald-400/30 blur-2xl" />
+          {/* Subtle inner border */}
+          <div className="pointer-events-none absolute inset-3 rounded-2xl ring-1 ring-inset ring-emerald-200/30" />
 
-      {/* Geometric pattern overlay */}
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.25]">
-        <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="hexPattern" x="0" y="0" width="80" height="69.28" patternUnits="userSpaceOnUse">
-              <path d="M20,0 L60,0 L80,34.64 L60,69.28 L20,69.28 L0,34.64 Z" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="1" 
-                    className="text-emerald-500/40" />
-            </pattern>
-            <radialGradient id="hexMask">
-              <stop offset="0%" stopColor="white" stopOpacity="1" />
-              <stop offset="60%" stopColor="white" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="white" stopOpacity="0.1" />
-            </radialGradient>
-            <mask id="hexMaskEl">
-              <rect width="100%" height="100%" fill="url(#hexMask)" />
-            </mask>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#hexPattern)" mask="url(#hexMaskEl)" />
-        </svg>
-      </div>
-
-      {/* Dot grid pattern */}
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.3]">
-        <svg className="h-full w-full text-emerald-600/30" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="dotgrid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
-              <circle cx="2" cy="2" r="1.5" fill="currentColor" />
-            </pattern>
-            <radialGradient id="dotFade">
-              <stop offset="30%" stopColor="white" />
-              <stop offset="100%" stopColor="black" />
-            </radialGradient>
-            <mask id="dotMask">
-              <rect width="100%" height="100%" fill="url(#dotFade)" />
-            </mask>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#dotgrid)" mask="url(#dotMask)" />
-        </svg>
-      </div>
-
-      {/* Subtle line pattern */}
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.12]">
-        <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="lines" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M0,20 L40,20" stroke="currentColor" strokeWidth="0.8" className="text-emerald-600" />
-              <path d="M20,0 L20,40" stroke="currentColor" strokeWidth="0.8" className="text-emerald-600" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#lines)" opacity="0.6" />
-        </svg>
-      </div>
-
-      {/* Noise texture */}
-      <div
-        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.05] mix-blend-overlay"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.6'/></svg>\")",
-        }}
-      />
-
-      {/* Vignette effect */}
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0)_0%,rgba(16,185,129,0)_50%,rgba(5,150,105,0.15)_100%)]" />
-
-      {/* Decorative corner elements */}
-      <div className="pointer-events-none absolute top-0 left-0 w-96 h-96 -z-10">
-        <div className="absolute top-8 left-8 w-48 h-48 border-[3px] border-emerald-400/40 rounded-[2.5rem] rotate-12" />
-        <div className="absolute top-16 left-16 w-36 h-36 border-[2px] border-teal-400/30 rounded-3xl -rotate-6" />
-        <div className="absolute top-24 left-24 w-24 h-24 border-[2px] border-emerald-300/25 rounded-2xl rotate-12" />
-      </div>
-      
-      <div className="pointer-events-none absolute bottom-0 right-0 w-96 h-96 -z-10">
-        <div className="absolute bottom-8 right-8 w-48 h-48 border-[3px] border-emerald-400/40 rounded-[2.5rem] -rotate-12" />
-        <div className="absolute bottom-16 right-16 w-36 h-36 border-[2px] border-teal-400/30 rounded-3xl rotate-6" />
-        <div className="absolute bottom-24 right-24 w-24 h-24 border-[2px] border-emerald-300/25 rounded-2xl -rotate-12" />
-      </div>
-
-      {/* Floating particles */}
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-emerald-400/50 rounded-full animate-ping" 
-             style={{ animationDuration: '3s', animationDelay: '0s' }} />
-        <div className="absolute top-1/3 right-1/3 w-2 h-2 bg-teal-400/50 rounded-full animate-ping" 
-             style={{ animationDuration: '4s', animationDelay: '1s' }} />
-        <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-cyan-400/50 rounded-full animate-ping" 
-             style={{ animationDuration: '5s', animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/5 w-2 h-2 bg-emerald-500/40 rounded-full animate-ping" 
-             style={{ animationDuration: '4.5s', animationDelay: '0.5s' }} />
-        <div className="absolute bottom-1/3 right-1/4 w-2.5 h-2.5 bg-teal-500/40 rounded-full animate-ping" 
-             style={{ animationDuration: '3.5s', animationDelay: '1.5s' }} />
-        <div className="absolute top-2/3 right-1/5 w-2 h-2 bg-cyan-500/40 rounded-full animate-ping" 
-             style={{ animationDuration: '4.2s', animationDelay: '2.5s' }} />
-      </div>
-
-      {/* ====== Centered Card ====== */}
-      <div className="relative z-10 w-full flex min-h-screen items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          {/* Glass morphism card */}
-          <div className="relative overflow-hidden bg-white/85 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/60 p-8 before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/60 before:to-emerald-50/40 before:rounded-3xl">
-            
-            {/* Top glow line */}
-            <div className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
-            
-            {/* Corner accent lights */}
-            <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br from-emerald-400/30 to-teal-400/30 blur-2xl" />
-            <div className="pointer-events-none absolute -left-10 -bottom-10 h-36 w-36 rounded-full bg-gradient-to-tr from-teal-400/30 to-emerald-400/30 blur-2xl" />
-
-            {/* Subtle inner border */}
-            <div className="pointer-events-none absolute inset-3 rounded-2xl ring-1 ring-inset ring-emerald-200/30" />
-
-            {/* Form content */}
-            <div className="relative z-10 space-y-6">
-              {/* Header */}
-              <div className="text-center space-y-3">
-                <div className="mx-auto w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-300/50 rotate-3 hover:rotate-0 transition-transform duration-300 ring-4 ring-white/50">
-                  <UserPlus className="w-10 h-10 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent">
-                    Daftar Akun Pasien
-                  </h1>
-                  <p className="mt-2 text-sm text-gray-600">
-                    Bergabunglah dengan GLEAM untuk monitoring kesehatan diabetes Anda
-                  </p>
-                </div>
+          <div className="relative z-10 space-y-6">
+            <div className="text-center space-y-3">
+              <div className="mx-auto w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-300/50 rotate-3 hover:rotate-0 transition-transform duration-300 ring-4 ring-white/50">
+                <UserPlus className="w-10 h-10 text-white" />
               </div>
-
-              {/* Form fields */}
-              <form onSubmit={handleFormSubmit} className="space-y-4">
-                {/* Nama Lengkap */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-emerald-800">
-                    Nama Lengkap <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={form.nama}
-                    onChange={(e) => onChange("nama", e.target.value)}
-                    className="w-full px-4 py-3.5 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                    placeholder="Masukkan nama lengkap"
-                    required
-                  />
-                </div>
-
-                {/* Email */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-emerald-800">
-                    Email <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => onChange("email", e.target.value)}
-                    className="w-full px-4 py-3.5 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                    placeholder="nama@email.com"
-                    required
-                  />
-                </div>
-
-                {/* Username */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-emerald-800">
-                    Username <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={form.username}
-                    onChange={(e) => onChange("username", e.target.value)}
-                    className="w-full px-4 py-3.5 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                    placeholder="username123"
-                    required
-                  />
-                </div>
-
-                {/* Nomor Telepon */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-emerald-800">
-                    Nomor Telepon <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={form.nomor_telepon}
-                    onChange={(e) => onChange("nomor_telepon", e.target.value)}
-                    className="w-full px-4 py-3.5 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                    placeholder="08123456789"
-                    required
-                  />
-                </div>
-
-
-                {/* Password */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-emerald-800">
-                    Password <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={form.password}
-                      onChange={(e) => onChange("password", e.target.value)}
-                      className="w-full px-4 py-3.5 pr-12 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                      placeholder="Minimal 8 karakter"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-emerald-600 transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Konfirmasi Password */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-emerald-800">
-                    Konfirmasi Password <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={form.password_confirmation}
-                      onChange={(e) => onChange("password_confirmation", e.target.value)}
-                      className="w-full px-4 py-3.5 pr-12 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                      placeholder="Ulangi password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-emerald-600 transition-colors"
-                    >
-                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="group relative w-full h-13 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-base rounded-xl shadow-lg shadow-emerald-300/50 hover:shadow-emerald-400/60 hover:shadow-xl transition-all duration-300 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] mt-6"
-                >
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    {loading ? "Memproses..." : "Daftar Sekarang"}
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-teal-600 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  {/* Button shine effect */}
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                  </div>
-                </button>
-              </form>
-
-              {/* Footer */}
-              <div className="pt-4 border-t-2 border-emerald-100/50 text-center">
-                <p className="text-sm text-gray-600">
-                  Sudah punya akun?{" "}
-                  <Link
-                    href="/login/user"
-                    className="font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors"
-                  >
-                    Masuk Sekarang
-                  </Link>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent">
+                  Daftar Akun Pasien
+                </h1>
+                <p className="mt-2 text-sm text-gray-600">
+                  Bergabunglah dengan GLEAM untuk monitoring kesehatan diabetes
+                  Anda
                 </p>
               </div>
+            </div>
+
+            <form onSubmit={handleFormSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-emerald-800">
+                  Nama Lengkap <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.nama}
+                  onChange={(e) => onChange("nama", e.target.value)}
+                  className="w-full px-4 py-3.5 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
+                  placeholder="Masukkan nama lengkap"
+                  autoComplete="name"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-emerald-800">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => onChange("email", e.target.value)}
+                  className="w-full px-4 py-3.5 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
+                  placeholder="nama@email.com"
+                  autoComplete="email"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-emerald-800">
+                  Username <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.username}
+                  onChange={(e) => onChange("username", e.target.value)}
+                  className="w-full px-4 py-3.5 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
+                  placeholder="username123"
+                  autoComplete="username"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-emerald-800">
+                  Nomor Telepon <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={form.nomor_telepon}
+                  onChange={(e) => onChange("nomor_telepon", e.target.value)}
+                  className="w-full px-4 py-3.5 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
+                  placeholder="08123456789"
+                  autoComplete="tel"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-emerald-800">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(e) => onChange("password", e.target.value)}
+                    className="w-full px-4 py-3.5 pr-12 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
+                    placeholder="Minimal 8 karakter"
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-emerald-600 transition-colors"
+                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-emerald-800">
+                  Konfirmasi Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={form.password_confirmation}
+                    onChange={(e) => onChange("password_confirmation", e.target.value)}
+                    className="w-full px-4 py-3.5 pr-12 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
+                    placeholder="Ulangi password"
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-emerald-600 transition-colors"
+                    aria-label={showConfirmPassword ? "Sembunyikan konfirmasi password" : "Tampilkan konfirmasi password"}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="group relative w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-base rounded-xl shadow-lg shadow-emerald-300/50 hover:shadow-emerald-400/60 hover:shadow-xl transition-all duration-300 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] mt-6 py-3"
+              >
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {loading ? "Memproses..." : "Daftar Sekarang"}
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-teal-600 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                </div>
+              </button>
+            </form>
+
+            <div className="pt-4 border-t-2 border-emerald-100/50 text-center">
+              <p className="text-sm text-gray-600">
+                Sudah punya akun?{" "}
+                <Link
+                  href="/login/user"
+                  className="font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors"
+                >
+                  Masuk Sekarang
+                </Link>
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Terms & Conditions Popup */}
+      {/* Terms Popup */}
       {showTermsPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
-            {/* Header */}
             <div className="px-6 pt-6 pb-4 bg-gradient-to-br from-emerald-50 to-white border-b border-emerald-100">
-              <h2 className="text-2xl font-bold text-emerald-700">
-                Syarat dan Persetujuan
-              </h2>
+              <h2 className="text-2xl font-bold text-emerald-700">Syarat dan Persetujuan</h2>
               <p className="text-sm text-gray-600 mt-2">
                 Dengan ini saya menyatakan bahwa saya setuju untuk ikut berpartisipasi dalam penelitian berbasis website ini{" "}
-                <span className="font-semibold text-emerald-700">"GLEAM"</span>{" "}
-                dengan penuh kesadaran dan tanpa ada paksaan dari siapapun dengan kondisi:
+                <span className="font-semibold text-emerald-700">"GLEAM"</span> dengan penuh kesadaran dan tanpa ada paksaan dari siapapun dengan kondisi:
               </p>
             </div>
 
-            {/* Content */}
             <div className="px-6 py-5 overflow-y-auto flex-1">
               <div className="space-y-4 text-sm text-gray-700 bg-emerald-50 p-4 rounded-xl">
                 <div className="flex gap-3">
@@ -472,7 +361,6 @@ export function UserRegistrationForm() {
               </div>
             </div>
 
-            {/* Footer */}
             <div className="px-6 py-4 bg-gray-50 border-t border-emerald-100 flex gap-3">
               <button
                 onClick={() => setShowTermsPopup(false)}

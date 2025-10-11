@@ -58,6 +58,11 @@ export default function UsersPage() {
   const rowsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
 
+  function blurSearch() {
+    const el = document.getElementById("admin-users-search") as HTMLInputElement | null;
+    el?.blur();
+  }
+
   async function load() {
     setLoading(true);
     try {
@@ -120,10 +125,9 @@ export default function UsersPage() {
   }
 
   return (
-    // ⬇️ sama persis dengan Materi: p-6 + container spacing 6
     <div className="min-h-screen bg-white p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header — match Materi (ikon hijau, judul 4xl, subjudul, gap) */}
+        {/* Header */}
         <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
@@ -145,10 +149,9 @@ export default function UsersPage() {
           </button>
         </header>
 
-        {/* Table card */}
+        {/* Card + Search + Table */}
         <section>
           <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl overflow-hidden">
-            {/* header card — match Materi: emerald→teal */}
             <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
               <div className="flex items-center justify-between">
                 <div>
@@ -166,6 +169,7 @@ export default function UsersPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
+                  id="admin-users-search"
                   type="text"
                   name="admin-users-search"
                   autoComplete="off"
@@ -197,7 +201,7 @@ export default function UsersPage() {
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td className="p-8 text-center text-gray-5 00" colSpan={6}>
+                        <td className="p-8 text-center text-gray-500" colSpan={6}>
                           <div className="flex flex-col items-center justify-center gap-3">
                             <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
                             <p className="text-sm font-medium">Memuat data...</p>
@@ -346,9 +350,29 @@ export default function UsersPage() {
       </div>
 
       {/* Modals */}
-      {showAdd && <AddUserModal onCreated={load} onClose={() => setShowAdd(false)} />}
+      {showAdd && (
+        <AddUserModal
+          onCreated={async () => {
+            await load();
+          }}
+          onClose={() => {
+            setShowAdd(false);
+            setTimeout(blurSearch, 0); // pastikan search tidak fokus lagi
+          }}
+        />
+      )}
+
       {editUser && (
-        <EditUserModal user={editUser} onUpdated={load} onClose={() => setEditUser(null)} />
+        <EditUserModal
+          user={editUser}
+          onUpdated={async () => {
+            await load();
+          }}
+          onClose={() => {
+            setEditUser(null);
+            setTimeout(blurSearch, 0);
+          }}
+        />
       )}
 
       {/* Confirm Delete */}
