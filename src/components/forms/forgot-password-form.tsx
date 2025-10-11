@@ -1,132 +1,85 @@
-// src/components/forms/user-registration-form.tsx
+// src/components/forms/forgot-password-form.tsx
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState } from "react";
+import { KeyRound, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { Eye, EyeOff, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-interface FormData {
-  nama: string;
-  email: string;
-  username: string;
-  nomor_telepon: string
-  password: string;
-  password_confirmation: string;
-}
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-
-export function UserRegistrationForm() {
+export function ForgotPasswordForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showTermsPopup, setShowTermsPopup] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
 
-  const [form, setForm] = useState<FormData>({
-    nama: "",
-    email: "",
-    username: "",
-    nomor_telepon: "",
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [formData, setFormData] = useState({
+    login: "",
+    old_password: "",
     password: "",
     password_confirmation: "",
   });
 
-  const onChange = (field: keyof FormData, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+  const handleChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    setError("");
   };
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setSuccess(false);
 
     // Validasi
-    const requiredFields = [
-      "nama",
-      "email",
-      "username",
-      "nomor_telepon",
-      "password",
-      "password_confirmation",
-    ] as const;
-
-    for (const field of requiredFields) {
-      if (!form[field]) {
-        alert(`Field ${field} wajib diisi`);
-        return;
-      }
-    }
-
-    if (form.password !== form.password_confirmation) {
-      alert("Password dan konfirmasi password tidak sama");
+    if (!formData.login || !formData.old_password || !formData.password || !formData.password_confirmation) {
+      setError("Semua field wajib diisi");
       return;
     }
 
-    if (form.password.length < 8) {
-      alert("Password minimal 8 karakter");
+    if (formData.password !== formData.password_confirmation) {
+      setError("Password baru dan konfirmasi password tidak sama");
       return;
     }
 
-    // Tampilkan popup terms
-    setShowTermsPopup(true);
-  };
-
-  const handleAcceptTerms = async () => {
-    if (!agreedToTerms) {
-      alert("Anda harus menyetujui persyaratan terlebih dahulu");
+    if (formData.password.length < 6) {
+      setError("Password baru minimal 6 karakter");
       return;
     }
 
-    setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register/user`, {
+      setLoading(true);
+
+      const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({
-          nama: form.nama,
-          email: form.email,
-          username: form.username,
-          nomor_telepon: form.nomor_telepon,
-          password: form.password,
-          password_confirmation: form.password_confirmation,
-        }),
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        const errorMsg =
-          data?.message ||
-          (typeof data?.errors === "object"
-            ? Object.values(data.errors).flat().join(", ")
-            : "Registrasi gagal");
-        throw new Error(errorMsg);
+        throw new Error(data?.message || "Gagal mengubah password");
       }
 
-      // Simpan token
-      if (data.token) {
-        localStorage.setItem("gleam_token", data.token);
-        document.cookie = `auth_token=${data.token}; Path=/; Max-Age=${
-          60 * 60 * 24 * 7
-        }; SameSite=Lax`;
-      }
-
-      // Redirect ke personal info page
-      alert("Registrasi berhasil! Silakan lengkapi informasi pribadi Anda.");
-      router.push("/dashboard/user/personal-info");
+      setSuccess(true);
+      
+      // Redirect ke login setelah 2 detik
+      setTimeout(() => {
+        router.push("/login/user");
+      }, 2000);
     } catch (error: any) {
-      console.error("Registration error:", error);
-      alert(error.message || "Terjadi kesalahan saat registrasi");
+      console.error(error);
+      setError(error.message || "Terjadi kesalahan saat mengubah password");
     } finally {
       setLoading(false);
-      setShowTermsPopup(false);
     }
   };
 
@@ -248,7 +201,7 @@ export function UserRegistrationForm() {
       <div className="relative z-10 w-full flex min-h-screen items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           {/* Glass morphism card */}
-          <div className="relative overflow-hidden bg-white/85 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/60 p-8 before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/60 before:to-emerald-50/40 before:rounded-3xl">
+          <div className="relative overflow-hidden bg-white/85 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/60 p-8 before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/60 before:to-emerald-50/40 before:rounded-3xl before:pointer-events-none">
             
             {/* Top glow line */}
             <div className="pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
@@ -262,121 +215,126 @@ export function UserRegistrationForm() {
 
             {/* Form content */}
             <div className="relative z-10 space-y-6">
+              {/* Back button */}
+              <Link
+                href="/login/user"
+                className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-800 transition-colors group"
+              >
+                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                Kembali ke Login
+              </Link>
+
               {/* Header */}
               <div className="text-center space-y-3">
                 <div className="mx-auto w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-300/50 rotate-3 hover:rotate-0 transition-transform duration-300 ring-4 ring-white/50">
-                  <UserPlus className="w-10 h-10 text-white" />
+                  <KeyRound className="w-10 h-10 text-white" />
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent">
-                    Daftar Akun Pasien
+                    Ubah Password
                   </h1>
                   <p className="mt-2 text-sm text-gray-600">
-                    Bergabunglah dengan GLEAM untuk monitoring kesehatan diabetes Anda
+                    Masukkan informasi akun dan password baru Anda
                   </p>
                 </div>
               </div>
 
-              {/* Form fields */}
-              <form onSubmit={handleFormSubmit} className="space-y-4">
-                {/* Nama Lengkap */}
+              {/* Success Message */}
+              {success && (
+                <div className="p-4 bg-emerald-50 border-2 border-emerald-200 rounded-xl">
+                  <p className="text-sm text-emerald-800 text-center font-medium">
+                    ✓ Password berhasil diubah! Mengalihkan ke halaman login...
+                  </p>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {error && (
+                <div className="p-4 bg-red-50 border-2 border-red-200 rounded-xl">
+                  <p className="text-sm text-red-800 text-center font-medium">
+                    {error}
+                  </p>
+                </div>
+              )}
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Email atau Username */}
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-emerald-800">
-                    Nama Lengkap <span className="text-red-500">*</span>
+                    Email atau Username <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={form.nama}
-                    onChange={(e) => onChange("nama", e.target.value)}
+                    value={formData.login}
+                    onChange={(e) => handleChange("login", e.target.value)}
                     className="w-full px-4 py-3.5 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                    placeholder="Masukkan nama lengkap"
-                    required
+                    placeholder="email@example.com atau username"
+                    disabled={loading || success}
                   />
                 </div>
 
-                {/* Email */}
+                {/* Password Lama */}
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-emerald-800">
-                    Email <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => onChange("email", e.target.value)}
-                    className="w-full px-4 py-3.5 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                    placeholder="nama@email.com"
-                    required
-                  />
-                </div>
-
-                {/* Username */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-emerald-800">
-                    Username <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={form.username}
-                    onChange={(e) => onChange("username", e.target.value)}
-                    className="w-full px-4 py-3.5 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                    placeholder="username123"
-                    required
-                  />
-                </div>
-
-                {/* Nomor Telepon */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-emerald-800">
-                    Nomor Telepon <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={form.nomor_telepon}
-                    onChange={(e) => onChange("nomor_telepon", e.target.value)}
-                    className="w-full px-4 py-3.5 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                    placeholder="08123456789"
-                    required
-                  />
-                </div>
-
-
-                {/* Password */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-emerald-800">
-                    Password <span className="text-red-500">*</span>
+                    Password Lama <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <input
-                      type={showPassword ? "text" : "password"}
-                      value={form.password}
-                      onChange={(e) => onChange("password", e.target.value)}
+                      type={showOldPassword ? "text" : "password"}
+                      value={formData.old_password}
+                      onChange={(e) => handleChange("old_password", e.target.value)}
                       className="w-full px-4 py-3.5 pr-12 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                      placeholder="Minimal 8 karakter"
-                      required
+                      placeholder="Masukkan password lama"
+                      disabled={loading || success}
                     />
                     <button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={() => setShowOldPassword(!showOldPassword)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-emerald-600 transition-colors"
                     >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showOldPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
                 </div>
 
-                {/* Konfirmasi Password */}
+                {/* Password Baru */}
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-emerald-800">
-                    Konfirmasi Password <span className="text-red-500">*</span>
+                    Password Baru <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) => handleChange("password", e.target.value)}
+                      className="w-full px-4 py-3.5 pr-12 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
+                      placeholder="Minimal 6 karakter"
+                      disabled={loading || success}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-emerald-600 transition-colors"
+                    >
+                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Konfirmasi Password Baru */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-emerald-800">
+                    Konfirmasi Password Baru <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <input
                       type={showConfirmPassword ? "text" : "password"}
-                      value={form.password_confirmation}
-                      onChange={(e) => onChange("password_confirmation", e.target.value)}
+                      value={formData.password_confirmation}
+                      onChange={(e) => handleChange("password_confirmation", e.target.value)}
                       className="w-full px-4 py-3.5 pr-12 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                      placeholder="Ulangi password"
-                      required
+                      placeholder="Ulangi password baru"
+                      disabled={loading || success}
                     />
                     <button
                       type="button"
@@ -388,14 +346,14 @@ export function UserRegistrationForm() {
                   </div>
                 </div>
 
-                {/* Submit Button */}
+                {/* Submit button */}
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="group relative w-full h-13 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-base rounded-xl shadow-lg shadow-emerald-300/50 hover:shadow-emerald-400/60 hover:shadow-xl transition-all duration-300 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] mt-6"
+                  disabled={loading || success}
+                  className="group relative w-full h-13 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-base rounded-xl shadow-lg shadow-emerald-300/50 hover:shadow-emerald-400/60 hover:shadow-xl transition-all duration-300 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] mt-6 py-3"
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2">
-                    {loading ? "Memproses..." : "Daftar Sekarang"}
+                    {loading ? "Mengubah Password..." : success ? "Berhasil!" : "Ubah Password"}
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-teal-600 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   {/* Button shine effect */}
@@ -408,10 +366,10 @@ export function UserRegistrationForm() {
               {/* Footer */}
               <div className="pt-4 border-t-2 border-emerald-100/50 text-center">
                 <p className="text-sm text-gray-600">
-                  Sudah punya akun?{" "}
+                  Ingat password?{" "}
                   <Link
                     href="/login/user"
-                    className="font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors"
+                    className="relative z-20 font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors cursor-pointer"
                   >
                     Masuk Sekarang
                   </Link>
@@ -421,76 +379,6 @@ export function UserRegistrationForm() {
           </div>
         </div>
       </div>
-
-      {/* Terms & Conditions Popup */}
-      {showTermsPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
-            {/* Header */}
-            <div className="px-6 pt-6 pb-4 bg-gradient-to-br from-emerald-50 to-white border-b border-emerald-100">
-              <h2 className="text-2xl font-bold text-emerald-700">
-                Syarat dan Persetujuan
-              </h2>
-              <p className="text-sm text-gray-600 mt-2">
-                Dengan ini saya menyatakan bahwa saya setuju untuk ikut berpartisipasi dalam penelitian berbasis website ini{" "}
-                <span className="font-semibold text-emerald-700">"GLEAM"</span>{" "}
-                dengan penuh kesadaran dan tanpa ada paksaan dari siapapun dengan kondisi:
-              </p>
-            </div>
-
-            {/* Content */}
-            <div className="px-6 py-5 overflow-y-auto flex-1">
-              <div className="space-y-4 text-sm text-gray-700 bg-emerald-50 p-4 rounded-xl">
-                <div className="flex gap-3">
-                  <span className="font-bold text-emerald-700 flex-shrink-0">1.</span>
-                  <p className="leading-relaxed">
-                    Data yang didapatkan dari penelitian ini akan dijaga kerahasiaannya dan hanya digunakan untuk kepentingan ilmiah.
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <span className="font-bold text-emerald-700 flex-shrink-0">2.</span>
-                  <p className="leading-relaxed">
-                    Saya berhak untuk mengundurkan diri dari penelitian ini kapan saja tanpa perlu memberikan alasan apa pun.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3 mt-5 pt-4 border-t border-emerald-100">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  checked={agreedToTerms}
-                  onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="mt-1 w-4 h-4 text-emerald-600 border-emerald-300 rounded focus:ring-emerald-500"
-                />
-                <label
-                  htmlFor="terms"
-                  className="text-sm font-medium leading-relaxed cursor-pointer text-gray-700"
-                >
-                  Saya menyetujui persyaratan di atas dan bersedia berpartisipasi dalam penelitian ini
-                </label>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-emerald-100 flex gap-3">
-              <button
-                onClick={() => setShowTermsPopup(false)}
-                className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition-colors"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleAcceptTerms}
-                disabled={!agreedToTerms || loading}
-                className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? "Memproses..." : "Daftar Sekarang"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
