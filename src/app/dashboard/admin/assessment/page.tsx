@@ -19,8 +19,9 @@ type BankSoal = {
   id: string;
   nama: string;
   totalSoal: number;
-  status?: "draft" | "publish";
   updatedAt?: string;
+  /** derived di FE: tampilkan ke user jika totalSoal > 0 */
+  isShown?: boolean;
 };
 type Soal = {
   id: string;
@@ -148,9 +149,6 @@ export default function AssessmentPage() {
   // urutan tampil saat ini — supaya kartu tidak “loncat” saat refresh
   const orderRef = useRef<string[]>([]);
 
-  // Toggle guard
-  const [togglingId, setTogglingId] = useState<string | null>(null);
-
   // Modals
   const [openAddBank, setOpenAddBank] = useState(false);
   const [addBankName, setAddBankName] = useState("");
@@ -225,13 +223,16 @@ export default function AssessmentPage() {
     try {
       const res = await api.get(API_PATHS.bankList);
       const list = (res.data?.data ?? res.data ?? []) as any[];
-      const mapped: BankSoal[] = list.map((it: any) => ({
-        id: String(it.id),
-        nama: it.nama,
-        totalSoal: it.totalSoal ?? it.total_soal ?? 0,
-        status: it.status ?? "draft",
-        updatedAt: it.updatedAt ?? it.updated_at ?? undefined,
-      }));
+      const mapped: BankSoal[] = list.map((it: any) => {
+        const total = it.totalSoal ?? it.total_soal ?? 0;
+        return {
+          id: String(it.id),
+          nama: it.nama,
+          totalSoal: total,
+          updatedAt: it.updatedAt ?? it.updated_at ?? undefined,
+          isShown: total > 0,
+        };
+      });
 
       // set initial order (first load) atau pertahankan urutan tampilan saat ini
       let next = mapped;
@@ -334,42 +335,6 @@ export default function AssessmentPage() {
     }
   }
 
-  /** Toggle publish/draft:
-   * - cegah bubbling (biar gak dobel panggilan)
-   * - guard while toggling
-   * - optimistically update status lokal agar UI nggak “loncat”
-   * - setSelectedBankId ke bank yang baru di-toggle
-   * - refresh data (urutan tetap stabil karena sortByOrderRef)
-   */
-  async function toggleBankStatus(bank: BankSoal) {
-    if (togglingId) return; // ada proses lain berjalan
-    setTogglingId(bank.id);
-    try {
-      const nextStatus = bank.status === "publish" ? "draft" : "publish";
-      await api.patch(`${API_PATHS.bankList}/${bank.id}`, { status: nextStatus });
-
-      // Optimistic update (tidak mengubah urutan)
-      setBanks((prev) =>
-        prev.map((b) => (b.id === bank.id ? { ...b, status: nextStatus } : b))
-      );
-
-      // pilih kartu yang baru di-toggle
-      setSelectedBankId(bank.id);
-      await fetchSoal(bank.id);
-
-      // sinkronisasi data dari server (urutan tetap karena sortByOrderRef)
-      await fetchBanks();
-      showMsg({
-        type: "success",
-        text: nextStatus === "publish" ? "Bank dipublish" : "Bank dijadikan draft",
-      });
-    } catch (err) {
-      showMsg({ type: "error", text: parseErrText(err, "Gagal mengubah status bank.") });
-    } finally {
-      setTogglingId(null);
-    }
-  }
-
   /* ------------------------ CRUD: Soal ------------------------ */
   function setOpt(i: number, patch: Partial<{ label: string; skor: string }>) {
     setOptions((prev) => {
@@ -436,7 +401,7 @@ export default function AssessmentPage() {
       setOpenAddSoal(false);
       resetSoalForm();
       await fetchSoal(selectedBankId);
-      await fetchBanks();
+      await fetchBanks(); // penting: update totalSoal → badge tampil otomatis
     } catch (err) {
       showMsg({ type: "error", text: parseErrText(err, "Gagal menambahkan soal.") });
     }
@@ -448,7 +413,7 @@ export default function AssessmentPage() {
       await api.delete(API_PATHS.soalDelete(id));
       showMsg({ type: "success", text: "Soal berhasil dihapus!" });
       await fetchSoal(selectedBankId);
-      await fetchBanks();
+      await fetchBanks(); // penting: update totalSoal → badge tampil otomatis
     } catch (err) {
       showMsg({ type: "error", text: parseErrText(err, "Gagal menghapus soal.") });
     } finally {
@@ -591,69 +556,46 @@ export default function AssessmentPage() {
                               </h3>
                               <div className="text-xs text-gray-500 flex items-center gap-2 flex-wrap">
                                 <span>{bank.totalSoal} soal</span>
-                                <span className="text-gray-300">•</span>
-                                {bank.status === "publish" ? (
-                                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    Ditampilkan ke pengguna
-                                  </span>
+                                {/* ✅ BADGE OTOMATIS BERDASARKAN JUMLAH SOAL */}
+                                {bank.totalSoal > 0 ? (
+                                  <>
+                                    <span className="text-gray-300">•</span>
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
+                                      ✓ Ditampilkan ke user
+                                    </span>
+                                  </>
                                 ) : (
-                                  <span className="px-2 py-0.5 rounded-full bg-gray-50 text-gray-600 border border-gray-200">
-                                    Belum ditampilkan
-                                  </span>
+                                  <>
+                                    <span className="text-gray-300">•</span>
+                                    <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                      Belum ada soal
+                                    </span>
+                                  </>
                                 )}
                               </div>
                             </div>
                           </div>
 
                           {/* kanan: action area */}
-                          <div
-                            className="flex items-center gap-2 z-10 pointer-events-auto"
-                            onClick={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => e.stopPropagation()}
-                          >
-                            {/* Toggle Publish/Draft — stop bubbling, ada guard, dan auto-select */}
-                            <button
-                              disabled={togglingId === bank.id}
-                              onClick={(e) => {
-                                e.stopPropagation(); // ⬅️ cegah klik kartu
-                                toggleBankStatus(bank);
-                              }}
-                              className={`px-4 py-2 rounded-lg text-xs font-semibold shadow-sm transition-colors ${
-                                togglingId === bank.id
-                                  ? "opacity-60 cursor-not-allowed"
-                                  : ""
-                              } ${
-                                bank.status === "publish"
-                                  ? "bg-rose-600 text-white hover:bg-rose-700"
-                                  : "bg-emerald-600 text-white hover:bg-emerald-700"
-                              }`}
-                              title={bank.status === "publish" ? "Jadikan Draft" : "Publish"}
-                              aria-label="Toggle visibility"
-                            >
-                              {togglingId === bank.id
-                                ? "Menyimpan..."
-                                : bank.status === "publish"
-                                ? "Jadikan Draft"
-                                : "Publish"}
-                            </button>
-
-                            <button
-                              onClick={() => setOpenRename({ id: bank.id, nama: bank.nama })}
-                              className="p-2 rounded-lg text-amber-600 bg-amber-50 hover:bg-amber-500 hover:text-white transition-colors shadow-sm"
-                              title="Ubah Nama"
-                              aria-label="Ubah Nama"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => setConfirmDeleteBank({ id: bank.id, nama: bank.nama })}
-                              className="p-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-500 hover:text-white transition-colors shadow-sm"
-                              title="Hapus"
-                              aria-label="Hapus"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
+<div className="flex items-center gap-2 z-10 pointer-events-auto"
+     onClick={(e) => e.stopPropagation()}
+     onMouseDown={(e) => e.stopPropagation()}>
+  {/* ✅ HAPUS BUTTON PUBLISH/DRAFT, TINGGAL EDIT & DELETE */}
+  <button
+    onClick={() => setOpenRename({ id: bank.id, nama: bank.nama })}
+    className="p-2 rounded-lg text-amber-600 bg-amber-50 hover:bg-amber-500 hover:text-white transition-colors shadow-sm"
+    title="Ubah Nama"
+    aria-label="Ubah Nama">
+    <Pencil className="h-4 w-4" />
+  </button>
+  <button
+    onClick={() => setConfirmDeleteBank({ id: bank.id, nama: bank.nama })}
+    className="p-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-500 hover:text-white transition-colors shadow-sm"
+    title="Hapus"
+    aria-label="Hapus">
+    <Trash2 className="h-4 w-4" />
+  </button>
+</div>
                         </div>
                       </div>
                     </div>
@@ -1004,5 +946,9 @@ export default function AssessmentPage() {
 }
 
 function X(props: any) {
-  return <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>;
+  return (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
 }
