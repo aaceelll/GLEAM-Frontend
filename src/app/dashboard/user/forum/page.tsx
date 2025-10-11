@@ -12,8 +12,6 @@ import {
   MessageSquare,
   Search,
   Plus,
-  Heart,
-  Pin,
   Users,
   Calendar,
   Lock,
@@ -21,6 +19,10 @@ import {
   Stethoscope,
   Clock,
   CheckCircle,
+  X,
+  CheckCircle2,
+  AlertTriangle,
+  Pin,
 } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
@@ -53,6 +55,67 @@ interface Thread {
   last_activity_at: string;
 }
 
+/* ============= Tiny Toast ============= */
+type ToastKind = "success" | "error";
+type Toast = { id: string; message: string; kind: ToastKind };
+
+function useToasts() {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  function push(message: string, kind: ToastKind = "success") {
+    const id = Math.random().toString(36).slice(2);
+    setToasts((t) => [...t, { id, message, kind }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 2800);
+  }
+  function dismiss(id: string) {
+    setToasts((t) => t.filter((x) => x.id !== id));
+  }
+  return { toasts, push, dismiss };
+}
+
+function ToastShelf({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id: string) => void }) {
+  return (
+    <div className="pointer-events-none fixed top-4 left-0 right-0 z-[100] flex justify-center px-4">
+      <div className="flex w-full max-w-xl flex-col gap-3">
+        {toasts.map((t) => {
+          const ok = t.kind === "success";
+          return (
+            <div
+              key={t.id}
+              className={`pointer-events-auto relative overflow-hidden rounded-2xl border-2 shadow-xl transition-all bg-white ${
+                ok ? "border-emerald-200" : "border-red-200"
+              }`}
+            >
+              <div
+                className={`absolute inset-0 opacity-10 ${
+                  ok
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-500"
+                    : "bg-gradient-to-r from-red-500 to-rose-500"
+                }`}
+              />
+              <div className="relative flex items-center gap-3 px-4 py-3">
+                <div
+                  className={`rounded-xl p-2 ${
+                    ok ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {ok ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
+                </div>
+                <p className="flex-1 text-sm font-medium text-gray-900">{t.message}</p>
+                <button
+                  onClick={() => dismiss(t.id)}
+                  className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ================= Page ================= */
 export default function ForumPage() {
   const [publicThreads, setPublicThreads] = useState<Thread[]>([]);
@@ -61,6 +124,8 @@ export default function ForumPage() {
   const [showNewThreadModal, setShowNewThreadModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"public" | "private">("public");
   const [loading, setLoading] = useState(true);
+
+  const { toasts, push, dismiss } = useToasts();
 
   useEffect(() => {
     loadThreads();
@@ -72,12 +137,10 @@ export default function ForumPage() {
       const params: any = { type: activeTab };
       if (searchQuery) params.search = searchQuery;
       const response = await api.get("/forum/threads", { params });
-      if (activeTab === "public") {
-        setPublicThreads(response.data.data || []);
-      } else {
-        setPrivateThreads(response.data.data || []);
-      }
-    } catch (error) {
+      if (activeTab === "public") setPublicThreads(response.data.data || []);
+      else setPrivateThreads(response.data.data || []);
+    } catch {
+      push("Gagal memuat daftar diskusi.", "error");
     } finally {
       setLoading(false);
     }
@@ -101,6 +164,9 @@ export default function ForumPage() {
 
   return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-6">
+      {/* Toasts */}
+      <ToastShelf toasts={toasts} dismiss={dismiss} />
+
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
@@ -113,13 +179,16 @@ export default function ForumPage() {
               <p className="text-gray-600 mt-0.5">Ruang berbagi & tanya jawab seputar diabetes</p>
             </div>
           </div>
-          <Button onClick={() => setShowNewThreadModal(true)} className="bg-emerald-600 hover:bg-emerald-700">
+          <Button
+            onClick={() => setShowNewThreadModal(true)}
+            className="bg-emerald-600 hover:bg-emerald-700"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Buat Pertanyaan
           </Button>
         </div>
 
-        {/* Card Diskusi — container tanpa hover */}
+        {/* Card Diskusi — container */}
         <Card className="p-6 rounded-3xl bg-white border border-emerald-300/70">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "public" | "private")}>
             {/* Tabs + Search */}
@@ -168,11 +237,14 @@ export default function ForumPage() {
                     Belum ada {activeTab === "public" ? "diskusi" : "pertanyaan"}
                   </h3>
                   <p className="text-emerald-700/70 mb-4 text-sm">
-                    {activeTab === "public" ? "Jadilah yang pertama memulai diskusi!" : "Ajukan pertanyaan private ke tenaga kesehatan."}
+                    {activeTab === "public"
+                      ? "Jadilah yang pertama memulai diskusi!"
+                      : "Ajukan pertanyaan private ke tenaga kesehatan."}
                   </p>
                 </div>
               ) : (
-                <div className="space-y-5">
+                // SPACING LEBIH LEBAR
+                <div className="space-y-6 md:space-y-8">
                   {currentThreads.map((thread) => (
                     <ThreadCard key={thread.id} thread={thread} formatDate={formatDate} />
                   ))}
@@ -182,7 +254,7 @@ export default function ForumPage() {
           </Tabs>
         </Card>
 
-        {/* Card Info Penting — container tanpa hover */}
+        {/* Card Info Penting */}
         <Card className="p-6 rounded-3xl bg-emerald-50/40 border border-emerald-300/70">
           <h3 className="font-semibold text-base mb-4 text-emerald-900 flex items-center gap-2">
             <Shield className="w-5 h-5 text-emerald-700" />
@@ -191,11 +263,15 @@ export default function ForumPage() {
           <div className="grid md:grid-cols-2 gap-3 text-sm">
             <div className="rounded-2xl border border-emerald-200 bg-white p-4">
               <p className="font-medium text-emerald-900 mb-1">💬 Publik</p>
-              <p className="text-emerald-800/90">Diskusi terlihat oleh semua pengguna & bisa mendapat banyak masukan.</p>
+              <p className="text-emerald-800/90">
+                Diskusi terlihat oleh semua pengguna & bisa mendapat banyak masukan.
+              </p>
             </div>
             <div className="rounded-2xl border border-emerald-200 bg-white p-4">
               <p className="font-medium text-emerald-900 mb-1">🔒 Private</p>
-              <p className="text-emerald-800/90">Hanya Anda & tenaga kesehatan yang dapat melihat dan menjawab.</p>
+              <p className="text-emerald-800/90">
+                Hanya Anda & tenaga kesehatan yang dapat melihat dan menjawab.
+              </p>
             </div>
           </div>
         </Card>
@@ -208,6 +284,7 @@ export default function ForumPage() {
             setShowNewThreadModal(false);
             loadThreads();
           }}
+          onNotify={(msg, kind) => push(msg, kind)}
         />
       )}
     </div>
@@ -241,21 +318,18 @@ function ThreadCard({
   };
 
   return (
-    <Link href={`/dashboard/user/forum/${thread.id}`}>
-      {/* Desain & hover meniru "Daftar Konten" #3 */}
+    // IMPORTANT: jadikan block supaya space-y-* bekerja
+    <Link href={`/dashboard/user/forum/${thread.id}`} className="block">
       <Card
         className="
           group relative bg-white border-2 border-gray-100 rounded-3xl p-6
           hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden
         "
       >
-        {/* overlay gradient lembut */}
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
-        {/* bubble pojok kanan atas */}
         <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-br from-emerald-500 to-teal-500 opacity-5 rounded-bl-full" />
 
         <div className="relative flex items-start gap-5">
-          {/* icon box gradient (scale saat hover) */}
           <div
             className="
               flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-xl
@@ -263,11 +337,7 @@ function ThreadCard({
               group-hover:scale-110 transition-transform duration-300
             "
           >
-            {thread.is_private ? (
-              <Shield className="w-5 h-5" />
-            ) : (
-              thread.user.nama.charAt(0).toUpperCase()
-            )}
+            {thread.is_private ? <Shield className="w-5 h-5" /> : thread.user.nama.charAt(0).toUpperCase()}
           </div>
 
           <div className="flex-1 min-w-0">
@@ -292,13 +362,10 @@ function ThreadCard({
                 <h3 className="font-bold text-gray-900 text-lg leading-snug group-hover:text-emerald-700 transition-colors">
                   {thread.title}
                 </h3>
-                <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                  {thread.content}
-                </p>
+                <p className="text-sm text-gray-600 mt-1 line-clamp-2">{thread.content}</p>
               </div>
             </div>
 
-            {/* meta */}
             <div className="flex items-center gap-3 flex-wrap mt-3 mb-2 text-xs text-gray-600">
               <span>
                 oleh <strong className="text-gray-900">{thread.user.nama}</strong>
@@ -315,7 +382,6 @@ function ThreadCard({
               </span>
             </div>
 
-            {/* stats */}
             <div className="flex items-center gap-6 text-sm text-gray-700">
               <span className="flex items-center gap-1.5">
                 <MessageSquare className="w-4 h-4" />
@@ -333,9 +399,11 @@ function ThreadCard({
 function NewThreadModal({
   onClose,
   onSuccess,
+  onNotify,
 }: {
   onClose: () => void;
   onSuccess: () => void;
+  onNotify: (msg: string, kind?: "success" | "error") => void;
 }) {
   const [formData, setFormData] = useState({ title: "", content: "", is_private: false });
   const [submitting, setSubmitting] = useState(false);
@@ -352,10 +420,13 @@ function NewThreadModal({
         content: formData.content,
         is_private: formData.is_private,
       });
-      alert(formData.is_private ? "Pertanyaan private berhasil dikirim! 🩺" : "Diskusi berhasil dibuat! 🎉");
+      onNotify(
+        formData.is_private ? "Pertanyaan private berhasil dikirim! 🩺" : "Diskusi berhasil dibuat! 🎉",
+        "success"
+      );
       onSuccess();
     } catch (error: any) {
-      alert(error?.response?.data?.message || "Gagal membuat thread");
+      onNotify(error?.response?.data?.message || "Gagal membuat thread", "error");
     } finally {
       setSubmitting(false);
     }
@@ -427,7 +498,11 @@ function NewThreadModal({
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button type="submit" disabled={submitting || !canSubmit} className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button
+                  type="submit"
+                  disabled={submitting || !canSubmit}
+                  className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
                   {submitting ? "Mengirim..." : formData.is_private ? "Kirim Private" : "Posting Diskusi"}
                 </Button>
                 <Button

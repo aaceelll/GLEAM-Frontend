@@ -1,41 +1,55 @@
+// app/(dashboard)/dashboard/admin/forum/[id]/page.tsx
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { api } from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
-  Pin,
-  Lock,
-  Trash2,
   Calendar,
-  Eye,
+  Lock,
   MessageSquare,
-  Heart,
-  Shield,
+  Pin,
+  ShieldAlert,
+  X,
 } from "lucide-react";
-import Link from "next/link";
-import { api } from "@/lib/api";
 
+/* ===== Types ===== */
 interface User { id: number; nama: string }
 interface Category { id: number; name: string; icon: string; color: string }
-interface Reply { id: number; content: string; user: User; like_count: number; created_at: string }
+interface Reply { id: number; content: string; user: User; created_at: string }
 interface Thread {
-  id: number; title: string; content: string; user: User; category: Category;
-  is_pinned: boolean; is_locked: boolean; is_private: boolean;
-  view_count: number; reply_count: number; like_count: number;
-  created_at: string; replies: Reply[];
+  id: number;
+  title: string;
+  content: string;
+  user: User;
+  category: Category;
+  is_pinned: boolean;
+  is_locked: boolean;
+  is_private: boolean;
+  view_count: number;
+  reply_count: number;
+  like_count: number;
+  created_at: string;
+  replies: Reply[];
 }
 
 export default function AdminForumDetailPage() {
-  const params = useParams();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const threadId = params.id as string;
+  const threadId = id;
 
   const [thread, setThread] = useState<Thread | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // UI states
+  const [confirmOpen, setConfirmOpen] = useState<null | number>(null); // replyId
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
   const hoverCard =
     "group relative overflow-hidden rounded-2xl border-2 border-emerald-100 bg-white " +
@@ -44,26 +58,27 @@ export default function AdminForumDetailPage() {
 
   useEffect(() => { loadThread(); }, [threadId]);
 
-  const loadThread = async () => {
+  async function loadThread() {
     setLoading(true);
     try {
-      const response = await api.get(`/forum/threads/${threadId}`);
-      if (response.data.is_private) {
+      const res = await api.get(`/forum/threads/${threadId}`);
+      const data: Thread = res.data;
+      if (data.is_private) {
         alert("Admin tidak memiliki akses ke pertanyaan private");
         router.push("/dashboard/admin/forum");
         return;
       }
-      setThread(response.data);
-    } catch (error: any) {
-      console.error("Error loading thread:", error);
+      setThread(data);
+    } catch (e: any) {
+      console.error(e);
       alert("Thread tidak ditemukan");
       router.push("/dashboard/admin/forum");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  // (opsi) fungsionalitas admin masih ada tapi tombol2nya tidak ditampilkan:
+  // (opsional) admin actions — tombolnya tidak ditampilkan
   const handlePinThread = async () => {
     try { await api.post(`/admin/forum/threads/${threadId}/pin`); loadThread(); }
     catch (e:any) { alert(e.response?.data?.message || "Gagal mengubah status pin"); }
@@ -72,24 +87,31 @@ export default function AdminForumDetailPage() {
     try { await api.post(`/admin/forum/threads/${threadId}/lock`); loadThread(); }
     catch (e:any) { alert(e.response?.data?.message || "Gagal mengubah status lock"); }
   };
-  const handleDeleteThread = async () => {
-    if (!confirm("Hapus thread ini? Tindakan ini tidak dapat dibatalkan!")) return;
-    try { await api.delete(`/admin/forum/threads/${threadId}/force`); router.push("/dashboard/admin/forum"); }
-    catch (e:any) { alert(e.response?.data?.message || "Gagal menghapus thread"); }
-  };
+
+  // Delete reply with modern modal + success banner
   const handleDeleteReply = async (replyId: number) => {
-    if (!confirm("Hapus balasan ini?")) return;
-    try { await api.delete(`/forum/replies/${replyId}`); loadThread(); }
-    catch (e:any) { alert(e.response?.data?.message || "Gagal menghapus balasan"); }
+    setConfirmOpen(replyId);
+  };
+  const confirmDelete = async () => {
+    if (!confirmOpen) return;
+    setDeletingId(confirmOpen);
+    try {
+      await api.delete(`/forum/replies/${confirmOpen}`);
+      setConfirmOpen(null);
+      setDeletingId(null);
+      setSuccessBanner("Balasan berhasil dihapus!");
+      setTimeout(() => setSuccessBanner(null), 3500);
+      await loadThread();
+    } catch (e: any) {
+      setDeletingId(null);
+      alert(e?.response?.data?.message || "Gagal menghapus balasan");
+    }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("id-ID", {
+  const formatDate = (s: string) =>
+    new Date(s).toLocaleDateString("id-ID", {
       day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
     });
-  };
-  const k = (n: number) => n >= 1000 ? `${(n/1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : `${n}`;
 
   const statusChips = useMemo(() => {
     if (!thread) return null;
@@ -131,31 +153,40 @@ export default function AdminForumDetailPage() {
     <div className="min-h-screen bg-white p-6">
       <div className="max-w-6xl mx-auto space-y-6">
 
-        {/* Kembali */}
-        <div className="flex items-center justify-between">
-          <Link href="/dashboard/admin/forum">
-            <Button variant="ghost" className="hover:bg-emerald-50 text-emerald-700 font-semibold">
-              <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke Forum
-            </Button>
+        {/* Back link (match user page) + success banner */}
+        <div className="space-y-3">
+          <Link
+            href="/dashboard/admin/forum"
+            className="inline-flex items-center gap-2 text-emerald-700 hover:text-emerald-800"
+          >
+            <ArrowLeft className="w-4 h-4" /> Kembali
           </Link>
-          {/* Toolbar dihapus sesuai permintaan (Pin/Lock/Hapus) */}
+
+          {successBanner && (
+            <div className="
+              w-full rounded-2xl border-2 border-emerald-200
+              bg-emerald-50 text-emerald-900 px-4 py-3
+              shadow-[0_6px_30px_rgba(16,185,129,0.12)]
+              flex items-center gap-3
+            ">
+              <div className="w-9 h-9 rounded-xl bg-white grid place-items-center border border-emerald-200">
+                <MessageSquare className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div className="font-semibold">{successBanner}</div>
+            </div>
+          )}
         </div>
 
-        {/* ======= Satu Card: Judul + Meta + Stats + Konten (pertanyaan) ======= */}
+        {/* ======= Header + Konten Thread ======= */}
         <Card className={`${hoverCard} p-0`}>
-          {/* soft gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-100" />
           <div className="relative p-6 md:p-8">
-            {/* header */}
             <div className="flex items-start justify-between gap-6">
               <div className="flex-1 min-w-0 space-y-3">
                 {statusChips}
-                {/* Judul (font berbeda, lebih tebal & besar) */}
                 <h1 className="text-[32px] md:text-[40px] leading-tight font-extrabold tracking-tight text-gray-900">
                   {thread.title}
                 </h1>
 
-                {/* Author + tanggal */}
                 <div className="flex items-center gap-4 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
                     <div className="w-10 h-10 rounded-full bg-emerald-500/90 text-white font-bold grid place-items-center shadow">
@@ -172,10 +203,8 @@ export default function AdminForumDetailPage() {
               </div>
             </div>
 
-            {/* divider tipis */}
             <div className="h-px w-full bg-gradient-to-r from-transparent via-emerald-100 to-transparent my-6" />
 
-            {/* Konten pertanyaan (font berbeda: lebih kecil, body copy) */}
             <div className="rounded-2xl border-2 border-emerald-100 bg-white/70 p-5">
               <p className="text-[15px] md:text-base leading-7 text-gray-800 whitespace-pre-wrap">
                 {thread.content}
@@ -228,22 +257,16 @@ export default function AdminForumDetailPage() {
                               </div>
                               <p className="text-xs text-gray-500">{formatDate(reply.created_at)}</p>
                             </div>
-                            <div className="flex items-center gap-3 text-sm text-gray-600">
-                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50">
-                                <Heart className="w-4 h-4 text-emerald-600" />
-                                <span className="font-medium">{reply.like_count}</span>
-                              </div>
-                              {/* tombol hapus tetap ada (opsional). Hapus jika tidak diperlukan */}
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleDeleteReply(reply.id)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                title="Hapus balasan"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
+
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDeleteReply(reply.id)}
+                              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                              title="Hapus balasan"
+                            >
+                              Hapus
+                            </Button>
                           </div>
 
                           <div className="mt-3 text-gray-800 whitespace-pre-wrap leading-7">
@@ -259,6 +282,63 @@ export default function AdminForumDetailPage() {
           )}
         </Card>
       </div>
+
+      {/* ===== Modal Konfirmasi Hapus ===== */}
+      {confirmOpen !== null && (
+        <div className="fixed inset-0 z-[100]">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-md"
+            onClick={() => (deletingId ? null : setConfirmOpen(null))}
+          />
+
+          {/* Dialog */}
+          <div className="absolute inset-0 grid place-items-center p-4">
+            <div className="w-full max-w-2xl rounded-3xl bg-white shadow-2xl">
+              <div className="p-6 md:p-8">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-rose-50 grid place-items-center">
+                      <ShieldAlert className="w-6 h-6 text-rose-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">Hapus balasan ini?</h3>
+                      <p className="text-gray-600 mt-1">
+                        Tindakan ini tidak dapat dibatalkan. Balasan akan dihapus secara permanen.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    aria-label="Tutup"
+                    className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                    onClick={() => (deletingId ? null : setConfirmOpen(null))}
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="mt-8 flex items-center justify-end gap-3">
+                  <Button
+                    variant="outline"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-800"
+                    onClick={() => (deletingId ? null : setConfirmOpen(null))}
+                    disabled={!!deletingId}
+                  >
+                    Batal
+                  </Button>
+                  <Button
+                    className="bg-rose-600 hover:bg-rose-700"
+                    onClick={confirmDelete}
+                    disabled={!!deletingId}
+                  >
+                    {deletingId ? "Menghapus..." : "Hapus"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
