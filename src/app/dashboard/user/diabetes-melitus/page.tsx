@@ -281,6 +281,7 @@ export default function DiabetesMelitusPage() {
             }))
           : [];
 
+
         const rawTes: any[] = root.tes ?? root.tests ?? root.kuisioner ?? [];
         const mappedTes: TesItem[] = Array.isArray(rawTes)
           ? rawTes.map((t: any) => ({
@@ -752,6 +753,139 @@ export default function DiabetesMelitusPage() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* =================== DAFTAR KONTEN =================== */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl">
+          <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <span className="w-1.5 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
+                  Daftar Konten
+                </h2>
+                <p className="text-sm text-gray-600 mt-1 ml-4">
+                  {loading ? "Memuat…" : `${konten.length} konten tersedia untuk dipelajari`}
+                </p>
+              </div>
+              <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-gray-700">{konten.length} Materi</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {loading ? (
+              <div className="text-center py-20">
+                <div className="inline-block relative">
+                  <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
+                </div>
+                <p className="text-sm text-gray-500 mt-4 font-medium">Memuat materi edukasi…</p>
+              </div>
+            ) : konten.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4 shadow-inner">
+                  <FileText className="h-10 w-10 text-gray-400" />
+                </div>
+                <p className="text-gray-700 font-bold text-lg mb-2">Belum ada materi</p>
+                <p className="text-sm text-gray-500">Materi edukasi sedang dalam proses pembuatan</p>
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                {konten.map((it, i) => (
+                  <div
+                    key={it.id}
+                    className="group relative bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden"
+                  >
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-r ${greenGrad} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
+                    />
+                    <div
+                      className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${greenGrad} opacity-5 rounded-bl-full`}
+                    />
+
+                    <div className="relative flex items-start gap-5">
+                      <div
+                        className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${greenGrad} text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                      >
+                        {i + 1}
+                      </div>
+
+                      <div className="flex-1 min-w-0 space-y-4">
+                        <h3 className="font-bold text-gray-900 text-2xl group-hover:text-emerald-700 transition-colors">
+                          {it.judul}
+                        </h3>
+
+                        <p className="text-gray-600 text-base leading-relaxed break-words whitespace-pre-wrap [overflow-wrap:anywhere]">
+                          {it.deskripsi}
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-3">
+                          {it.file_url && (
+                            <a
+                              href={it.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-700 hover:to-yellow-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
+                            >
+                              <Download className="h-4 w-4" />
+                              Unduh PDF
+                            </a>
+                          )}
+                          {it.video_id && (
+                            <a
+                              href={`https://www.youtube.com/watch?v=${it.video_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-700 hover:to-blue-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
+                            >
+                              <Video className="h-4 w-4" />
+                              Tonton Video
+                            </a>
+                          )}
+                        </div>
+
+                        {(it.created_at || it.updated_at) && (
+                          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
+                            {it.created_at && (
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="h-3.5 w-3.5 text-emerald-600" />
+                                <span className="font-medium">
+                                  Dibuat:{" "}
+                                  {new Date(it.created_at).toLocaleDateString("id-ID", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                              </div>
+                            )}
+                            {it.updated_at && (
+                              <>
+                                <span className="text-gray-300">•</span>
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="h-3.5 w-3.5 text-emerald-600" />
+                                  <span className="font-medium">
+                                    Diperbarui:{" "}
+                                    {new Date(it.updated_at).toLocaleDateString("id-ID", {
+                                      day: "numeric",
+                                      month: "short",
+                                      year: "numeric",
+                                    })}
+                                  </span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
