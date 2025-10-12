@@ -27,10 +27,7 @@ interface UserLocation {
   longitude: number;
 }
 
-interface RWData {
-  rw: string;
-  count: number;
-}
+interface RWData { rw: string; count: number; }
 
 interface Statistics {
   total_keseluruhan: number;
@@ -47,14 +44,9 @@ export default function LokasiPersebaran() {
   const [selectedUser, setSelectedUser] = useState<UserLocation | null>(null);
   const [showUserDetail, setShowUserDetail] = useState(false);
   const [showRWModal, setShowRWModal] = useState(false);
-  const [selectedRW, setSelectedRW] = useState<{ kelurahan: string; rw: string }>({
-    kelurahan: "",
-    rw: "",
-  });
+  const [selectedRW, setSelectedRW] = useState<{ kelurahan: string; rw: string }>({ kelurahan: "", rw: "" });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -72,9 +64,7 @@ export default function LokasiPersebaran() {
         setUsers(normalizedUsers);
       }
 
-      if (statsRes.data.success) {
-        setStatistics(statsRes.data.data);
-      }
+      if (statsRes.data.success) setStatistics(statsRes.data.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -95,7 +85,6 @@ export default function LokasiPersebaran() {
       latitude: user.latitude || 0,
       longitude: user.longitude || 0,
     };
-    
     setSelectedUser(normalizedUser);
     setShowUserDetail(true);
   };
@@ -121,7 +110,7 @@ export default function LokasiPersebaran() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 px-6 md:px-10 py-8">
+    <div className="min-h-screen bg-white px-6 md:px-10 py-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <header className="mb-6 animate-fade-in">
@@ -143,26 +132,11 @@ export default function LokasiPersebaran() {
           </div>
         </header>
 
-        {/* Stats Overview Cards - SEMUA HIJAU */}
+        {/* Stats Overview Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <StatsCard
-            title="Pedalangan"
-            count={statistics?.total_pedalangan || 0}
-            gradient="from-emerald-500 to-teal-600"
-            icon="📍"
-          />
-          <StatsCard
-            title="Padangsari"
-            count={statistics?.total_padangsari || 0}
-            gradient="from-teal-500 to-cyan-600"
-            icon="🗺️"
-          />
-          <StatsCard
-            title="Total Keseluruhan"
-            count={statistics?.total_keseluruhan || 0}
-            gradient="from-emerald-600 to-green-700"
-            icon="📊"
-          />
+          <StatsCard title="Pedalangan" count={statistics?.total_pedalangan || 0} gradient="from-emerald-500 to-teal-600" icon="" />
+          <StatsCard title="Padangsari" count={statistics?.total_padangsari || 0} gradient="from-teal-500 to-cyan-600" icon="" />
+          <StatsCard title="Total Keseluruhan" count={statistics?.total_keseluruhan || 0} gradient="from-emerald-600 to-green-700" icon="" />
         </div>
 
         {/* Map Card */}
@@ -180,9 +154,7 @@ export default function LokasiPersebaran() {
                 <CardTitle className="text-xl md:text-2xl font-black bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text text-transparent">
                   Peta Persebaran Wilayah
                 </CardTitle>
-                <p className="text-sm md:text-base text-gray-600 font-medium mt-1">
-                  Visualisasi geografis distribusi kasus
-                </p>
+                <p className="text-sm md:text-base text-gray-600 font-medium mt-1">Visualisasi geografis distribusi kasus</p>
               </div>
             </div>
           </CardHeader>
@@ -193,17 +165,14 @@ export default function LokasiPersebaran() {
           </CardContent>
         </Card>
 
-        {/* Data Grid - KEDUA SECTION HIJAU */}
+        {/* Data Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pedalangan */}
           <RWSection
             kelurahan="Pedalangan"
             rwData={statistics?.pedalangan_rw || []}
             onRWClick={handleRWCardClick}
             gradient="from-emerald-500 to-teal-600"
           />
-
-          {/* Padangsari */}
           <RWSection
             kelurahan="Padangsari"
             rwData={statistics?.padangsari_rw || []}
@@ -214,34 +183,21 @@ export default function LokasiPersebaran() {
       </div>
 
       {/* Modals */}
-      <UserDetailModal
-        isOpen={showUserDetail}
-        onClose={() => setShowUserDetail(false)}
-        user={selectedUser}
-      />
-
-      <RWUsersModal
-        isOpen={showRWModal}
-        onClose={() => setShowRWModal(false)}
-        kelurahan={selectedRW.kelurahan}
-        rw={selectedRW.rw}
-        onUserClick={handleUserClick}
-      />
+      <UserDetailModal isOpen={showUserDetail} onClose={() => setShowUserDetail(false)} user={selectedUser} />
+      <RWUsersModal isOpen={showRWModal} onClose={() => setShowRWModal(false)} kelurahan={selectedRW.kelurahan} rw={selectedRW.rw} onUserClick={handleUserClick} />
     </div>
   );
 }
 
-// Stats Card Component dengan Icon
-interface StatsCardProps {
-  title: string;
-  count: number;
-  gradient: string;
-  icon: string;
-}
+/* ====== Small cards (dipulihkan hover scale) ====== */
+interface StatsCardProps { title: string; count: number; gradient: string; icon: string; }
 
 function StatsCard({ title, count, gradient, icon }: StatsCardProps) {
   return (
-    <div className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-6 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 cursor-pointer`}>
+    <div
+      className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-6
+                  shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 cursor-pointer`}
+    >
       <div className="absolute inset-0 bg-white/10 transform -skew-y-6 group-hover:skew-y-0 transition-transform duration-700"></div>
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-3">
@@ -256,7 +212,7 @@ function StatsCard({ title, count, gradient, icon }: StatsCardProps) {
   );
 }
 
-// RW Section Component
+/* ====== RW Section ====== */
 interface RWSectionProps {
   kelurahan: string;
   rwData: RWData[];
@@ -271,19 +227,18 @@ function RWSection({ kelurahan, rwData, onRWClick, gradient }: RWSectionProps) {
       <CardHeader className="relative flex items-center gap-4 border-b border-emerald-100 bg-gradient-to-r from-emerald-50/80 to-teal-50/80 py-5 px-6">
         <div className="relative">
           <div className={`absolute inset-0 bg-gradient-to-r ${gradient} rounded-xl blur-md opacity-50 group-hover:opacity-100 transition-opacity duration-500`}></div>
-          <div className={`relative w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg transform group-hover:rotate-12 transition-transform duration-500`}>
+          <div className={`relative w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg`}>
             <MapPin className="h-5 w-5 text-white" />
           </div>
         </div>
         <div>
-          <CardTitle className={`text-xl font-black bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
-            {kelurahan}
-          </CardTitle>
+          <CardTitle className={`text-xl font-black bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{kelurahan}</CardTitle>
           <p className="text-sm text-gray-600 font-medium mt-1">Distribusi kasus per RW</p>
         </div>
       </CardHeader>
+
       <CardContent className="p-6 space-y-4 relative">
-        <div className="grid grid-cols-1 gap-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="grid grid-cols-1 gap-3 max-h-[600px] overflow-y-auto pr-2 py-1 custom-scrollbar">
           {rwData.map((rw, idx) => (
             <RWCard
               key={rw.rw}
@@ -300,7 +255,7 @@ function RWSection({ kelurahan, rwData, onRWClick, gradient }: RWSectionProps) {
   );
 }
 
-// RW Card Component - HIJAU SEMUA
+/* ====== RW Card (tanpa scale agar tidak kepotong) ====== */
 interface RWCardProps {
   rw: string;
   count: number;
@@ -309,48 +264,55 @@ interface RWCardProps {
   delay: number;
 }
 
-function RWCard({ rw, count, kelurahan, onClick, delay }: RWCardProps) {
+function RWCard({ rw, count, onClick, delay }: RWCardProps) {
   const hasUsers = count > 0;
 
   return (
     <div
       onClick={onClick}
-      className={`group/item relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-white to-emerald-50/30 border-2 border-emerald-200/50 hover:border-emerald-400 hover:shadow-xl transition-all duration-500 hover:scale-105 cursor-pointer animate-fade-in`}
+      className={`
+        group/item relative p-5 rounded-2xl
+        bg-gradient-to-br from-white to-emerald-50/30
+        border border-emerald-200/60
+        transition-all duration-300 cursor-pointer animate-fade-in
+        hover:border-emerald-400 hover:shadow-lg
+        hover:ring-1 hover:ring-emerald-300/60
+      `}
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/0 via-emerald-400/10 to-emerald-400/0 transform -translate-x-full group-hover/item:translate-x-full transition-transform duration-1000"></div>
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-400/0 via-emerald-400/10 to-emerald-400/0 -translate-x-full group-hover/item:translate-x-0 transition-transform duration-700"></div>
+
       <div className="relative flex items-center justify-between mb-3">
         <h3 className="font-black text-emerald-900 text-lg">{rw}</h3>
         {hasUsers ? (
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-emerald-600" />
-            <span className={`px-3 py-1 rounded-full text-sm font-bold ${
-              count > 10 
-                ? "bg-gradient-to-r from-emerald-600 to-teal-700 text-white" 
-                : count > 5 
-                ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white"
-                : "bg-gradient-to-r from-emerald-400 to-teal-500 text-white"
-            }`}>
+            <span
+              className={`px-3 py-1 rounded-full text-sm font-bold ${
+                count > 10
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-700 text-white"
+                  : count > 5
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white"
+                  : "bg-gradient-to-r from-emerald-400 to-teal-500 text-white"
+              }`}
+            >
               {count} orang
             </span>
           </div>
         ) : (
-          <span className="px-3 py-1 rounded-full text-sm font-bold bg-gray-200 text-gray-600">
-            0 orang
-          </span>
+          <span className="px-3 py-1 rounded-full text-sm font-bold bg-gray-200 text-gray-600">0 orang</span>
         )}
       </div>
+
       <div className="relative">
         <p className="text-sm text-gray-600 font-medium">Diabetes Melitus</p>
         <div className="mt-2 w-full bg-emerald-100 rounded-full h-2 overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-700 ${
-              hasUsers 
-                ? "bg-gradient-to-r from-emerald-400 to-teal-500" 
-                : "bg-gray-300"
+              hasUsers ? "bg-gradient-to-r from-emerald-400 to-teal-500" : "bg-gray-300"
             }`}
             style={{ width: hasUsers ? "100%" : "0%" }}
-          ></div>
+          />
         </div>
       </div>
     </div>
