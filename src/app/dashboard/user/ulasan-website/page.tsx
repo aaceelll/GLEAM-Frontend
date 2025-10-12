@@ -9,6 +9,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import { Star, Sparkles, MessageCircle, ArrowRight, CheckCircle2 } from "lucide-react";
+import { SuccessDialog } from "@/components/ui/success-dialog";
+import { ErrorDialog } from "@/components/ui/error-dialog";
 
 const questions = [
   { id: 'q1', text: 'Saya ingin menggunakan website ini secara rutin.' },
@@ -37,6 +39,11 @@ export default function UlasanWebsitePage() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [suggestion, setSuggestion] = useState('');
   const [progress, setProgress] = useState(0);
+  
+  // State untuk dialog
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Load existing review
   useEffect(() => {
@@ -77,10 +84,20 @@ export default function UlasanWebsitePage() {
       });
 
       await api.post('/website-review', payload);
-      alert("✅ Berhasil! Ulasan Anda telah tersimpan. Terima kasih atas feedback-nya! 🎉");
-      router.push('/dashboard/user');
+      
+      // Tampilkan success dialog
+      setShowSuccessDialog(true);
+      
+      // Redirect setelah 2 detik
+      setTimeout(() => {
+        router.push('/dashboard/user');
+      }, 2000);
+      
     } catch (error: any) {
-      alert("❌ Gagal menyimpan: " + (error.response?.data?.message || "Terjadi kesalahan"));
+      // Tampilkan error dialog
+      const message = error.response?.data?.message || "Terjadi kesalahan";
+      setErrorMessage(message);
+      setShowErrorDialog(true);
     } finally {
       setLoading(false);
     }
@@ -288,6 +305,21 @@ export default function UlasanWebsitePage() {
           )}
         </form>
       </div>
+
+      {/* Custom Dialogs */}
+      <SuccessDialog
+        isOpen={showSuccessDialog}
+        onClose={() => setShowSuccessDialog(false)}
+        title="Berhasil! 🎉"
+        message="Ulasan Anda telah tersimpan. Terima kasih atas feedback-nya!"
+      />
+
+      <ErrorDialog
+        isOpen={showErrorDialog}
+        onClose={() => setShowErrorDialog(false)}
+        title="Gagal Menyimpan"
+        message={errorMessage}
+      />
     </div>
   );
 }

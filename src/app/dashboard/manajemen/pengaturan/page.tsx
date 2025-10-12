@@ -108,9 +108,8 @@ export default function PengaturanPage() {
 
   return (
     <div className="min-h-screen bg-white p-6">
-      {/* samakan dengan halaman lain */}
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header — style seragam */}
+        {/* Header */}
         <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
@@ -185,7 +184,7 @@ export default function PengaturanPage() {
               <form onSubmit={handleSaveProfile} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InputField
                   label="Nama Lengkap"
-                  icon={<User className="h-5 w-5 text-gray-400" />}
+                  icon={<User className="h-5 w-5 text-emerald-500" />}
                   required
                   value={profile.nama}
                   onChange={(v) => setProfile((p) => ({ ...p, nama: v }))}
@@ -193,7 +192,7 @@ export default function PengaturanPage() {
                 />
                 <InputField
                   label="Alamat Email"
-                  icon={<Mail className="h-5 w-5 text-gray-400" />}
+                  icon={<Mail className="h-5 w-5 text-emerald-500" />}
                   required
                   type="email"
                   value={profile.email}
@@ -202,7 +201,7 @@ export default function PengaturanPage() {
                 />
                 <InputField
                   label="Username"
-                  icon={<User className="h-5 w-5 text-gray-400" />}
+                  icon={<User className="h-5 w-5 text-emerald-500" />}
                   required
                   value={profile.username}
                   onChange={(v) => setProfile((p) => ({ ...p, username: v }))}
@@ -210,7 +209,7 @@ export default function PengaturanPage() {
                 />
                 <InputField
                   label="Nomor Telepon"
-                  icon={<Phone className="h-5 w-5 text-gray-400" />}
+                  icon={<Phone className="h-5 w-5 text-emerald-500" />}
                   value={profile.nomor_telepon}
                   onChange={(v) => setProfile((p) => ({ ...p, nomor_telepon: v }))}
                   placeholder="+62 812 3456 7890"
@@ -327,7 +326,10 @@ function InputField({
           placeholder={placeholder}
           autoComplete="off"
           spellCheck={false}
-          className="pl-12 py-6 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200 bg-white hover:border-gray-300"
+          /* ⬇️ Style disamakan dengan Pengaturan User */
+          className="pl-12 py-6 rounded-xl border-2 border-emerald-200 bg-white
+                     hover:border-emerald-300 focus:border-emerald-500
+                     focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
         />
       </div>
     </div>
@@ -359,7 +361,7 @@ function PasswordInput({
       </Label>
       <div className="relative group">
         <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none transition-colors group-focus-within:text-emerald-600">
-          <Lock className="h-5 w-5 text-gray-400" />
+          <Lock className="h-5 w-5 text-emerald-500" />
         </div>
         <Input
           type={show ? "text" : "password"}
@@ -369,12 +371,15 @@ function PasswordInput({
           placeholder={placeholder}
           autoComplete="off"
           spellCheck={false}
-          className="pl-12 pr-12 py-6 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all duration-200 bg-white hover:border-gray-300"
+          /* ⬇️ Style disamakan dengan Pengaturan User */
+          className="pl-12 pr-12 py-6 rounded-xl border-2 border-emerald-200 bg-white
+                     hover:border-emerald-300 focus:border-emerald-500
+                     focus:ring-4 focus:ring-emerald-100 transition-all duration-200"
         />
         <button
           type="button"
           onClick={onToggle}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors p-1 rounded-lg hover:bg-emerald-50"
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-600/70 hover:text-emerald-700 transition-colors p-1 rounded-lg hover:bg-emerald-50"
         >
           {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
         </button>

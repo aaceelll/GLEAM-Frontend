@@ -426,26 +426,27 @@ function PasswordInput({
 }) {
   return (
     <div className="space-y-2">
-      <Label className="text-sm font-semibold text-slate-700">
+      <Label className="text-emerald-700 font-semibold">
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="text-red-500"> *</span>}
       </Label>
       <div className="relative">
-        <div className="absolute left-4 top-1/2 -translate-y-1/2">
-          <Lock className="h-5 w-5 text-slate-400" />
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+          <Lock className="h-5 w-5 text-gray-400" />
         </div>
         <Input
           type={show ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="pl-12 pr-12 h-12 border-2 border-gray-200 focus:border-emerald-500 rounded-xl transition-colors"
+          className="w-full pl-12 pr-12 border-emerald-200 focus:border-emerald-500"
           required={required}
         />
         <button
           type="button"
           onClick={onToggle}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-emerald-600 transition-colors"
+          aria-label={show ? "Sembunyikan password" : "Tampilkan password"}
         >
           {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
         </button>
