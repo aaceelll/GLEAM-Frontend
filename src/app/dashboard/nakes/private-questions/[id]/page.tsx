@@ -20,13 +20,37 @@ import {
 import Link from "next/link";
 import { api } from "@/lib/api";
 
-interface UserType { id: number; nama: string; role?: string; }
-interface Category { id: number; name: string; icon: string; color: string; }
-interface Reply { id: number; content: string; user: UserType; responder_role: string; created_at: string; }
+interface UserType {
+  id: number;
+  nama: string;
+  role?: string;
+}
+interface Category {
+  id: number;
+  name: string;
+  icon: string;
+  color: string;
+}
+interface Reply {
+  id: number;
+  content: string;
+  user: UserType;
+  responder_role: string;
+  created_at: string;
+}
 interface Thread {
-  id: number; title: string; content: string; user: UserType;
-  category: Category; assigned_nakes: UserType | null; is_private: boolean; is_locked: boolean;
-  view_count: number; reply_count: number; created_at: string; replies: Reply[];
+  id: number;
+  title: string;
+  content: string;
+  user: UserType;
+  category: Category;
+  assigned_nakes: UserType | null;
+  is_private: boolean;
+  is_locked: boolean;
+  view_count: number;
+  reply_count: number;
+  created_at: string;
+  replies: Reply[];
 }
 
 export default function NakesQuestionDetailPage() {
@@ -65,11 +89,21 @@ export default function NakesQuestionDetailPage() {
   }, [questionId, router]);
 
   const formatDate = (s: string) =>
-    new Date(s).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    new Date(s).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   const formatRelative = (s: string) => {
-    const d = new Date(s), now = new Date(), ms = now.getTime() - d.getTime();
-    const m = Math.floor(ms / 60000), h = Math.floor(ms / 3600000), day = Math.floor(ms / 86400000);
+    const d = new Date(s),
+      now = new Date(),
+      ms = now.getTime() - d.getTime();
+    const m = Math.floor(ms / 60000),
+      h = Math.floor(ms / 3600000),
+      day = Math.floor(ms / 86400000);
     if (m < 1) return "Baru saja";
     if (m < 60) return `${m} menit yang lalu`;
     if (h < 24) return `${h} jam yang lalu`;
@@ -86,22 +120,45 @@ export default function NakesQuestionDetailPage() {
   }
   if (!question) return null;
 
-  // — logic (tidak gunakan hooks)
-  const isAssignedToMe = question.assigned_nakes?.id === currentUser?.id;
-  const iReplied = !!question.replies?.some((r) => r.user.id === currentUser?.id);
-  const canAnswer = isAssignedToMe && !question.is_locked && !iReplied;
+  // ================== LOGIC: izinkan SEMUA nakes menjawab ==================
+  // sebelumnya: harus assigned + belum pernah menjawab -> form disembunyikan
+  // sekarang: cukup role 'nakes' (atau 'admin') dan thread tidak dikunci
+  const role = (currentUser?.role || "").toLowerCase();
+  const canAnswer = (role === "nakes" || role === "admin") && !question.is_locked;
+  // ========================================================================
 
   const getStatusBadge = () => {
     if (question.is_locked)
-      return <Badge className="bg-gray-500 text-white text-sm px-3 py-1"><XCircle className="w-4 h-4 mr-1" />Ditutup</Badge>;
+      return (
+        <Badge className="bg-gray-500 text-white text-sm px-3 py-1">
+          <XCircle className="w-4 h-4 mr-1" />
+          Ditutup
+        </Badge>
+      );
     if (question.reply_count > 0)
-      return <Badge className="bg-emerald-600 text-white text-sm px-3 py-1"><CheckCircle className="w-4 h-4 mr-1" />Sudah Dijawab</Badge>;
+      return (
+        <Badge className="bg-emerald-600 text-white text-sm px-3 py-1">
+          <CheckCircle className="w-4 h-4 mr-1" />
+          Sudah Dijawab
+        </Badge>
+      );
     if (question.assigned_nakes)
-      return <Badge className="bg-blue-600 text-white text-sm px-3 py-1"><Stethoscope className="w-4 h-4 mr-1" />Sedang Ditangani</Badge>;
-    return <Badge className="bg-amber-500 text-white text-sm px-3 py-1"><Clock className="w-4 h-4 mr-1" />Menunggu</Badge>;
+      return (
+        <Badge className="bg-blue-600 text-white text-sm px-3 py-1">
+          <Stethoscope className="w-4 h-4 mr-1" />
+          Sedang Ditangani
+        </Badge>
+      );
+    return (
+      <Badge className="bg-amber-500 text-white text-sm px-3 py-1">
+        <Clock className="w-4 h-4 mr-1" />
+        Menunggu
+      </Badge>
+    );
   };
 
   const handleAssignToSelf = async () => {
+    // tetap ada jika ingin meng-assign, tapi tidak wajib untuk bisa menjawab
     if (!confirm("Ambil pertanyaan ini untuk dijawab?")) return;
     try {
       await api.post(`/forum/threads/${questionId}/assign`);
@@ -130,7 +187,9 @@ export default function NakesQuestionDetailPage() {
     if (!answerContent.trim()) return;
     setSubmitting(true);
     try {
-      await api.post(`/forum/threads/${questionId}/reply`, { content: answerContent });
+      await api.post(`/forum/threads/${questionId}/reply`, {
+        content: answerContent,
+      });
       setAnswerContent("");
       const r = await api.get(`/forum/threads/${questionId}`);
       setQuestion(r.data);
@@ -146,16 +205,24 @@ export default function NakesQuestionDetailPage() {
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Back button — modern pill */}
         <div className="sticky top-0 z-10 -mt-2 pt-2 bg-white/70 backdrop-blur">
-          <Link href="/dashboard/nakes/private-questions">
-            <Button
-              variant="ghost"
-              className="rounded-full border-2 border-emerald-200 text-emerald-700 bg-white hover:bg-emerald-50 hover:border-emerald-300 hover:shadow-sm transition-all"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Kembali ke Daftar Pertanyaan
-            </Button>
-          </Link>
-        </div>
+        <Link
+          href="/dashboard/nakes/private-questions"
+          className="
+            inline-flex items-center gap-2
+            rounded-full px-4 py-2
+            bg-transparent
+            text-emerald-700
+            hover:text-emerald-900
+            active:text-emerald-900
+            shadow-none
+            transition-colors
+            focus-visible:outline-none focus-visible:ring-0
+          "
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="font-semibold">Kembali ke Daftar Pertanyaan</span>
+        </Link>
+      </div>
 
         {/* Info assignment / status */}
         {!question.assigned_nakes && (
@@ -165,21 +232,26 @@ export default function NakesQuestionDetailPage() {
                 <Clock className="w-5 h-5" />
                 <div>
                   <p className="font-semibold">Pertanyaan Belum Diambil</p>
-                  <p className="text-sm">Ambil untuk mulai membantu pasien.</p>
+                  <p className="text-sm">Anda tetap bisa menjawab sekarang.</p>
                 </div>
               </div>
-              <Button onClick={handleAssignToSelf} className="bg-emerald-600 hover:bg-emerald-700">
-                <Stethoscope className="w-4 h-4 mr-2" />Ambil Pertanyaan
+              <Button
+                onClick={handleAssignToSelf}
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                <Stethoscope className="w-4 h-4 mr-2" />
+                Tandai Saya Menangani
               </Button>
             </div>
           </Card>
         )}
 
-        {question.assigned_nakes && !isAssignedToMe && (
+        {question.assigned_nakes && (
           <Card className="p-4 border-2 border-emerald-200 bg-emerald-50 rounded-2xl">
             <div className="flex items-center gap-2 text-emerald-800">
               <Stethoscope className="w-5 h-5" />
-              Ditangani oleh <b className="ml-1">{question.assigned_nakes.nama}</b>
+              Ditangani oleh{" "}
+              <b className="ml-1">{question.assigned_nakes.nama}</b>
             </div>
           </Card>
         )}
@@ -190,18 +262,25 @@ export default function NakesQuestionDetailPage() {
           <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
               {getStatusBadge()}
-              <Badge style={{ backgroundColor: question.category.color, color: "white" }}>
+              <Badge
+                style={{
+                  backgroundColor: question.category.color,
+                  color: "white",
+                }}
+              >
                 {question.category.icon} {question.category.name}
               </Badge>
             </div>
-            {/* Hapus tombol tutup? -> kalau tetap perlu, pakai handleCloseQuestion; kalau tidak, tinggal sembunyikan. */}
+            {/* Jika tetap butuh tombol tutup, gunakan handleCloseQuestion */}
             {/* <Button onClick={handleCloseQuestion} variant="outline" className="text-red-600 border-red-300 hover:bg-red-50">
               <Lock className="w-4 h-4 mr-2" />Tutup Pertanyaan
             </Button> */}
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">{question.title}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            {question.title}
+          </h1>
 
           {/* Info penanya */}
           <div className="flex items-center gap-4 mb-4">
@@ -216,17 +295,22 @@ export default function NakesQuestionDetailPage() {
             </div>
           </div>
 
-          {/* Content + divider di bawah konten */}
+          {/* Content */}
           <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200">
-            <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{question.content}</p>
+            <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+              {question.content}
+            </p>
           </div>
           <div className="mt-6 border-t border-gray-200" />
 
-          {/* Answers (langsung di bawah pertanyaan) */}
+          {/* Answers */}
           {question.replies.length > 0 && (
             <div className="space-y-4 pt-6">
               {question.replies.map((reply) => (
-                <div key={reply.id} className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5">
+                <div
+                  key={reply.id}
+                  className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5"
+                >
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 to-teal-600 text-white flex items-center justify-center shadow">
@@ -236,18 +320,26 @@ export default function NakesQuestionDetailPage() {
                         <p className="font-semibold text-gray-900">
                           {reply.user.nama}
                           <Badge className="ml-2 bg-emerald-600 text-white text-[10px]">
-                            {reply.responder_role === "nakes" ? "Tenaga Kesehatan" : "Admin"}
+                            {reply.responder_role === "nakes"
+                              ? "Tenaga Kesehatan"
+                              : "Admin"}
                           </Badge>
                           {reply.user.id === currentUser?.id && (
-                            <Badge variant="outline" className="ml-2 text-[10px]">Anda</Badge>
+                            <Badge variant="outline" className="ml-2 text-[10px]">
+                              Anda
+                            </Badge>
                           )}
                         </p>
-                        <p className="text-xs text-gray-500">{formatRelative(reply.created_at)}</p>
+                        <p className="text-xs text-gray-500">
+                          {formatRelative(reply.created_at)}
+                        </p>
                       </div>
                     </div>
                   </div>
                   <div className="bg-white p-4 rounded-xl border border-emerald-200">
-                    <p className="text-gray-800 whitespace-pre-wrap">{reply.content}</p>
+                    <p className="text-gray-800 whitespace-pre-wrap">
+                      {reply.content}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -255,7 +347,7 @@ export default function NakesQuestionDetailPage() {
           )}
         </Card>
 
-        {/* Answer form (hanya saat boleh jawab) */}
+        {/* Answer form — sekarang tampil untuk SEMUA nakes */}
         {canAnswer && (
           <Card className="p-8 border-2 border-gray-100 rounded-3xl shadow-xl">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">

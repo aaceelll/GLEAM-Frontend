@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   MessageSquare,
   Clock,
@@ -28,12 +27,69 @@ interface Question {
   created_at: string;
 }
 
+/* ===== Modal konfirmasi minimal ===== */
+function ConfirmModal({
+  open,
+  title,
+  description,
+  onConfirm,
+  onClose,
+  confirmText = "Ya, lanjut",
+  cancelText = "Batal",
+}: {
+  open: boolean;
+  title: string;
+  description?: string;
+  onConfirm: () => void;
+  onClose: () => void;
+  confirmText?: string;
+  cancelText?: string;
+}) {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-emerald-100 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-6 py-5 bg-gradient-to-br from-emerald-50 to-teal-50 border-b border-emerald-100">
+          <h3 className="text-lg font-bold text-emerald-900">{title}</h3>
+          {description ? (
+            <p className="text-sm text-emerald-700 mt-1">{description}</p>
+          ) : null}
+        </div>
+        <div className="px-6 py-5 flex gap-3 justify-end bg-white">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="border-gray-300 text-gray-700 hover:bg-gray-100"
+          >
+            {cancelText}
+          </Button>
+          <Button
+            onClick={onConfirm}
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+          >
+            {confirmText}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ================ Page =================== */
 export default function NakesPrivateQuestionsPage() {
   const [pendingQuestions, setPendingQuestions] = useState<Question[]>([]);
   const [myQuestions, setMyQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"pending" | "my-questions">("pending");
+
+  // modal state
+  const [confirmId, setConfirmId] = useState<number | null>(null);
 
   useEffect(() => {
     loadQuestions();
@@ -55,14 +111,17 @@ export default function NakesPrivateQuestionsPage() {
     }
   }
 
-  async function handleAssignToSelf(id: number) {
-    if (!confirm("Ambil pertanyaan ini untuk dijawab?")) return;
+  // >>> tidak ada toast / alert / redirect
+  async function assignNow(id: number) {
     try {
       await api.post(`/forum/threads/${id}/assign`);
-      alert("Pertanyaan berhasil diambil!");
-      loadQuestions();
-    } catch (error: any) {
-      alert(error.response?.data?.message || "Gagal mengambil pertanyaan");
+      setConfirmId(null);
+      await loadQuestions();
+      setTab("my-questions"); // pindah tab “Pertanyaan Saya”
+    } catch (error) {
+      setConfirmId(null);
+      // diam saja (tanpa notif), tapi kamu bisa console.log bila mau debug
+      console.error(error);
     }
   }
 
@@ -90,6 +149,17 @@ export default function NakesPrivateQuestionsPage() {
 
   return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-6">
+      {/* Confirm Modal */}
+      <ConfirmModal
+        open={confirmId !== null}
+        title="Ambil & Jawab Pertanyaan?"
+        description="Pertanyaan akan ditugaskan ke Anda sehingga bisa segera dijawab."
+        onConfirm={() => assignNow(confirmId as number)}
+        onClose={() => setConfirmId(null)}
+        confirmText="Ambil Sekarang"
+        cancelText="Batal"
+      />
+
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -148,60 +218,56 @@ export default function NakesPrivateQuestionsPage() {
         {/* Tabs + List */}
         <Card className="rounded-3xl border-2 border-gray-100 shadow-xl">
           <div className="px-6 pt-6">
-            <Tabs
-              value={tab}
-              onValueChange={(v) =>
-                setTab((v as "pending" | "my-questions") ?? "pending")
-              }
-              className="w-full"
-            >
-              {/* Navigation Pills - Full Width dengan Gap */}
-              <div className="flex gap-3 p-1 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-100 shadow-lg mb-6">
-                <button
-                  onClick={() => setTab("pending")}
-                  className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold transition-all duration-300
-                  ${tab === "pending"
+            {/* Navigation Pills */}
+            <div className="flex gap-3 p-1 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-100 shadow-lg mb-6">
+              <button
+                onClick={() => setTab("pending")}
+                className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold transition-all duration-300
+                  ${
+                    tab === "pending"
                       ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.03]"
                       : "text-gray-600 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:text-emerald-700 hover:shadow-md"
-                    }`}
+                  }`}
+              >
+                <Clock className="h-5 w-5" />
+                Pertanyaan Baru
+                <span
+                  className={`ml-2 inline-flex items-center justify-center h-6 min-w-6 px-2 rounded-full text-xs font-bold ${
+                    tab === "pending"
+                      ? "bg-white/25 text-white"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
                 >
-                  <Clock className="h-5 w-5" />
-                  Pertanyaan Baru
-                  <span
-                    className={`ml-2 inline-flex items-center justify-center h-6 min-w-6 px-2 rounded-full text-xs font-bold ${
-                      tab === "pending"
-                        ? "bg-white/25 text-white"
-                        : "bg-gray-200 text-gray-700"
-                    }`}
-                  >
-                    {pendingQuestions.length}
-                  </span>
-                </button>
+                  {pendingQuestions.length}
+                </span>
+              </button>
 
-                <button
-                  onClick={() => setTab("my-questions")}
-                  className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold transition-all duration-300
-                  ${tab === "my-questions"
+              <button
+                onClick={() => setTab("my-questions")}
+                className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold transition-all duration-300
+                  ${
+                    tab === "my-questions"
                       ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.03]"
                       : "text-gray-600 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:text-emerald-700 hover:shadow-md"
-                    }`}
+                  }`}
+              >
+                <MessageSquare className="h-5 w-5" />
+                Pertanyaan Saya
+                <span
+                  className={`ml-2 inline-flex items-center justify-center h-6 min-w-6 px-2 rounded-full text-xs font-bold ${
+                    tab === "my-questions"
+                      ? "bg-white/25 text-white"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
                 >
-                  <MessageSquare className="h-5 w-5" />
-                  Pertanyaan Saya
-                  <span
-                    className={`ml-2 inline-flex items-center justify-center h-6 min-w-6 px-2 rounded-full text-xs font-bold ${
-                      tab === "my-questions"
-                        ? "bg-white/25 text-white"
-                        : "bg-gray-200 text-gray-700"
-                    }`}
-                  >
-                    {myQuestions.length}
-                  </span>
-                </button>
-              </div>
+                  {myQuestions.length}
+                </span>
+              </button>
+            </div>
 
-              {/* PENDING */}
-              <TabsContent value="pending" className="pt-6 pb-2">
+            {/* PENDING */}
+            {tab === "pending" && (
+              <div className="pt-6 pb-2">
                 {loading ? (
                   <div className="text-center py-10">
                     <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto mb-3" />
@@ -215,7 +281,7 @@ export default function NakesPrivateQuestionsPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-5">
+                  <div className="flex flex-col gap-5">
                     {pendingQuestions.map((q) => (
                       <Card
                         key={q.id}
@@ -265,7 +331,7 @@ export default function NakesPrivateQuestionsPage() {
                               <div className="flex justify-end">
                                 <Button
                                   size="sm"
-                                  onClick={() => handleAssignToSelf(q.id)}
+                                  onClick={() => setConfirmId(q.id)}
                                   className="w-full md:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-px transition-all"
                                 >
                                   <Stethoscope className="w-4 h-4 mr-1.5" />
@@ -279,10 +345,12 @@ export default function NakesPrivateQuestionsPage() {
                     ))}
                   </div>
                 )}
-              </TabsContent>
+              </div>
+            )}
 
-              {/* MY QUESTIONS */}
-              <TabsContent value="my-questions" className="pt-6 pb-2">
+            {/* MY QUESTIONS (spasi antar card lebih renggang) */}
+            {tab === "my-questions" && (
+              <div className="pt-6 pb-2">
                 {loading ? (
                   <div className="text-center py-10">
                     <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto mb-3" />
@@ -296,7 +364,7 @@ export default function NakesPrivateQuestionsPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-5">
+                  <div className="flex flex-col gap-5">
                     {myQuestions.map((q) => (
                       <Link
                         key={q.id}
@@ -359,8 +427,8 @@ export default function NakesPrivateQuestionsPage() {
                     ))}
                   </div>
                 )}
-              </TabsContent>
-            </Tabs>
+              </div>
+            )}
           </div>
         </Card>
       </div>
