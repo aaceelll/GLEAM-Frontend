@@ -18,6 +18,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import ScreeningLineChart from "@/components/ScreeningLineChart"; // GRAFIK
 
 /* ================= Types ================= */
 type MateriItem = {
@@ -281,7 +282,6 @@ export default function DiabetesMelitusPage() {
             }))
           : [];
 
-
         const rawTes: any[] = root.tes ?? root.tests ?? root.kuisioner ?? [];
         const mappedTes: TesItem[] = Array.isArray(rawTes)
           ? rawTes.map((t: any) => ({
@@ -392,6 +392,11 @@ export default function DiabetesMelitusPage() {
           </div>
         </div>
 
+        {/* =================== GRAFIK RIWAYAT SCREENING (PALING ATAS) =================== */}
+        {!loading && historyResults.length > 0 && (
+          <ScreeningLineChart data={historyResults} />
+        )}
+
         {/* =================== HASIL SCREENING =================== */}
         <div className="bg-white rounded-3xl border-2 border-gray-100 shadow-xl">
           <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
@@ -438,7 +443,7 @@ export default function DiabetesMelitusPage() {
               </div>
             ) : (
               <>
-                {/* Banner status risiko – SUDAH konsisten */}
+                {/* Banner status risiko */}
                 {(() => {
                   const risk = computeRisk(
                     latestResult.diabetes_probability,
@@ -682,15 +687,15 @@ export default function DiabetesMelitusPage() {
                       className="group relative bg-white border-2 border-gray-100 rounded-2xl p-5 hover:border-transparent hover:shadow-2xl transition-all overflow-hidden"
                     >
                       <div
-                        className={`absolute inset-0 bg-gradient-to-r ${greenGrad} opacity-0 group-hover:opacity-5 transition-opacity`}
+                        className={`absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-5 transition-opacity`}
                       />
                       <div
-                        className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${greenGrad} opacity-5 rounded-bl-full`}
+                        className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-500 opacity-5 rounded-bl-full`}
                       />
 
                       <div className="relative flex items-start gap-4">
                         <div
-                          className={`flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br ${greenGrad} text-white font-bold shadow`}
+                          className={`flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-bold shadow`}
                         >
                           <ListChecks className="w-5 h-5" />
                         </div>
@@ -802,15 +807,15 @@ export default function DiabetesMelitusPage() {
                     className="group relative bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden"
                   >
                     <div
-                      className={`absolute inset-0 bg-gradient-to-r ${greenGrad} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
+                      className={`absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
                     />
                     <div
-                      className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${greenGrad} opacity-5 rounded-bl-full`}
+                      className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500 to-teal-500 opacity-5 rounded-bl-full`}
                     />
 
                     <div className="relative flex items-start gap-5">
                       <div
-                        className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${greenGrad} text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                        className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
                       >
                         {i + 1}
                       </div>
