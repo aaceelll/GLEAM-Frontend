@@ -21,7 +21,7 @@ interface DashboardStats {
   status_perhatian: number;
   status_risiko: number;
   growth_percentage: number;
-  affected_percentage: number; // NEW
+  affected_percentage: number;
 }
 
 export default function DashboardManajemen() {
@@ -43,12 +43,12 @@ export default function DashboardManajemen() {
           total_pedalangan: d.total_pedalangan || 0,
           total_padangsari: d.total_padangsari || 0,
           diabetes_cases: d.total_keseluruhan || 0,
-          // ← ambil dari backend (risk_summary), bukan dummy lagi
           status_normal: d.risk_summary?.normal ?? 0,
           status_perhatian: d.risk_summary?.perhatian ?? 0,
+          // ← gunakan nilai backend apa adanya (tanpa dummy)
           status_risiko: d.risk_summary?.risiko ?? 0,
-          growth_percentage: 12.5, // optional, nanti bisa dibuat real
-          affected_percentage: d.affected_percentage ?? 0, // NEW
+          growth_percentage: 12.5,
+          affected_percentage: d.affected_percentage ?? 0,
         });
       }
     } catch (error) {
@@ -94,15 +94,15 @@ export default function DashboardManajemen() {
           </div>
         </header>
 
-        {/* Main Stats Cards - 3 CARDS (hover dibiarkan seperti semula) */}
+        {/* Main Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Tidak mengirim `trend` → badge persentase tidak muncul */}
           <StatsCard
             title="Total Kasus Diabetes"
             value={stats.diabetes_cases}
             subtitle="Pasien terdaftar di sistem"
             icon={<Heart className="h-6 w-6 text-white" />}
             gradient="from-emerald-500 to-teal-600"
-            trend={`+${stats.growth_percentage}%`}
           />
           <StatsCard
             title="Pedalangan"
@@ -122,7 +122,7 @@ export default function DashboardManajemen() {
           />
         </div>
 
-        {/* Kondisi Kesehatan Section */}
+        {/* Kondisi Kesehatan */}
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
@@ -191,7 +191,8 @@ interface StatsCardProps {
   subtitle: string;
   icon: React.ReactNode;
   gradient: string;
-  trend: string;
+  /** opsional; jika tidak diberikan, badge tren disembunyikan */
+  trend?: string;
 }
 
 function StatsCard({ title, value, subtitle, icon, gradient, trend }: StatsCardProps) {
@@ -204,9 +205,11 @@ function StatsCard({ title, value, subtitle, icon, gradient, trend }: StatsCardP
           <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
             {icon}
           </div>
-          <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-bold text-white">
-            {trend}
-          </span>
+          {typeof trend === "string" && trend.length > 0 && (
+            <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-bold text-white">
+              {trend}
+            </span>
+          )}
         </div>
         <h3 className="text-4xl font-black text-white mb-2">{value.toLocaleString()}</h3>
         <p className="text-sm font-semibold text-white/90 mb-1">{title}</p>
