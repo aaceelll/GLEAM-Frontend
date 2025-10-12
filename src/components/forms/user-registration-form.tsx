@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, UserPlus } from "lucide-react";
+import { Eye, EyeOff, UserPlus, CheckCircle2 } from "lucide-react";
 
 type FormData = {
   nama: string;
@@ -42,6 +42,8 @@ export function UserRegistrationForm() {
   const [showTermsPopup, setShowTermsPopup] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [errors, setErrors] = useState<ErrorMap>({});
+  // NEW: popup sukses bergaya selaras UI
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   const [form, setForm] = useState<FormData>({
     nama: "",
@@ -133,8 +135,8 @@ export function UserRegistrationForm() {
         }; SameSite=Lax`;
       }
 
-      alert("Registrasi berhasil! Silakan lengkapi informasi pribadi Anda.");
-      router.push("/dashboard/user/personal-info");
+      // Ganti alert native -> modal sukses selaras UI
+      setShowSuccessPopup(true);
     } catch (err: unknown) {
       console.error("Registration error:", err);
       const msg =
@@ -144,6 +146,12 @@ export function UserRegistrationForm() {
       setLoading(false);
       setShowTermsPopup(false);
     }
+  };
+
+  // Ketika user menekan tombol OK pada modal sukses
+  const proceedAfterSuccess = () => {
+    setShowSuccessPopup(false);
+    router.push("/dashboard/user/personal-info");
   };
 
   return (
@@ -374,6 +382,43 @@ export function UserRegistrationForm() {
                 className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Memproses..." : "Daftar Sekarang"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Popup (ganti alert native) */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-emerald-100">
+            {/* Header gradient */}
+            <div className="relative px-6 pt-6 pb-4 bg-gradient-to-br from-emerald-50 to-white border-b border-emerald-100">
+              <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-emerald-400/20 blur-2xl" />
+              <div className="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-teal-400/20 blur-2xl" />
+              <div className="relative flex items-center gap-3">
+                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md ring-4 ring-white/60">
+                  <CheckCircle2 className="h-7 w-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-emerald-800">Registrasi Berhasil</h3>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 text-sm text-gray-700">
+              <p className="leading-relaxed">
+                Akunmu berhasil dibuat. Silakan lengkapi <span className="font-semibold text-emerald-700">informasi pribadi</span> terlebih dahulu untuk pengalaman yang optimal.
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-emerald-100 flex justify-end">
+              <button
+                onClick={proceedAfterSuccess}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                autoFocus
+              >
+                OK
               </button>
             </div>
           </div>
