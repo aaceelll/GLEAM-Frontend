@@ -228,8 +228,8 @@ export default function HomePage() {
                       </div>
                       <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
                         <Heart className="w-5 h-5 text-purple-600 mb-2" />
-                        <div className="text-xs text-gray-600">Detak Jantung</div>
-                        <div className="text-sm font-bold text-purple-700">72 bpm</div>
+                        <div className="text-xs text-gray-600">Body Mass Index</div>
+                        <div className="text-sm font-bold text-purple-700">23,4 kkg/m²</div>
                       </div>
                       <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
                         <Calendar className="w-5 h-5 text-amber-600 mb-2" />
