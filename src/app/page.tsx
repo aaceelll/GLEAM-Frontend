@@ -299,7 +299,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">Screening Risiko</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Deteksi dini risiko diabetes dengan kuesioner cerdas dan analisis AI yang akurat
+                  Deteksi dini risiko diabetes dengan cerdas dan analisis AI yang akurat
                 </p>
               </div>
 
@@ -319,9 +319,9 @@ export default function HomePage() {
                 <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <Brain className="w-7 h-7 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">AI Assistant</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Rekomendasi Personal</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Dapatkan rekomendasi personal dari AI untuk pola makan, olahraga, dan gaya hidup sehat
+                  Dapatkan rekomendasi personal untuk pola makan, olahraga, dan gaya hidup sehat
                 </p>
               </div>
 
@@ -330,109 +330,10 @@ export default function HomePage() {
                 <div className="w-14 h-14 bg-gradient-to-br from-rose-500 to-red-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <HeartPulse className="w-7 h-7 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Health Tracker</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Laporan Kesehatan</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Catat dan analisis data kesehatan lengkap: tekanan darah, berat badan, aktivitas fisik, dan lainnya
+                  Generate laporan kesehatan komprehensif lengkap dengan analisis kesehatan dan riwayat screening Diabetes Melitus Anda
                 </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Why Choose Us Section */}
-        <section className="relative z-10 py-20 md:py-32 bg-white">
-          <div className="container mx-auto px-6">
-            <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
-              {/* Kiri - Image/Illustration */}
-              <div className="relative order-2 lg:order-1">
-                <div className="relative bg-gradient-to-br from-emerald-100 to-teal-100 rounded-3xl p-10 border-2 border-emerald-200">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-emerald-200">
-                      <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-4">
-                        <Zap className="w-6 h-6 text-emerald-600" />
-                      </div>
-                      <div className="text-3xl font-bold text-emerald-600 mb-1">Cepat</div>
-                      <p className="text-sm text-gray-600">Hasil instan</p>
-                    </div>
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-teal-200 translate-y-8">
-                      <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mb-4">
-                        <Shield className="w-6 h-6 text-teal-600" />
-                      </div>
-                      <div className="text-3xl font-bold text-teal-600 mb-1">Aman</div>
-                      <p className="text-sm text-gray-600">Data terenkripsi</p>
-                    </div>
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-blue-200 -translate-y-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
-                        <Award className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <div className="text-3xl font-bold text-blue-600 mb-1">Akurat</div>
-                      <p className="text-sm text-gray-600">AI powered</p>
-                    </div>
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-purple-200">
-                      <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
-                        <Smartphone className="w-6 h-6 text-purple-600" />
-                      </div>
-                      <div className="text-3xl font-bold text-purple-600 mb-1">Mudah</div>
-                      <p className="text-sm text-gray-600">User friendly</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="absolute -top-4 -right-4 w-24 h-24 bg-emerald-300 rounded-full blur-2xl opacity-50" />
-                <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-teal-300 rounded-full blur-2xl opacity-50" />
-              </div>
-
-              {/* Kanan - Content */}
-              <div className="space-y-6 order-1 lg:order-2">
-                <div className="inline-block px-4 py-2 bg-teal-100 text-teal-700 rounded-full text-sm font-bold border border-teal-200">
-                  Kenapa GLEAM?
-                </div>
-                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
-                  Platform Diabetes Terlengkap di Indonesia
-                </h2>
-                <p className="text-lg text-gray-600 leading-relaxed">
-                  GLEAM menggabungkan teknologi AI, data kesehatan real-time, dan edukasi komprehensif dalam satu platform yang mudah digunakan.
-                </p>
-
-                <div className="space-y-4 pt-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900 mb-1">Didukung Tenaga Medis Profesional</h4>
-                      <p className="text-gray-600">Tim dokter dan ahli gizi bersertifikat siap membantu Anda</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
-                      <CheckCircle2 className="w-5 h-5 text-teal-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900 mb-1">Teknologi AI Terdepan</h4>
-                      <p className="text-gray-600">Algoritma machine learning untuk rekomendasi personal</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                      <CheckCircle2 className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900 mb-1">Gratis & Mudah Diakses</h4>
-                      <p className="text-gray-600">Tidak ada biaya tersembunyi, akses kapan saja dari smartphone Anda</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <Link href="/register/user">
-                    <Button className="px-8 py-6 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 font-bold text-lg rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all">
-                      Mulai Sekarang
-                      <ArrowRight className="ml-2 w-5 h-5" />
-                    </Button>
-                  </Link>
-                </div>
               </div>
             </div>
           </div>
@@ -497,88 +398,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Testimonials Section */}
-        <section className="relative z-10 py-20 md:py-32 bg-gradient-to-b from-white to-emerald-50/30">
-          <div className="container mx-auto px-6">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <div className="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-bold mb-4 border border-emerald-200">
-                Testimoni
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                Cerita Pengguna GLEAM
-              </h2>
-              <p className="text-lg text-gray-600">
-                Ribuan pengguna telah merasakan manfaat GLEAM untuk kesehatan mereka
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {/* Testimonial 1 */}
-              <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-emerald-100 hover:border-emerald-300 transition-all hover:-translate-y-2">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xl">
-                    B
-                  </div>
-                  <div>
-                    <div className="font-bold text-gray-900">Budi Santoso</div>
-                    <div className="text-sm text-gray-500">Pasien Diabetes Tipe 2</div>
-                  </div>
-                </div>
-                <p className="text-gray-600 leading-relaxed mb-4">
-                  "GLEAM sangat membantu saya dalam monitoring gula darah sehari-hari. Fitur reminder-nya juga bikin saya tidak lupa cek gula darah secara rutin."
-                </p>
-                <div className="flex gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <span key={i} className="text-yellow-400">★</span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Testimonial 2 */}
-              <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-teal-100 hover:border-teal-300 transition-all hover:-translate-y-2">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white font-bold text-xl">
-                    S
-                  </div>
-                  <div>
-                    <div className="font-bold text-gray-900">Siti Nurhaliza</div>
-                    <div className="text-sm text-gray-500">Ibu Rumah Tangga</div>
-                  </div>
-                </div>
-                <p className="text-gray-600 leading-relaxed mb-4">
-                  "Materi edukasinya lengkap dan mudah dipahami. Saya jadi lebih paham tentang pola makan yang sehat untuk diabetes. Terima kasih GLEAM!"
-                </p>
-                <div className="flex gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <span key={i} className="text-yellow-400">★</span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Testimonial 3 */}
-              <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-blue-100 hover:border-blue-300 transition-all hover:-translate-y-2">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-xl">
-                    A
-                  </div>
-                  <div>
-                    <div className="font-bold text-gray-900">Ahmad Wijaya</div>
-                    <div className="text-sm text-gray-500">Karyawan Swasta</div>
-                  </div>
-                </div>
-                <p className="text-gray-600 leading-relaxed mb-4">
-                  "Aplikasi yang sangat user-friendly! Konsultasi online dengan dokter juga sangat membantu saya yang sibuk dengan pekerjaan."
-                </p>
-                <div className="flex gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <span key={i} className="text-yellow-400">★</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* CTA Section */}
         <section id="cta" className="relative z-10 py-20 md:py-32">
           <div className="container mx-auto px-6">
@@ -591,7 +410,7 @@ export default function HomePage() {
                   Siap Mengelola Kesehatan Diabetes Anda?
                 </h3>
                 <p className="text-xl text-white/90">
-                  Bergabunglah dengan ribuan pengguna yang telah merasakan manfaat GLEAM
+                  Bergabunglah dengan pengguna lain yang telah merasakan manfaat GLEAM
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link href="/register/user">
@@ -627,7 +446,7 @@ export default function HomePage() {
                 <div className="space-y-4">
                   <GleamLogo size="md" />
                   <p className="text-sm text-gray-600">
-                    Platform monitoring kesehatan diabetes terpercaya untuk Indonesia.
+                    Platform monitoring kesehatan diabetes terpercaya dengan teknologi AI.
                   </p>
                   <div className="h-1 w-16 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full" />
                 </div>
@@ -665,7 +484,7 @@ export default function HomePage() {
               <div className="mt-10 pt-6 border-t border-emerald-100/70 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <p className="text-sm text-gray-600">© 2025 GLEAM. All rights reserved.</p>
                 <div className="text-xs text-gray-500">
-                  Dibuat dengan <span className="text-emerald-600 font-semibold">GLEAM Design System</span>
+                  Universitas Diponegoro
                 </div>
               </div>
             </div>
