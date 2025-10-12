@@ -17,6 +17,14 @@ import {
   BarChart3,
   Calendar,
   Bell,
+  Sparkles,
+  ArrowRight,
+  Zap,
+  Target,
+  Award,
+  Smartphone,
+  Brain,
+  HeartPulse,
 } from "lucide-react";
 
 /* ===== Lightweight UI helpers (agar file mandiri) ===== */
@@ -122,7 +130,7 @@ export default function HomePage() {
             {/* Kiri */}
             <div className="space-y-8">
               <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-100 to-teal-100 border-2 border-emerald-200 rounded-full shadow-md hover:shadow-lg transition-all">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <Sparkles className="w-5 h-5 text-emerald-600" />
                 <span className="text-sm font-bold text-emerald-700">Platform Kesehatan Digital Terpercaya</span>
               </div>
 
@@ -144,31 +152,38 @@ export default function HomePage() {
 
               {/* CTA */}
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button className="w-full sm:w-auto group px-8 py-6 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 font-bold text-lg rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all">
-                  Mulai Sekarang
-                  <TrendingUp className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto px-8 py-6 border-2 border-gray-200 text-gray-700 font-bold text-lg rounded-2xl hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-700 transition-all"
-                >
-                  Pelajari Lebih Lanjut
-                </Button>
+                <Link href="/register/user">
+                  <Button className="w-full sm:w-auto group px-8 py-6 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 font-bold text-lg rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all relative overflow-hidden">
+                    <span className="relative z-10 flex items-center">
+                      Mulai Sekarang
+                      <TrendingUp className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                    <span className="absolute inset-0 bg-gradient-to-r from-teal-600 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Button>
+                </Link>
+                <Link href="#features">
+                  <Button
+                    variant="outline"
+                    className="w-full sm:w-auto px-8 py-6 border-2 border-emerald-200 text-emerald-700 bg-emerald-50/50 backdrop-blur-sm font-bold text-lg rounded-2xl hover:border-emerald-400 hover:bg-emerald-100 hover:shadow-lg transition-all"
+                  >
+                    Pelajari Lebih Lanjut
+                  </Button>
+                </Link>
               </div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-6 pt-8">
-                <div className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-emerald-600">1000+</div>
-                  <div className="text-sm text-gray-600 mt-1">Pengguna Aktif</div>
+              {/* Trust Indicators - Pengganti Stats */}
+              <div className="flex flex-wrap items-center gap-4 pt-6">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50/80 rounded-full border border-emerald-200 hover:border-emerald-300 transition-all">
+                  <Shield className="w-4 h-4 text-emerald-600" />
+                  <span className="text-sm font-semibold text-emerald-700">Keamanan Data Terjamin</span>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-emerald-600">24/7</div>
-                  <div className="text-sm text-gray-600 mt-1">Monitoring</div>
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-teal-50/80 rounded-full border border-teal-200 hover:border-teal-300 transition-all">
+                  <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                  <span className="text-sm font-semibold text-teal-700">Mudah Digunakan</span>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-emerald-600">99%</div>
-                  <div className="text-sm text-gray-600 mt-1">Kepuasan</div>
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50/80 rounded-full border border-green-200 hover:border-green-300 transition-all">
+                  <Users className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-semibold text-green-700">Konsultasi Gratis</span>
                 </div>
               </div>
             </div>
@@ -236,6 +251,193 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Features Section */}
+        <section id="features" className="relative z-10 py-20 md:py-32 bg-gradient-to-b from-white to-emerald-50/30">
+          <div className="container mx-auto px-6">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-bold mb-4 border border-emerald-200">
+                Fitur Unggulan
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                Semua yang Anda Butuhkan untuk{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
+                  Kesehatan Diabetes
+                </span>
+              </h2>
+              <p className="text-lg text-gray-600">
+                Platform lengkap dengan teknologi terkini untuk monitoring dan edukasi diabetes
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              {/* Feature Card 1 */}
+              <div className="group bg-white rounded-2xl p-8 border-2 border-emerald-100 hover:border-emerald-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Activity className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Monitoring Real-time</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Pantau kadar glukosa darah Anda secara real-time dengan grafik interaktif dan notifikasi otomatis
+                </p>
+              </div>
+
+              {/* Feature Card 2 */}
+              <div className="group bg-white rounded-2xl p-8 border-2 border-teal-100 hover:border-teal-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                <div className="w-14 h-14 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <BookOpen className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Edukasi Interaktif</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Akses materi pembelajaran lengkap tentang diabetes dengan video, artikel, dan kuis interaktif
+                </p>
+              </div>
+
+              {/* Feature Card 3 */}
+              <div className="group bg-white rounded-2xl p-8 border-2 border-blue-100 hover:border-blue-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Target className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Screening Risiko</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Deteksi dini risiko diabetes dengan kuesioner cerdas dan analisis AI yang akurat
+                </p>
+              </div>
+
+              {/* Feature Card 4 */}
+              <div className="group bg-white rounded-2xl p-8 border-2 border-purple-100 hover:border-purple-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <MessageSquare className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Konsultasi Online</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Konsultasi langsung dengan tenaga kesehatan profesional kapan saja, di mana saja
+                </p>
+              </div>
+
+              {/* Feature Card 5 */}
+              <div className="group bg-white rounded-2xl p-8 border-2 border-amber-100 hover:border-amber-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Brain className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">AI Assistant</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Dapatkan rekomendasi personal dari AI untuk pola makan, olahraga, dan gaya hidup sehat
+                </p>
+              </div>
+
+              {/* Feature Card 6 */}
+              <div className="group bg-white rounded-2xl p-8 border-2 border-rose-100 hover:border-rose-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                <div className="w-14 h-14 bg-gradient-to-br from-rose-500 to-red-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <HeartPulse className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Health Tracker</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Catat dan analisis data kesehatan lengkap: tekanan darah, berat badan, aktivitas fisik, dan lainnya
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Why Choose Us Section */}
+        <section className="relative z-10 py-20 md:py-32 bg-white">
+          <div className="container mx-auto px-6">
+            <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+              {/* Kiri - Image/Illustration */}
+              <div className="relative order-2 lg:order-1">
+                <div className="relative bg-gradient-to-br from-emerald-100 to-teal-100 rounded-3xl p-10 border-2 border-emerald-200">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-emerald-200">
+                      <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-4">
+                        <Zap className="w-6 h-6 text-emerald-600" />
+                      </div>
+                      <div className="text-3xl font-bold text-emerald-600 mb-1">Cepat</div>
+                      <p className="text-sm text-gray-600">Hasil instan</p>
+                    </div>
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-teal-200 translate-y-8">
+                      <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mb-4">
+                        <Shield className="w-6 h-6 text-teal-600" />
+                      </div>
+                      <div className="text-3xl font-bold text-teal-600 mb-1">Aman</div>
+                      <p className="text-sm text-gray-600">Data terenkripsi</p>
+                    </div>
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-blue-200 -translate-y-4">
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+                        <Award className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div className="text-3xl font-bold text-blue-600 mb-1">Akurat</div>
+                      <p className="text-sm text-gray-600">AI powered</p>
+                    </div>
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-purple-200">
+                      <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
+                        <Smartphone className="w-6 h-6 text-purple-600" />
+                      </div>
+                      <div className="text-3xl font-bold text-purple-600 mb-1">Mudah</div>
+                      <p className="text-sm text-gray-600">User friendly</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute -top-4 -right-4 w-24 h-24 bg-emerald-300 rounded-full blur-2xl opacity-50" />
+                <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-teal-300 rounded-full blur-2xl opacity-50" />
+              </div>
+
+              {/* Kanan - Content */}
+              <div className="space-y-6 order-1 lg:order-2">
+                <div className="inline-block px-4 py-2 bg-teal-100 text-teal-700 rounded-full text-sm font-bold border border-teal-200">
+                  Kenapa GLEAM?
+                </div>
+                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
+                  Platform Diabetes Terlengkap di Indonesia
+                </h2>
+                <p className="text-lg text-gray-600 leading-relaxed">
+                  GLEAM menggabungkan teknologi AI, data kesehatan real-time, dan edukasi komprehensif dalam satu platform yang mudah digunakan.
+                </p>
+
+                <div className="space-y-4 pt-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 mb-1">Didukung Tenaga Medis Profesional</h4>
+                      <p className="text-gray-600">Tim dokter dan ahli gizi bersertifikat siap membantu Anda</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle2 className="w-5 h-5 text-teal-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 mb-1">Teknologi AI Terdepan</h4>
+                      <p className="text-gray-600">Algoritma machine learning untuk rekomendasi personal</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 mb-1">Gratis & Mudah Diakses</h4>
+                      <p className="text-gray-600">Tidak ada biaya tersembunyi, akses kapan saja dari smartphone Anda</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <Link href="/register/user">
+                    <Button className="px-8 py-6 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 font-bold text-lg rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all">
+                      Mulai Sekarang
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* How It Works */}
         <section id="how-it-works" className="relative z-10 py-20 md:py-32 bg-white">
           <div className="container mx-auto px-6">
@@ -248,7 +450,8 @@ export default function HomePage() {
               </h3>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto relative">
+              {/* Step 1 */}
               <div className="text-center relative">
                 <div className="relative mb-6">
                   <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mx-auto shadow-2xl">
@@ -259,6 +462,12 @@ export default function HomePage() {
                 <p className="text-gray-600">Buat akun dalam hitungan menit dengan data diri Anda</p>
               </div>
 
+              {/* Arrow 1 to 2 */}
+              <div className="hidden md:flex items-center justify-center absolute top-10 left-1/3 -translate-x-1/2 z-10">
+                <ArrowRight className="w-8 h-8 text-emerald-400" strokeWidth={2.5} />
+              </div>
+
+              {/* Step 2 */}
               <div className="text-center relative">
                 <div className="relative mb-6">
                   <div className="w-20 h-20 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center mx-auto shadow-2xl">
@@ -269,6 +478,12 @@ export default function HomePage() {
                 <p className="text-gray-600">Masukkan data kesehatan Anda untuk screening awal</p>
               </div>
 
+              {/* Arrow 2 to 3 */}
+              <div className="hidden md:flex items-center justify-center absolute top-10 left-2/3 -translate-x-1/2 z-10">
+                <ArrowRight className="w-8 h-8 text-teal-400" strokeWidth={2.5} />
+              </div>
+
+              {/* Step 3 */}
               <div className="text-center relative">
                 <div className="relative mb-6">
                   <div className="w-20 h-20 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center mx-auto shadow-2xl">
@@ -277,6 +492,88 @@ export default function HomePage() {
                 </div>
                 <h4 className="text-xl font-bold text-gray-900 mb-3">Monitoring & Konsultasi</h4>
                 <p className="text-gray-600">Pantau kesehatan dan konsultasi kapan saja</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section className="relative z-10 py-20 md:py-32 bg-gradient-to-b from-white to-emerald-50/30">
+          <div className="container mx-auto px-6">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-bold mb-4 border border-emerald-200">
+                Testimoni
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                Cerita Pengguna GLEAM
+              </h2>
+              <p className="text-lg text-gray-600">
+                Ribuan pengguna telah merasakan manfaat GLEAM untuk kesehatan mereka
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              {/* Testimonial 1 */}
+              <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-emerald-100 hover:border-emerald-300 transition-all hover:-translate-y-2">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xl">
+                    B
+                  </div>
+                  <div>
+                    <div className="font-bold text-gray-900">Budi Santoso</div>
+                    <div className="text-sm text-gray-500">Pasien Diabetes Tipe 2</div>
+                  </div>
+                </div>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  "GLEAM sangat membantu saya dalam monitoring gula darah sehari-hari. Fitur reminder-nya juga bikin saya tidak lupa cek gula darah secara rutin."
+                </p>
+                <div className="flex gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="text-yellow-400">★</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Testimonial 2 */}
+              <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-teal-100 hover:border-teal-300 transition-all hover:-translate-y-2">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white font-bold text-xl">
+                    S
+                  </div>
+                  <div>
+                    <div className="font-bold text-gray-900">Siti Nurhaliza</div>
+                    <div className="text-sm text-gray-500">Ibu Rumah Tangga</div>
+                  </div>
+                </div>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  "Materi edukasinya lengkap dan mudah dipahami. Saya jadi lebih paham tentang pola makan yang sehat untuk diabetes. Terima kasih GLEAM!"
+                </p>
+                <div className="flex gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="text-yellow-400">★</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Testimonial 3 */}
+              <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-blue-100 hover:border-blue-300 transition-all hover:-translate-y-2">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-xl">
+                    A
+                  </div>
+                  <div>
+                    <div className="font-bold text-gray-900">Ahmad Wijaya</div>
+                    <div className="text-sm text-gray-500">Karyawan Swasta</div>
+                  </div>
+                </div>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  "Aplikasi yang sangat user-friendly! Konsultasi online dengan dokter juga sangat membantu saya yang sibuk dengan pekerjaan."
+                </p>
+                <div className="flex gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="text-yellow-400">★</span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -297,7 +594,6 @@ export default function HomePage() {
                   Bergabunglah dengan ribuan pengguna yang telah merasakan manfaat GLEAM
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  {/* Lebih muda agar tidak nyaru */}
                   <Link href="/register/user">
                     <Button
                       variant="outline"
