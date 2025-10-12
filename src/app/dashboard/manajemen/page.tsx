@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  MapPin, 
-  Activity, 
-  TrendingUp, 
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  MapPin,
+  Activity,
   AlertCircle,
   CheckCircle2,
   Loader2,
@@ -13,7 +12,6 @@ import {
   Heart
 } from "lucide-react";
 import { api } from "@/lib/api";
-import Link from "next/link";
 
 interface DashboardStats {
   total_pedalangan: number;
@@ -23,6 +21,7 @@ interface DashboardStats {
   status_perhatian: number;
   status_risiko: number;
   growth_percentage: number;
+  affected_percentage: number; // NEW
 }
 
 export default function DashboardManajemen() {
@@ -31,26 +30,25 @@ export default function DashboardManajemen() {
 
   useEffect(() => {
     fetchDashboardData();
-    
-    // Auto refresh setiap 30 detik
     const interval = setInterval(fetchDashboardData, 30000);
     return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardData = async () => {
     try {
-      const response = await api.get("/locations/statistics");
-      
-      if (response.data.success) {
-        const data = response.data.data;
+      const { data } = await api.get("/locations/statistics");
+      if (data.success) {
+        const d = data.data;
         setStats({
-          total_pedalangan: data.total_pedalangan || 0,
-          total_padangsari: data.total_padangsari || 0,
-          diabetes_cases: data.total_keseluruhan || 0,
-          status_normal: Math.floor((data.total_keseluruhan || 0) * 0.35),
-          status_perhatian: Math.floor((data.total_keseluruhan || 0) * 0.42),
-          status_risiko: Math.floor((data.total_keseluruhan || 0) * 0.23),
-          growth_percentage: 12.5,
+          total_pedalangan: d.total_pedalangan || 0,
+          total_padangsari: d.total_padangsari || 0,
+          diabetes_cases: d.total_keseluruhan || 0,
+          // ← ambil dari backend (risk_summary), bukan dummy lagi
+          status_normal: d.risk_summary?.normal ?? 0,
+          status_perhatian: d.risk_summary?.perhatian ?? 0,
+          status_risiko: d.risk_summary?.risiko ?? 0,
+          growth_percentage: 12.5, // optional, nanti bisa dibuat real
+          affected_percentage: d.affected_percentage ?? 0, // NEW
         });
       }
     } catch (error) {
@@ -60,7 +58,7 @@ export default function DashboardManajemen() {
     }
   };
 
-  if (loading) {
+  if (loading || !stats) {
     return (
       <div className="min-h-screen bg-white">
         <div className="flex items-center justify-center h-96">
@@ -96,29 +94,27 @@ export default function DashboardManajemen() {
           </div>
         </header>
 
-        {/* Main Stats Cards - 3 CARDS */}
+        {/* Main Stats Cards - 3 CARDS (hover dibiarkan seperti semula) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatsCard
             title="Total Kasus Diabetes"
-            value={stats?.diabetes_cases || 0}
+            value={stats.diabetes_cases}
             subtitle="Pasien terdaftar di sistem"
             icon={<Heart className="h-6 w-6 text-white" />}
             gradient="from-emerald-500 to-teal-600"
-            trend={`+${stats?.growth_percentage || 0}%`}
+            trend={`+${stats.growth_percentage}%`}
           />
-          
           <StatsCard
             title="Pedalangan"
-            value={stats?.total_pedalangan || 0}
+            value={stats.total_pedalangan}
             subtitle="Kasus terdaftar"
             icon={<MapPin className="h-6 w-6 text-white" />}
             gradient="from-teal-500 to-cyan-600"
             trend="11 RW"
           />
-          
           <StatsCard
             title="Padangsari"
-            value={stats?.total_padangsari || 0}
+            value={stats.total_padangsari}
             subtitle="Kasus terdaftar"
             icon={<MapPin className="h-6 w-6 text-white" />}
             gradient="from-emerald-600 to-green-700"
@@ -127,89 +123,83 @@ export default function DashboardManajemen() {
         </div>
 
         {/* Kondisi Kesehatan Section */}
-      <div className="space-y-4">
-        {/* Judul dan icon di luar card */}
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
-            <Activity className="h-6 w-6 text-white" />
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+              <Activity className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Kondisi Kesehatan</h2>
+              <p className="text-sm text-emerald-700">Fokus: Diabetes Melitus</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Kondisi Kesehatan</h2>
-            <p className="text-sm text-emerald-700">Fokus: Diabetes Melitus</p>
-          </div>
+
+          <Card className="relative overflow-hidden border-2 border-emerald-100 bg-white rounded-3xl shadow-sm transition-all duration-500 hover:border-emerald-300 hover:shadow-[0_10px_40px_rgba(16,185,129,0.15)] hover:-translate-y-1">
+            <CardContent className="p-6">
+              {/* Main Stats */}
+              <div className="mb-6 p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700 mb-1">Total Kasus Terdaftar</p>
+                    <p className="text-5xl font-black bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                      {stats.diabetes_cases}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-2">Pasien dengan Diabetes Melitus</p>
+                  </div>
+                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xl">
+                    <Heart className="h-12 w-12 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-700">Persentase Populasi Terdampak</span>
+                  <span className="text-lg font-black text-emerald-600">{stats.affected_percentage}%</span>
+                </div>
+                <div className="w-full bg-emerald-100 rounded-full h-4 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-full transition-all duration-700 ease-out"
+                    style={{ width: `${stats.affected_percentage}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-2">Estimasi berdasarkan pemeriksaan terakhir</p>
+              </div>
+
+              {/* Status Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <StatusCard
+                  title="Status Normal"
+                  count={stats.status_normal}
+                  subtitle="peserta dalam kondisi sehat"
+                  icon={<CheckCircle2 className="h-6 w-6" />}
+                  color="emerald"
+                />
+                <StatusCard
+                  title="Perlu Perhatian"
+                  count={stats.status_perhatian}
+                  subtitle="peserta dengan risiko sedang"
+                  icon={<AlertCircle className="h-6 w-6" />}
+                  color="amber"
+                />
+                <StatusCard
+                  title="Risiko Tinggi"
+                  count={stats.status_risiko}
+                  subtitle="peserta memerlukan intervensi"
+                  icon={<Activity className="h-6 w-6" />}
+                  color="red"
+                />
+              </div>
+            </CardContent>
+          </Card>
         </div>
-
-        {/* Card isi utama */}
-        <Card className="relative overflow-hidden border-2 border-emerald-100 bg-white rounded-3xl shadow-sm transition-all duration-500 hover:border-emerald-300 hover:shadow-[0_10px_40px_rgba(16,185,129,0.15)] hover:-translate-y-1">
-          <CardContent className="p-6">
-            {/* Main Stats Display */}
-            <div className="mb-6 p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-1">Total Kasus Terdaftar</p>
-                  <p className="text-5xl font-black bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                    {stats?.diabetes_cases || 0}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">Pasien dengan Diabetes Melitus</p>
-                </div>
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xl">
-                  <Heart className="h-12 w-12 text-white" />
-                </div>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-gray-700">
-                  Persentase Populasi Terdampak
-                </span>
-                <span className="text-lg font-black text-emerald-600">68%</span>
-              </div>
-              <div className="w-full bg-emerald-100 rounded-full h-4 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-full transition-all duration-700 ease-out"
-                  style={{ width: "68%" }}
-                ></div>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">Estimasi berdasarkan pemeriksaan terakhir</p>
-            </div>
-
-            {/* Status Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <StatusCard
-                title="Status Normal"
-                count={stats?.status_normal || 0}
-                subtitle="peserta dalam kondisi sehat"
-                icon={<CheckCircle2 className="h-6 w-6" />}
-                color="emerald"
-              />
-
-              <StatusCard
-                title="Perlu Perhatian"
-                count={stats?.status_perhatian || 0}
-                subtitle="peserta dengan risiko sedang"
-                icon={<AlertCircle className="h-6 w-6" />}
-                color="amber"
-              />
-
-              <StatusCard
-                title="Risiko Tinggi"
-                count={stats?.status_risiko || 0}
-                subtitle="peserta memerlukan intervensi"
-                icon={<Activity className="h-6 w-6" />}
-                color="red"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
       </div>
     </div>
   );
 }
 
-// Stats Card Component
+/* ===== Components ===== */
 interface StatsCardProps {
   title: string;
   value: number;
@@ -241,7 +231,6 @@ function StatsCard({ title, value, subtitle, icon, gradient, trend }: StatsCardP
   );
 }
 
-// Status Card Component
 interface StatusCardProps {
   title: string;
   count: number;
@@ -257,23 +246,23 @@ function StatusCard({ title, count, subtitle, icon, color }: StatusCardProps) {
       border: "border-emerald-200",
       iconBg: "bg-gradient-to-br from-emerald-500 to-teal-600",
       text: "text-emerald-900",
-      subtitle: "text-emerald-600"
+      subtitle: "text-emerald-600",
     },
     amber: {
       bg: "from-amber-50 to-orange-50",
       border: "border-amber-200",
       iconBg: "bg-gradient-to-br from-amber-500 to-orange-600",
       text: "text-amber-900",
-      subtitle: "text-amber-600"
+      subtitle: "text-amber-600",
     },
     red: {
       bg: "from-red-50 to-rose-50",
       border: "border-red-200",
       iconBg: "bg-gradient-to-br from-red-500 to-rose-600",
       text: "text-red-900",
-      subtitle: "text-red-600"
-    }
-  };
+      subtitle: "text-red-600",
+    },
+  } as const;
 
   const style = colors[color];
 
