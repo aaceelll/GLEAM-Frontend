@@ -152,21 +152,6 @@ export default function DashboardManajemen() {
                 </div>
               </div>
 
-              {/* Progress Bar */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-gray-700">Persentase Populasi Terdampak</span>
-                  <span className="text-lg font-black text-emerald-600">{stats.affected_percentage}%</span>
-                </div>
-                <div className="w-full bg-emerald-100 rounded-full h-4 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-full transition-all duration-700 ease-out"
-                    style={{ width: `${stats.affected_percentage}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-2">Estimasi berdasarkan pemeriksaan terakhir</p>
-              </div>
-
               {/* Status Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatusCard

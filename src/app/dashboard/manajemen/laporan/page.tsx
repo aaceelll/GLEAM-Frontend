@@ -451,7 +451,6 @@ export default function LaporanKeseluruhan() {
   /* --- AUTO LOAD --- */
   useEffect(() => {
     fetchList("pre");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -553,19 +552,31 @@ export default function LaporanKeseluruhan() {
             {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
+                {/* atur lebar kolom aksi biar stabil */}
+                <colgroup>
+                  <col />
+                  <col />
+                  <col />
+                  <col />
+                  <col style={{ width: "140px" }} />
+                </colgroup>
                 <thead>
                   <tr className="bg-gray-50">
-                    {["No", "Nama", "Tanggal Terbaru", "Skor", "Aksi"].map((h, i) => (
-                      <th
-                        key={h}
-                        className={[
-                          "text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide py-4 border-b-2 border-gray-100",
-                          i === 0 ? "pl-6" : i === 4 ? "pr-6 text-center" : "",
-                        ].join(" ")}
-                      >
-                        {h}
-                      </th>
-                    ))}
+                    <th className="pl-6 py-4 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide border-b-2 border-gray-100">
+                      No
+                    </th>
+                    <th className="py-4 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide border-b-2 border-gray-100">
+                      Nama
+                    </th>
+                    <th className="py-4 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide border-b-2 border-gray-100">
+                      Tanggal Terbaru
+                    </th>
+                    <th className="py-4 text-center text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide border-b-2 border-gray-100">
+                      Skor
+                    </th>
+                    <th className="pr-6 py-4 text-right text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide border-b-2 border-gray-100">
+                      Aksi
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -605,7 +616,7 @@ export default function LaporanKeseluruhan() {
                             {formatIDTime(row.latestDate)}
                           </div>
                         </td>
-                        <td className="py-4">
+                        <td className="py-4 text-center">
                           <span
                             className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
                               row.latestScore >= 80
@@ -618,10 +629,11 @@ export default function LaporanKeseluruhan() {
                             {row.latestScore}%
                           </span>
                         </td>
-                        <td className="pr-6 py-4 text-center">
+                        <td className="pr-6 py-4 text-right">
                           <button
                             onClick={() => handleOpenHistory(row.userId, row.name)}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors"
+                            className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors whitespace-nowrap"
+                            title="Lihat riwayat & detail"
                           >
                             Detail
                           </button>

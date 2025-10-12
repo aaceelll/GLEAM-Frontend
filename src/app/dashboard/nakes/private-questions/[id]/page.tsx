@@ -322,7 +322,7 @@ export default function NakesQuestionDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 px-6 md:px-10 py-6 flex items-center justify-center">
+      <div className="min-h-screen bg-white px-6 md:px-10 py-6 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto mb-4" />
           <p className="text-emerald-700 font-semibold">Memuat pertanyaan...</p>
@@ -417,7 +417,7 @@ export default function NakesQuestionDetailPage() {
         cancelText="Batal"
       />
 
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 px-6 md:px-10 py-6">
+      <div className="min-h-screen bg-white px-6 md:px-10 py-6">
         <div className="max-w-5xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
