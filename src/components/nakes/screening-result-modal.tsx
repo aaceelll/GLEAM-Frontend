@@ -1,39 +1,112 @@
 "use client";
 
 import React from "react";
-import { X } from "lucide-react";
+import { X, Activity, CheckCircle, AlertTriangle, AlertCircle } from "lucide-react";
 
-export type ScreeningResultUI = {
-  id?: number;
-  created_at?: string;
+export interface ScreeningResultUI {
   patient_name: string;
   age: number;
   bmi: number;
   systolic_bp: number;
   diastolic_bp: number;
-  diabetes_probability: string; // contoh "48.47%" atau "48.47"
-  diabetes_result: string;      // contoh "Risiko Anda Sedang. Disarankan pemeriksaan lanjutan."
+  diabetes_probability: string;
+  diabetes_result: string;
   bp_classification: string;
-  bp_recommendation?: string;
-};
-
-/** Normalisasi tampilan persen: pastikan hanya 1 simbol "%" */
-function fmtPercent(raw: string | number | undefined): string {
-  const s = String(raw ?? "").replace(/%/g, "").trim();
-  return s ? `${s}%` : "-";
+  bp_recommendation: string;
+  created_at: string;
 }
 
-/** IKUTI LOGIC ML (Python backend):
- *  >= 48  -> High (Merah)
- *  <= 40  -> Low  (Hijau)
- *  else   -> Medium (Oranye)
- */
-function riskClasses(prob: number) {
-  if (prob >= 48)
-    return { box: "bg-red-50 border-red-200 text-red-700" };
-  if (prob <= 40)
-    return { box: "bg-emerald-50 border-emerald-200 text-emerald-700" };
-  return { box: "bg-orange-50 border-orange-200 text-orange-700" };
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  result: ScreeningResultUI | null;
+  onNewScreening: () => void;
+}
+
+/** LOGIC ML: sesuai Python backend */
+function getRiskLevel(probabilityStr: string) {
+  const numStr = probabilityStr.replace("%", "").trim();
+  const prob = parseFloat(numStr);
+
+  if (isNaN(prob)) {
+    return {
+      level: "medium" as const,
+      label: "Risiko Tidak Diketahui",
+      color: {
+        bg: "bg-gray-50",
+        border: "border-gray-300",
+        text: "text-gray-900",
+        icon: "text-gray-600",
+      },
+      icon: <AlertCircle className="w-6 h-6" />,
+    };
+  }
+
+  if (prob >= 48) {
+    return {
+      level: "high" as const,
+      label: "Risiko Tinggi",
+      color: {
+        bg: "bg-red-50",
+        border: "border-red-300",
+        text: "text-red-900",
+        icon: "text-red-600",
+      },
+      icon: <AlertCircle className="w-6 h-6" />,
+    };
+  }
+
+  if (prob <= 40) {
+    return {
+      level: "low" as const,
+      label: "Risiko Rendah",
+      color: {
+        bg: "bg-green-50",
+        border: "border-green-300",
+        text: "text-green-900",
+        icon: "text-green-600",
+      },
+      icon: <CheckCircle className="w-6 h-6" />,
+    };
+  }
+
+  return {
+    level: "medium" as const,
+    label: "Risiko Sedang",
+    color: {
+      bg: "bg-orange-50",
+      border: "border-orange-300",
+      text: "text-orange-900",
+      icon: "text-orange-600",
+    },
+    icon: <AlertTriangle className="w-6 h-6" />,
+  };
+}
+
+/** Warna card BP classification */
+function getBPColor(classification: string) {
+  const lower = classification.toLowerCase();
+
+  if (lower.includes("optimal")) {
+    return { bg: "bg-green-50", border: "border-green-300", text: "text-green-900" };
+  }
+  if (lower.includes("normal") && !lower.includes("tinggi")) {
+    return { bg: "bg-blue-50", border: "border-blue-300", text: "text-blue-900" };
+  }
+  if (lower.includes("pra hipertensi") || lower.includes("normal tinggi")) {
+    return { bg: "bg-yellow-50", border: "border-yellow-300", text: "text-yellow-900" };
+  }
+  if (lower.includes("derajat 1")) {
+    return { bg: "bg-orange-50", border: "border-orange-300", text: "text-orange-900" };
+  }
+  if (lower.includes("derajat 2")) {
+    return { bg: "bg-red-50", border: "border-red-300", text: "text-red-900" };
+  }
+  if (lower.includes("derajat 3") || lower.includes("sistolik terisolasi")) {
+    return { bg: "bg-purple-50", border: "border-purple-300", text: "text-purple-900" };
+  }
+
+  return { bg: "bg-gray-50", border: "border-gray-300", text: "text-gray-900" };
 }
 
 export default function ScreeningResultModal({
@@ -41,99 +114,151 @@ export default function ScreeningResultModal({
   onClose,
   result,
   onNewScreening,
-}: {
-  open: boolean;
-  onClose: () => void;
-  result: ScreeningResultUI | null;
-  onNewScreening?: () => void;
-}) {
+}: Props) {
   if (!open || !result) return null;
 
-  const probNum = parseFloat(String(result.diabetes_probability).replace("%", ""));
-  const cls = riskClasses(isFinite(probNum) ? probNum : 0);
+  const risk = getRiskLevel(result.diabetes_probability);
+  const bpColors = getBPColor(result.bp_classification);
+
+  const date = new Date(result.created_at);
+  const formattedDate = new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Jakarta",
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 
   return (
-    <div className="fixed inset-0 z-[999] grid place-items-center">
-      {/* backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-
-      {/* modal */}
-      <div className="relative w-full max-w-2xl mx-4 rounded-2xl bg-white shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b">
-          <h2 className="text-xl font-bold text-gray-900">Hasil Screening</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
-            aria-label="Tutup"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="p-6 space-y-6">
-          {/* Banner Probabilitas */}
-          <div className={`rounded-xl border-2 px-5 py-4 text-center ${cls.box}`}>
-            <p className="text-xs font-semibold tracking-wide uppercase">
-              Probabilitas Diabetes
-            </p>
-            <p className="mt-1 text-4xl font-extrabold">
-              {fmtPercent(result.diabetes_probability)}
-            </p>
-            <p className="mt-2 text-sm">{result.diabetes_result}</p>
-          </div>
-
-          {/* Grid Data */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Tekanan darah */}
-            <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4">
-              <p className="font-semibold text-blue-900 mb-1">Tekanan Darah</p>
-              <p className="text-blue-800 text-sm">Sistolik: {result.systolic_bp}</p>
-              <p className="text-blue-800 text-sm">Diastolik: {result.diastolic_bp}</p>
-              <p className="mt-2 font-semibold text-blue-700">
-                {result.bp_classification}
-              </p>
-            </div>
-
-            {/* Data Screening */}
-            <div className="rounded-xl border-2 border-gray-200 bg-gray-50 p-4">
-              <p className="font-semibold text-gray-900 mb-1">Data Screening</p>
-              <p className="text-sm text-gray-800">Pasien: {result.patient_name}</p>
-              <p className="text-sm text-gray-800">Usia: {result.age} tahun</p>
-              <p className="text-sm text-gray-800">BMI: {result.bmi}</p>
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border-2 border-gray-100">
+        <div className="max-h-[90vh] overflow-y-auto">
+          {/* HEADER */}
+          <div className="sticky top-0 bg-white border-b-2 border-gray-100 px-6 py-4 rounded-t-3xl z-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
+                  <Activity className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Hasil Screening Diabetes</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">{formattedDate}</p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
             </div>
           </div>
 
-          {/* Rekomendasi (opsional) */}
-          {result.bp_recommendation && (
-            <div className="rounded-xl border-2 border-yellow-200 bg-yellow-50 p-4">
-              <p className="font-semibold text-yellow-900 mb-1">Rekomendasi:</p>
-              <p className="text-sm text-yellow-800">{result.bp_recommendation}</p>
+          {/* BODY */}
+          <div className="p-6 space-y-6">
+            {/* RISK CARD */}
+            <div className={`rounded-2xl border-2 p-6 ${risk.color.bg} ${risk.color.border}`}>
+              <div className="flex items-start gap-4">
+                <div className={risk.color.icon}>{risk.icon}</div>
+                <div className="flex-1">
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <h3 className={`text-2xl font-bold ${risk.color.text}`}>{risk.label}</h3>
+                    <span className={`text-3xl font-extrabold ${risk.color.text}`}>
+                      {result.diabetes_probability}
+                    </span>
+                  </div>
+                  <p className={`text-sm ${risk.color.text} opacity-80`}>
+                    {result.diabetes_result}
+                  </p>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="px-4 py-2 rounded-xl border-2 border-gray-200 text-gray-700 font-medium hover:bg-white"
-          >
-            Cetak Hasil
-          </button>
+            {/* DATA PASIEN */}
+            <div className="rounded-2xl border-2 border-gray-100 bg-white overflow-hidden">
+              <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                <h3 className="font-semibold text-gray-900">Data Pasien</h3>
+              </div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <DataItem label="Nama" value={result.patient_name} />
+                <DataItem label="Usia" value={`${result.age} tahun`} />
+                <DataItem label="BMI" value={result.bmi} />
+              </div>
+            </div>
 
-          <button
-            type="button"
-            onClick={onNewScreening ?? onClose}
-            className="px-5 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow"
-          >
-            Screening Pasien Baru
-          </button>
+            {/* TEKANAN DARAH */}
+            <div className="rounded-2xl border-2 border-gray-100 bg-white overflow-hidden">
+              <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                <h3 className="font-semibold text-gray-900">Tekanan Darah</h3>
+              </div>
+              <div className="p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-600">
+                    Sistolik / Diastolik
+                  </span>
+                  <span className="text-lg font-bold text-gray-900">
+                    {result.systolic_bp} / {result.diastolic_bp}{" "}
+                    <span className="text-sm font-normal text-gray-600">mmHg</span>
+                  </span>
+                </div>
+                <div className={`rounded-xl border-2 p-4 ${bpColors.bg} ${bpColors.border}`}>
+                  <p className={`font-semibold mb-1 ${bpColors.text}`}>
+                    {result.bp_classification}
+                  </p>
+                  {result.bp_recommendation && (
+                    <p className={`text-sm ${bpColors.text} opacity-80`}>
+                      {result.bp_recommendation}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* REKOMENDASI */}
+            <div className="rounded-2xl border-2 border-blue-100 bg-blue-50 p-5">
+              <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Rekomendasi
+              </h3>
+              <ul className="space-y-2 text-sm text-blue-800">
+                <li>• Konsultasikan hasil ini dengan dokter untuk pemeriksaan lebih lanjut</li>
+                <li>• Jaga pola makan sehat dan olahraga teratur</li>
+                <li>• Monitor gula darah dan tekanan darah secara berkala</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* FOOTER */}
+          <div className="sticky bottom-0 bg-white border-t-2 border-gray-100 px-6 py-4 rounded-b-3xl">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={onClose}
+                className="flex-1 px-6 py-3 rounded-xl font-semibold border-2 border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
+              >
+                Tutup
+              </button>
+              <button
+                onClick={onNewScreening}
+                className="flex-1 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all"
+              >
+                Screening Pasien Baru
+              </button>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DataItem({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-3">
+      <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-1">{label}</p>
+      <p className="font-bold text-gray-900">{value}</p>
     </div>
   );
 }
