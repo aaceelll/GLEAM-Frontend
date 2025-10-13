@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import ScreeningResultModal, { ScreeningResultUI } from "@/components/nakes/screening-result-modal";
 
-export default function PageImpl(): JSX.Element {
+export default function PageImpl() {
   const [open, setOpen] = useState(false);
 
   const dummyResult: ScreeningResultUI = {
