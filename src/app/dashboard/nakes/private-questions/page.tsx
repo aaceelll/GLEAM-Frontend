@@ -1,3 +1,4 @@
+// app/(dashboard)/dashboard/nakes/private-questions/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -11,6 +12,7 @@ import {
   Stethoscope,
   Calendar,
   User,
+  Lock, // ⟵ tambah untuk badge "Private"
 } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
@@ -26,6 +28,14 @@ interface Question {
   view_count: number;
   created_at: string;
 }
+
+/* ===== Helper: sort terbaru di atas ===== */
+const sortDesc = (arr: Question[]) =>
+  [...arr].sort((a, b) => {
+    const t = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    if (t !== 0) return t;
+    return (b.id ?? 0) - (a.id ?? 0);
+  });
 
 /* ===== Modal konfirmasi minimal ===== */
 function ConfirmModal({
@@ -57,16 +67,10 @@ function ConfirmModal({
       >
         <div className="px-6 py-5 bg-gradient-to-br from-emerald-50 to-teal-50 border-b border-emerald-100">
           <h3 className="text-lg font-bold text-emerald-900">{title}</h3>
-          {description ? (
-            <p className="text-sm text-emerald-700 mt-1">{description}</p>
-          ) : null}
+          {description ? <p className="text-sm text-emerald-700 mt-1">{description}</p> : null}
         </div>
         <div className="px-6 py-5 flex gap-3 justify-end bg-white">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="border-gray-300 text-gray-700 hover:bg-gray-100"
-          >
+          <Button variant="outline" onClick={onClose} className="border-gray-300 text-gray-700 hover:bg-gray-100">
             {cancelText}
           </Button>
           <Button
@@ -102,8 +106,10 @@ export default function NakesPrivateQuestionsPage() {
         api.get("/forum/private/pending"),
         api.get("/forum/private/my-assignments"),
       ]);
-      setPendingQuestions(pendingRes.data);
-      setMyQuestions(myRes.data);
+
+      // URUT TERBARU DI ATAS
+      setPendingQuestions(sortDesc(pendingRes.data as Question[]));
+      setMyQuestions(sortDesc(myRes.data as Question[]));
     } catch (e) {
       console.error(e);
     } finally {
@@ -111,16 +117,15 @@ export default function NakesPrivateQuestionsPage() {
     }
   }
 
-  // >>> tidak ada toast / alert / redirect
+  // tidak ada toast/alert; setelah assign pindah tab otomatis
   async function assignNow(id: number) {
     try {
       await api.post(`/forum/threads/${id}/assign`);
       setConfirmId(null);
       await loadQuestions();
-      setTab("my-questions"); // pindah tab “Pertanyaan Saya”
+      setTab("my-questions");
     } catch (error) {
       setConfirmId(null);
-      // diam saja (tanpa notif), tapi kamu bisa console.log bila mau debug
       console.error(error);
     }
   }
@@ -163,39 +168,21 @@ export default function NakesPrivateQuestionsPage() {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div
-            className={`w-12 h-12 rounded-xl bg-gradient-to-br ${greenGrad} flex items-center justify-center shadow-lg`}
-          >
+          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${greenGrad} flex items-center justify-center shadow-lg`}>
             <Stethoscope className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-              Pertanyaan Private dari Pasien
-            </h1>
-            <p className="text-gray-600 mt-0.5">
-              Jawab Pertanyaan Private Pasien Anda di Sini
-            </p>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Pertanyaan Private dari Pasien</h1>
+            <p className="text-gray-600 mt-0.5">Jawab Pertanyaan Private Pasien Anda di Sini</p>
           </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            {
-              n: pendingQuestions.length,
-              label: "Pertanyaan Baru",
-              icon: <Clock className="w-6 h-6" />,
-            },
-            {
-              n: myQuestions.length,
-              label: "Pertanyaan Saya",
-              icon: <MessageSquare className="w-6 h-6" />,
-            },
-            {
-              n: myQuestions.filter((q) => q.reply_count > 0).length,
-              label: "Sudah Dijawab",
-              icon: <CheckCircle className="w-6 h-6" />,
-            },
+            { n: pendingQuestions.length, label: "Pertanyaan Baru", icon: <Clock className="w-6 h-6" /> },
+            { n: myQuestions.length, label: "Pertanyaan Saya", icon: <MessageSquare className="w-6 h-6" /> },
+            { n: myQuestions.filter((q) => q.reply_count > 0).length, label: "Sudah Dijawab", icon: <CheckCircle className="w-6 h-6" /> },
           ].map((s, i) => (
             <Card
               key={i}
@@ -203,9 +190,7 @@ export default function NakesPrivateQuestionsPage() {
             >
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center text-white">
-                  {s.icon}
-                </div>
+                <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center text-white">{s.icon}</div>
                 <div>
                   <p className="text-3xl font-bold text-gray-900">{s.n}</p>
                   <p className="text-sm text-gray-600">{s.label}</p>
@@ -233,9 +218,7 @@ export default function NakesPrivateQuestionsPage() {
                 Pertanyaan Baru
                 <span
                   className={`ml-2 inline-flex items-center justify-center h-6 min-w-6 px-2 rounded-full text-xs font-bold ${
-                    tab === "pending"
-                      ? "bg-white/25 text-white"
-                      : "bg-gray-200 text-gray-700"
+                    tab === "pending" ? "bg-white/25 text-white" : "bg-gray-200 text-gray-700"
                   }`}
                 >
                   {pendingQuestions.length}
@@ -255,9 +238,7 @@ export default function NakesPrivateQuestionsPage() {
                 Pertanyaan Saya
                 <span
                   className={`ml-2 inline-flex items-center justify-center h-6 min-w-6 px-2 rounded-full text-xs font-bold ${
-                    tab === "my-questions"
-                      ? "bg-white/25 text-white"
-                      : "bg-gray-200 text-gray-700"
+                    tab === "my-questions" ? "bg-white/25 text-white" : "bg-gray-200 text-gray-700"
                   }`}
                 >
                   {myQuestions.length}
@@ -276,79 +257,70 @@ export default function NakesPrivateQuestionsPage() {
                 ) : pendingQuestions.length === 0 ? (
                   <div className="text-center py-14">
                     <Clock className="w-16 h-16 mx-auto text-gray-300 mb-3" />
-                    <p className="text-gray-700 font-semibold">
-                      Tidak ada pertanyaan baru
-                    </p>
+                    <p className="text-gray-700 font-semibold">Tidak ada pertanyaan baru</p>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-5">
                     {pendingQuestions.map((q) => (
-                      <Card
-                        key={q.id}
-                        className="group relative overflow-hidden rounded-2xl border-2 border-gray-100 bg-white p-5 hover:border-emerald-300 hover:shadow-xl transition-all"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="relative flex gap-4">
-                          {/* avatar */}
-                          <div className="w-12 h-12 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center text-white font-bold shadow flex-shrink-0">
-                            {q.user.nama.charAt(0).toUpperCase()}
-                          </div>
+  <Card
+    key={q.id}
+    className="group relative overflow-hidden rounded-2xl border-2 border-gray-100 bg-white p-5 hover:border-emerald-300 hover:shadow-xl transition-all"
+  >
+    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+    <div className="relative flex gap-4 items-start">
+      {/* avatar */}
+      <div className="w-12 h-12 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center text-white font-bold shadow flex-shrink-0">
+        {q.user.nama.charAt(0).toUpperCase()}
+      </div>
 
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <Badge className="bg-emerald-600 text-white">
-                                Baru
-                              </Badge>
-                              <Badge
-                                style={{
-                                  backgroundColor: q.category.color,
-                                  color: "white",
-                                }}
-                              >
-                                {q.category.icon} {q.category.name}
-                              </Badge>
-                            </div>
+      {/* content */}
+      <div className="flex-1 min-w-0">
+        {/* badges */}
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          <Badge className="bg-amber-500 text-white">Baru</Badge>
+          <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-300">
+            <Lock className="w-3 h-3 mr-1" />
+            Private
+          </Badge>
+        </div>
 
-                            <h3 className="font-bold text-gray-900 text-lg">
-                              {q.title}
-                            </h3>
-                            <p className="text-sm text-gray-600 line-clamp-2 mt-1">
-                              {q.content}
-                            </p>
+        {/* title & excerpt */}
+        <h3 className="font-bold text-gray-900 text-lg">{q.title}</h3>
+        <p className="text-sm text-gray-600 line-clamp-2 mt-1">{q.content}</p>
 
-                            <div className="mt-4 flex flex-col gap-3">
-                              <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
-                                <span className="flex items-center gap-1.5">
-                                  <User className="w-4 h-4" />
-                                  <strong>{q.user.nama}</strong>
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                  <Calendar className="w-4 h-4" />
-                                  {rel(q.created_at)}
-                                </span>
-                              </div>
+        {/* bottom row: info ⟷ button (SEJAJAR) */}
+        <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
+            <span className="flex items-center gap-1.5">
+              <User className="w-4 h-4" />
+              <strong>{q.user.nama}</strong>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-4 h-4" />
+              {rel(q.created_at)}
+            </span>
+          </div>
 
-                              <div className="flex justify-end">
-                                <Button
-                                  size="sm"
-                                  onClick={() => setConfirmId(q.id)}
-                                  className="w-full md:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-px transition-all"
-                                >
-                                  <Stethoscope className="w-4 h-4 mr-1.5" />
-                                  Ambil & Jawab
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
+          <Button
+            size="sm"
+            onClick={() => setConfirmId(q.id)}
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-sm"
+          >
+            <Stethoscope className="w-4 h-4 mr-1.5" />
+            Ambil & Jawab
+          </Button>
+        </div>
+      </div>
+    </div>
+  </Card>
+))}
+
                   </div>
                 )}
               </div>
             )}
 
-            {/* MY QUESTIONS (spasi antar card lebih renggang) */}
+            {/* MY QUESTIONS */}
             {tab === "my-questions" && (
               <div className="pt-6 pb-2">
                 {loading ? (
@@ -359,17 +331,12 @@ export default function NakesPrivateQuestionsPage() {
                 ) : myQuestions.length === 0 ? (
                   <div className="text-center py-14">
                     <MessageSquare className="w-16 h-16 mx-auto text-gray-300 mb-3" />
-                    <p className="text-gray-700 font-semibold">
-                      Belum ada pertanyaan yang Anda tangani
-                    </p>
+                    <p className="text-gray-700 font-semibold">Belum ada pertanyaan yang Anda tangani</p>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-5">
                     {myQuestions.map((q) => (
-                      <Link
-                        key={q.id}
-                        href={`/dashboard/nakes/private-questions/${q.id}`}
-                      >
+                      <Link key={q.id} href={`/dashboard/nakes/private-questions/${q.id}`}>
                         <Card className="group relative overflow-hidden rounded-2xl border-2 border-gray-100 bg-white p-5 hover:border-emerald-300 hover:shadow-xl transition-all cursor-pointer">
                           <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity" />
                           <div className="relative flex gap-4">
@@ -378,33 +345,30 @@ export default function NakesPrivateQuestionsPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                {/* Status beda warna */}
                                 {q.reply_count > 0 ? (
-                                  <Badge className="bg-green-600 text-white">
+                                  <Badge className="bg-emerald-600 text-white">
                                     <CheckCircle className="w-3 h-3 mr-1" />
                                     Dijawab
                                   </Badge>
                                 ) : (
-                                  <Badge className="bg-emerald-600 text-white">
+                                  <Badge className="bg-red-600 text-white">
                                     <Clock className="w-3 h-3 mr-1" />
                                     Belum Dijawab
                                   </Badge>
                                 )}
-                                <Badge
-                                  style={{
-                                    backgroundColor: q.category.color,
-                                    color: "white",
-                                  }}
-                                >
-                                  {q.category.icon} {q.category.name}
+
+                                {/* Ganti "Umum" -> "Private" */}
+                                <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                  <Lock className="w-3 h-3 mr-1" />
+                                  Private
                                 </Badge>
                               </div>
 
                               <h3 className="font-bold text-gray-900 text-lg group-hover:text-emerald-700 transition-colors">
                                 {q.title}
                               </h3>
-                              <p className="text-sm text-gray-600 line-clamp-2 mt-1">
-                                {q.content}
-                              </p>
+                              <p className="text-sm text-gray-600 line-clamp-2 mt-1">{q.content}</p>
 
                               <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-600">
                                 <span className="flex items-center gap-1.5">
