@@ -16,14 +16,13 @@ export interface ScreeningResultUI {
   created_at: string;
 }
 
-interface Props {
+type ModalProps = {
   open: boolean;
   onClose: () => void;
   result: ScreeningResultUI | null;
   onNewScreening: () => void;
-}
+};
 
-/* === Fungsi bantu === */
 function getRiskLevel(probabilityStr: string) {
   const numStr = probabilityStr.replace("%", "").trim();
   const prob = parseFloat(numStr);
@@ -70,8 +69,7 @@ function getBPColor(classification: string) {
   return { bg: "bg-gray-50", border: "border-gray-300", text: "text-gray-900" };
 }
 
-/* === Komponen Modal === */
-export default function ScreeningResultModal({ open, onClose, result, onNewScreening }: Props) {
+export default function ScreeningResultModal({ open, onClose, result, onNewScreening }: ModalProps) {
   if (!open || !result) return null;
 
   const risk = getRiskLevel(result.diabetes_probability);
@@ -113,12 +111,8 @@ export default function ScreeningResultModal({ open, onClose, result, onNewScree
                 <div className={risk.color.icon}>{risk.icon}</div>
                 <div>
                   <h3 className={`text-2xl font-bold ${risk.color.text}`}>{risk.label}</h3>
-                  <p className={`text-3xl font-extrabold ${risk.color.text}`}>
-                    {result.diabetes_probability}
-                  </p>
-                  <p className={`text-sm ${risk.color.text} opacity-80`}>
-                    {result.diabetes_result}
-                  </p>
+                  <p className={`text-3xl font-extrabold ${risk.color.text}`}>{result.diabetes_probability}</p>
+                  <p className={`text-sm ${risk.color.text} opacity-80`}>{result.diabetes_result}</p>
                 </div>
               </div>
             </div>
@@ -146,12 +140,8 @@ export default function ScreeningResultModal({ open, onClose, result, onNewScree
                   </span>
                 </div>
                 <div className={`rounded-xl border-2 p-4 ${bpColors.bg} ${bpColors.border}`}>
-                  <p className={`font-semibold mb-1 ${bpColors.text}`}>
-                    {result.bp_classification}
-                  </p>
-                  <p className={`text-sm ${bpColors.text} opacity-80`}>
-                    {result.bp_recommendation}
-                  </p>
+                  <p className={`font-semibold mb-1 ${bpColors.text}`}>{result.bp_classification}</p>
+                  <p className={`text-sm ${bpColors.text} opacity-80`}>{result.bp_recommendation}</p>
                 </div>
               </div>
             </div>

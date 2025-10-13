@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import ScreeningResultModal, { ScreeningResultUI } from "@/components/nakes/screening-result-modal";
 
-function ScreeningResultContent() {
+export default function Page(): JSX.Element {
   const [open, setOpen] = useState(false);
 
   const dummyResult: ScreeningResultUI = {
@@ -24,12 +24,8 @@ function ScreeningResultContent() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-6">
       <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-8 space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-gray-800">
-            Hasil Screening Pasien
-          </h1>
-          <p className="text-gray-600">
-            Klik tombol di bawah untuk membuka hasil screening.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-800">Hasil Screening Pasien</h1>
+          <p className="text-gray-600">Klik tombol di bawah untuk membuka hasil screening.</p>
         </div>
 
         <div className="flex justify-center">
@@ -50,8 +46,4 @@ function ScreeningResultContent() {
       />
     </div>
   );
-}
-
-export default function Page() {
-  return <ScreeningResultContent />;
 }
