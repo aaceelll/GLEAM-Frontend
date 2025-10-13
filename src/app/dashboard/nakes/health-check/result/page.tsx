@@ -4,11 +4,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import ScreeningResultModal, { ScreeningResultUI } from "@/components/nakes/screening-result-modal";
 
-export default function HealthCheckResultPage() {
+export default function Page() {
   const [open, setOpen] = useState(false);
 
-  // Simulasi hasil (ganti nanti dengan API fetch)
-  const result: ScreeningResultUI = {
+  const dummyResult: ScreeningResultUI = {
     patient_name: "Rachel Savitri",
     age: 22,
     bmi: 23.5,
@@ -21,32 +20,24 @@ export default function HealthCheckResultPage() {
     created_at: new Date().toISOString(),
   };
 
-  const handleClose = () => setOpen(false);
-  const handleNewScreening = () => {
-    setOpen(false);
-    alert("Navigasi ke halaman screening pasien baru...");
-  };
-
   return (
-    <main className="p-6 min-h-screen bg-gray-50">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Hasil Screening Pasien</h1>
-
-      <p className="text-gray-700 mb-4">
-        Klik tombol di bawah untuk melihat hasil screening pasien.
+    <main className="p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">Hasil Screening Pasien</h1>
+      <p className="text-gray-700 mb-6">
+        Klik tombol di bawah untuk membuka hasil screening.
       </p>
-
       <Button
         onClick={() => setOpen(true)}
-        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all"
+        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-md"
       >
         Lihat Hasil Screening
       </Button>
 
       <ScreeningResultModal
         open={open}
-        onClose={handleClose}
-        result={result}
-        onNewScreening={handleNewScreening}
+        onClose={() => setOpen(false)}
+        result={dummyResult}
+        onNewScreening={() => alert("Navigasi ke halaman screening baru")}
       />
     </main>
   );
