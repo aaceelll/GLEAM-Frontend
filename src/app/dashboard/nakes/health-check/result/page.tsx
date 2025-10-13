@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import ScreeningResultModal, { ScreeningResultUI } from "@/components/nakes/screening-result-modal";
 
-function ScreeningResultPage() {
+export default function Page() {
   const [open, setOpen] = useState(false);
 
   const dummyResult: ScreeningResultUI = {
@@ -50,8 +50,4 @@ function ScreeningResultPage() {
       />
     </div>
   );
-}
-
-export default function Page() {
-  return <ScreeningResultPage />;
 }
