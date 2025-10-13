@@ -6,7 +6,8 @@ import { KeyRound, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
+
 
 export function ForgotPasswordForm() {
   const router = useRouter();

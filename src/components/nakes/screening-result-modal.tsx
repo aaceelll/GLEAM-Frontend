@@ -11,18 +11,29 @@ export type ScreeningResultUI = {
   bmi: number;
   systolic_bp: number;
   diastolic_bp: number;
-  diabetes_probability: string; // contoh "48.47%"
-  diabetes_result: string;      // contoh "Risiko Sedang"
+  diabetes_probability: string; // contoh "48.47%" atau "48.47"
+  diabetes_result: string;      // contoh "Risiko Anda Sedang. Disarankan pemeriksaan lanjutan."
   bp_classification: string;
   bp_recommendation?: string;
 };
 
+/** Normalisasi tampilan persen: pastikan hanya 1 simbol "%" */
+function fmtPercent(raw: string | number | undefined): string {
+  const s = String(raw ?? "").replace(/%/g, "").trim();
+  return s ? `${s}%` : "-";
+}
+
+/** IKUTI LOGIC ML (Python backend):
+ *  >= 48  -> High (Merah)
+ *  <= 40  -> Low  (Hijau)
+ *  else   -> Medium (Oranye)
+ */
 function riskClasses(prob: number) {
-  if (prob >= 63)
-    return { box: "bg-red-50 border-red-200 text-red-700" };
   if (prob >= 48)
-    return { box: "bg-orange-50 border-orange-200 text-orange-700" };
-  return { box: "bg-emerald-50 border-emerald-200 text-emerald-700" };
+    return { box: "bg-red-50 border-red-200 text-red-700" };
+  if (prob <= 40)
+    return { box: "bg-emerald-50 border-emerald-200 text-emerald-700" };
+  return { box: "bg-orange-50 border-orange-200 text-orange-700" };
 }
 
 export default function ScreeningResultModal({
@@ -69,7 +80,7 @@ export default function ScreeningResultModal({
               Probabilitas Diabetes
             </p>
             <p className="mt-1 text-4xl font-extrabold">
-              {result.diabetes_probability}
+              {fmtPercent(result.diabetes_probability)}
             </p>
             <p className="mt-2 text-sm">{result.diabetes_result}</p>
           </div>

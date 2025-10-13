@@ -3,9 +3,9 @@ import axios, { AxiosHeaders } from "axios";
 import type { ApiRegisterRequest } from "@/types";
 
 // Base URL API Laravel (sudah ada /api di belakang)
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 console.log("[API_BASE_URL]", API_BASE_URL);
+
 
 // ===== Helpers (aman untuk SSR) =====
 const isBrowser = () => typeof window !== "undefined";

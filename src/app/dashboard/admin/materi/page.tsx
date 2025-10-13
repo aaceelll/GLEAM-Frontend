@@ -19,7 +19,7 @@ import axios from "axios";
 import { api } from "@/lib/api";
 
 /* ================= Helper (SATU VERSI SAJA) ================= */
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(/\/+$/, "");
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
 const FILE_HOST = API_BASE.replace(/\/api\/?$/, "");
 
 function toAbsolute(url?: string | null) {

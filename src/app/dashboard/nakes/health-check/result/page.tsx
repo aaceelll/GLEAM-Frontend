@@ -1,317 +1,311 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Sidebar } from "@/components/dashboard/sidebar";
-import { Heart, Activity, Droplet, Calendar, User, ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import React from "react";
+import { X, Activity, CheckCircle, AlertTriangle, AlertCircle } from "lucide-react";
 
-interface ScreeningResult {
-  id: number;
+export interface ScreeningResultUI {
   patient_name: string;
   age: number;
-  gender: string;
+  bmi: number;
   systolic_bp: number;
   diastolic_bp: number;
-  heart_disease: string;
-  smoking_history: string;
-  bmi: number;
-  blood_glucose_level: number;
-  diabetes_probability: string;
+  diabetes_probability: string; 
   diabetes_result: string;
   bp_classification: string;
   bp_recommendation: string;
   created_at: string;
 }
 
-export default function ResultPage() {
-  const [latestResult, setLatestResult] = useState<ScreeningResult | null>(null);
-  const [historyResults, setHistoryResults] = useState<ScreeningResult[]>([]);
-  const [loading, setLoading] = useState(true);
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  result: ScreeningResultUI | null;
+  onNewScreening: () => void;
+}
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch("/api/screenings/latest");
-        const d = await r.json();
-        setLatestResult(d?.latest || null);
-        setHistoryResults(d?.history || []);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  const getRiskColor = (p: string) => {
-    const v = parseFloat(p);
-    if (v >= 63) return "text-red-700 bg-red-50 border-red-200";
-    if (v >= 48) return "text-orange-700 bg-orange-50 border-orange-200";
-    return "text-green-700 bg-green-50 border-green-200";
+/** LOGIC ML: sesuai Python backend */
+function getRiskLevel(probabilityStr: string): {
+  level: "low" | "medium" | "high";
+  label: string;
+  color: {
+    bg: string;
+    border: string;
+    text: string;
+    icon: string;
   };
-  const getRiskBadge = (s: string) => {
-    if (s.includes("Risiko")) return "bg-red-100 text-red-800";
-    if (s.includes("Sedang")) return "bg-yellow-100 text-yellow-800";
-    return "bg-green-100 text-green-800";
-  };
+  icon: React.ReactNode;
+} {
+  // Parse angka dari string "47.64%" atau "47.64"
+  const numStr = probabilityStr.replace("%", "").trim();
+  const prob = parseFloat(numStr);
 
-  if (loading) {
-    return (
-      <div className="flex h-screen">
-        <div className="w-64 flex-shrink-0">
-          <Sidebar role="nakes" />
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-gray-600">Memuat hasil...</p>
-        </div>
-      </div>
-    );
+  if (isNaN(prob)) {
+    return {
+      level: "medium",
+      label: "Risiko Tidak Diketahui",
+      color: {
+        bg: "bg-gray-50",
+        border: "border-gray-300",
+        text: "text-gray-900",
+        icon: "text-gray-600",
+      },
+      icon: <AlertCircle className="w-6 h-6" />,
+    };
   }
 
-  if (!latestResult) {
-    return (
-      <div className="flex h-screen">
-        <div className="w-64 flex-shrink-0">
-          <Sidebar role="nakes" />
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">Tidak ada hasil screening</p>
-            <Link href="/dashboard/nakes/health-check" className="text-emerald-600 hover:text-emerald-700 font-medium">
-              Kembali ke Form Screening
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+  // Logic ML dari Python:
+  // >= 48 -> Tinggi
+  // <= 40 -> Rendah  
+  // else -> Sedang
+  if (prob >= 48) {
+    return {
+      level: "high",
+      label: "Risiko Tinggi",
+      color: {
+        bg: "bg-red-50",
+        border: "border-red-300",
+        text: "text-red-900",
+        icon: "text-red-600",
+      },
+      icon: <AlertCircle className="w-6 h-6" />,
+    };
   }
+
+  if (prob <= 40) {
+    return {
+      level: "low",
+      label: "Risiko Rendah",
+      color: {
+        bg: "bg-green-50",
+        border: "border-green-300",
+        text: "text-green-900",
+        icon: "text-green-600",
+      },
+      icon: <CheckCircle className="w-6 h-6" />,
+    };
+  }
+
+  // 40 < prob < 48
+  return {
+    level: "medium",
+    label: "Risiko Sedang",
+    color: {
+      bg: "bg-orange-50",
+      border: "border-orange-300",
+      text: "text-orange-900",
+      icon: "text-orange-600",
+    },
+    icon: <AlertTriangle className="w-6 h-6" />,
+  };
+}
+
+/** Warna card BP classification */
+function getBPColor(classification: string): {
+  bg: string;
+  border: string;
+  text: string;
+} {
+  const lower = classification.toLowerCase();
+
+  if (lower.includes("optimal")) {
+    return { bg: "bg-green-50", border: "border-green-300", text: "text-green-900" };
+  }
+  if (lower.includes("normal") && !lower.includes("tinggi")) {
+    return { bg: "bg-blue-50", border: "border-blue-300", text: "text-blue-900" };
+  }
+  if (lower.includes("pra hipertensi") || lower.includes("normal tinggi")) {
+    return { bg: "bg-yellow-50", border: "border-yellow-300", text: "text-yellow-900" };
+  }
+  if (lower.includes("derajat 1")) {
+    return { bg: "bg-orange-50", border: "border-orange-300", text: "text-orange-900" };
+  }
+  if (lower.includes("derajat 2")) {
+    return { bg: "bg-red-50", border: "border-red-300", text: "text-red-900" };
+  }
+  if (lower.includes("derajat 3") || lower.includes("sistolik terisolasi")) {
+    return { bg: "bg-purple-50", border: "border-purple-300", text: "text-purple-900" };
+  }
+
+  return { bg: "bg-gray-50", border: "border-gray-300", text: "text-gray-900" };
+}
+
+export default function ScreeningResultModal({
+  open,
+  onClose,
+  result,
+  onNewScreening,
+}: Props) {
+  if (!open || !result) return null;
+
+  const risk = getRiskLevel(result.diabetes_probability);
+  const bpColors = getBPColor(result.bp_classification);
+
+  // Format tanggal
+  const date = new Date(result.created_at);
+  const formattedDate = new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Jakarta",
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 
   return (
-    <div className="flex h-screen">
-      <div className="w-64 flex-shrink-0">
-        <Sidebar role="nakes" />
-      </div>
-      <div className="flex-1 overflow-auto bg-gray-50">
-        <div className="max-w-6xl mx-auto p-6">
-          <div className="mb-6">
-            <Link href="/dashboard/nakes/health-check" className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium mb-4">
-              <ArrowLeft className="w-4 h-4" />
-              Kembali
-            </Link>
-            <h1 className="text-3xl font-bold text-gray-800">Hasil Screening Diabetes Mellitus</h1>
-            <p className="text-gray-600">Dashboard hasil screening dan riwayat pemeriksaan</p>
-          </div>
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="flex items-start justify-between mb-6">
+      {/* Modal */}
+      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border-2 border-gray-100">
+        <div className="max-h-[90vh] overflow-y-auto">
+          {/* Header */}
+          <div className="sticky top-0 bg-white border-b-2 border-gray-100 px-6 py-4 rounded-t-3xl z-10">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                  <Activity className="w-6 h-6 text-emerald-600" />
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
+                  <Activity className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Hasil Screening</h2>
-                  <p className="text-sm text-gray-600">
-                    {new Date(latestResult.created_at).toLocaleDateString("id-ID", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Hasil Screening Diabetes
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">{formattedDate}</p>
                 </div>
               </div>
-              <button onClick={() => window.print()} className="px-4 py-2 text-sm font-medium text-emerald-600 border border-emerald-600 rounded-lg hover:bg-emerald-50">
-                Cetak Hasil
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label="Tutup"
+              >
+                <X className="w-5 h-5 text-gray-600" />
               </button>
             </div>
+          </div>
 
-            {/* Info pasien */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <User className="w-5 h-5 text-blue-600" />
-                <h3 className="font-semibold text-blue-900">Data Pasien</h3>
-              </div>
-              <div className="grid grid-cols-4 gap-4">
-                <div>
-                  <p className="text-xs text-blue-700 mb-1">PASIEN</p>
-                  <p className="font-semibold text-blue-900">{latestResult.patient_name}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-blue-700 mb-1">USIA</p>
-                  <p className="font-semibold text-blue-900">{latestResult.age} tahun</p>
-                </div>
-                <div>
-                  <p className="text-xs text-blue-700 mb-1">BMI</p>
-                  <p className="font-semibold text-blue-900">{latestResult.bmi}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-blue-700 mb-1">TEKANAN DARAH</p>
-                  <p className="font-semibold text-blue-900">
-                    {latestResult.systolic_bp}/{latestResult.diastolic_bp}
+          {/* Body */}
+          <div className="p-6 space-y-6">
+            {/* Risk Status Card - PALING ATAS */}
+            <div
+              className={`rounded-2xl border-2 p-6 ${risk.color.bg} ${risk.color.border}`}
+            >
+              <div className="flex items-start gap-4">
+                <div className={risk.color.icon}>{risk.icon}</div>
+                <div className="flex-1">
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <h3 className={`text-2xl font-bold ${risk.color.text}`}>
+                      {risk.label}
+                    </h3>
+                    <span className={`text-3xl font-extrabold ${risk.color.text}`}>
+                      {result.diabetes_probability}
+                    </span>
+                  </div>
+                  <p className={`text-sm ${risk.color.text} opacity-80`}>
+                    {result.diabetes_result}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Ringkasan hasil */}
-            <div className="grid grid-cols-2 gap-6 mb-6">
-              <div className={`rounded-xl p-6 border-2 ${getRiskColor(latestResult.diabetes_probability)}`}>
-                <div className="flex items-center gap-2 mb-3">
-                  <Droplet className="w-5 h-5" />
-                  <h3 className="font-semibold">Berisiko Diabetes</h3>
-                </div>
-                <p className="text-xs mb-2">Tingkat Risiko: {latestResult.diabetes_result}</p>
-                <p className="text-4xl font-bold mb-2">{latestResult.diabetes_probability}</p>
-                <div className="mt-4 bg-white bg-opacity-50 rounded-lg p-3">
-                  <p className="text-xs font-medium mb-1">Data Screening:</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-gray-600">Gula Darah:</span>
-                      <span className="font-semibold ml-1">{latestResult.blood_glucose_level} mg/dL</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Klasifikasi:</span>
-                      <span className="font-semibold ml-1">
-                        {latestResult.blood_glucose_level < 140 ? "Rendah" : "Tinggi"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+            {/* Data Pasien */}
+            <div className="rounded-2xl border-2 border-gray-100 bg-white overflow-hidden">
+              <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                <h3 className="font-semibold text-gray-900">Data Pasien</h3>
               </div>
-
-              <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-6 border-2 border-red-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <Heart className="w-5 h-5 text-red-600" />
-                  <h3 className="font-semibold text-red-900">Data Screening Hipertensi</h3>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-white rounded-lg p-3">
-                    <p className="text-xs text-gray-600 mb-1">Sistolik</p>
-                    <p className="text-2xl font-bold text-gray-800">{latestResult.systolic_bp}</p>
-                  </div>
-                  <div className="bg-white rounded-lg p-3">
-                    <p className="text-xs text-gray-600 mb-1">Diastolik</p>
-                    <p className="text-2xl font-bold text-gray-800">{latestResult.diastolic_bp}</p>
-                  </div>
-                </div>
-                <div className="bg-white rounded-lg p-3">
-                  <p className="text-xs font-medium text-gray-600 mb-1">Klasifikasi Hipertensi:</p>
-                  <p className="font-semibold text-red-700">{latestResult.bp_classification}</p>
-                </div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <DataItem label="Nama" value={result.patient_name} />
+                <DataItem label="Usia" value={`${result.age} tahun`} />
+                <DataItem label="BMI" value={result.bmi} />
               </div>
             </div>
 
-            {/* Info tambahan */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Riwayat Penyakit Jantung</p>
-                <p className="text-lg font-semibold text-gray-800">{latestResult.heart_disease}</p>
+            {/* Tekanan Darah */}
+            <div className="rounded-2xl border-2 border-gray-100 bg-white overflow-hidden">
+              <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
+                <h3 className="font-semibold text-gray-900">Tekanan Darah</h3>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Riwayat Merokok</p>
-                <p className="text-lg font-semibold text-gray-800 capitalize">{latestResult.smoking_history}</p>
-              </div>
-            </div>
-
-            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <div className="flex items-start gap-2">
-                <div className="text-2xl">💡</div>
-                <div className="flex-1">
-                  <p className="font-semibold text-blue-900 mb-2">Rekomendasi:</p>
-                  <p className="text-sm text-blue-800">{latestResult.bp_recommendation}</p>
+              <div className="p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-600">
+                    Sistolik / Diastolik
+                  </span>
+                  <span className="text-lg font-bold text-gray-900">
+                    {result.systolic_bp} / {result.diastolic_bp} <span className="text-sm font-normal text-gray-600">mmHg</span>
+                  </span>
                 </div>
-              </div>
-            </div>
 
-            <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-              <div className="flex items-start gap-2">
-                <div className="text-2xl">⚠️</div>
-                <div className="flex-1">
-                  <p className="font-semibold text-yellow-900 mb-1">Disclaimer:</p>
-                  <p className="text-sm text-yellow-800">
-                    Hasil ini hanya prediksi dan tidak menggantikan diagnosis medis profesional.
+                <div
+                  className={`rounded-xl border-2 p-4 ${bpColors.bg} ${bpColors.border}`}
+                >
+                  <p className={`font-semibold mb-1 ${bpColors.text}`}>
+                    {result.bp_classification}
                   </p>
+                  {result.bp_recommendation && (
+                    <p className={`text-sm ${bpColors.text} opacity-80`}>
+                      {result.bp_recommendation}
+                    </p>
+                  )}
                 </div>
               </div>
+            </div>
+
+            {/* Rekomendasi */}
+            <div className="rounded-2xl border-2 border-blue-100 bg-blue-50 p-5">
+              <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Rekomendasi
+              </h3>
+              <ul className="space-y-2 text-sm text-blue-800">
+                <li className="flex items-start gap-2">
+                  <span className="mt-1">•</span>
+                  <span>Konsultasikan hasil ini dengan dokter untuk pemeriksaan lebih lanjut</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1">•</span>
+                  <span>Jaga pola makan sehat dan olahraga teratur</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-1">•</span>
+                  <span>Monitor gula darah dan tekanan darah secara berkala</span>
+                </li>
+              </ul>
             </div>
           </div>
 
-          {/* History */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Calendar className="w-5 h-5 text-gray-600" />
-              <h2 className="text-xl font-bold text-gray-800">Riwayat Screening</h2>
+          {/* Footer Actions */}
+          <div className="sticky bottom-0 bg-white border-t-2 border-gray-100 px-6 py-4 rounded-b-3xl">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={onClose}
+                className="flex-1 px-6 py-3 rounded-xl font-semibold border-2 border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
+              >
+                Tutup
+              </button>
+              <button
+                onClick={onNewScreening}
+                className="flex-1 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all"
+              >
+                Screening Pasien Baru
+              </button>
             </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 text-left">
-                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
-                      TANGGAL
-                    </th>
-                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
-                      BMI
-                    </th>
-                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
-                      GULA DARAH
-                    </th>
-                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
-                      TEKANAN DARAH
-                    </th>
-                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
-                      HASIL
-                    </th>
-                    <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
-                      SKOR
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historyResults.map((r) => (
-                    <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-4 text-sm text-gray-800">
-                        {new Date(r.created_at).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </td>
-                      <td className="py-4 text-sm text-gray-800">{r.bmi}</td>
-                      <td className="py-4 text-sm text-gray-800">{r.blood_glucose_level} mg/dL</td>
-                      <td className="py-4 text-sm text-gray-800">
-                        {r.systolic_bp}/{r.diastolic_bp}
-                        <div className="text-xs text-gray-500">{r.bp_classification}</div>
-                      </td>
-                      <td className="py-4">
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getRiskBadge(r.diabetes_result)}`}>
-                          {r.diabetes_result.includes("Tidak")
-                            ? "Rendah"
-                            : r.diabetes_result.includes("Sedang")
-                            ? "Sedang"
-                            : "Tinggi"}
-                        </span>
-                      </td>
-                      <td className="py-4 text-sm font-semibold text-gray-800">
-                        {r.diabetes_probability}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {historyResults.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                Belum ada riwayat screening sebelumnya
-              </div>
-            )}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DataItem({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-3">
+      <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-1">
+        {label}
+      </p>
+      <p className="font-bold text-gray-900">{value}</p>
     </div>
   );
 }

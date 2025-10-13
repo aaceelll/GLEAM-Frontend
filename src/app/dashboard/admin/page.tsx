@@ -19,7 +19,7 @@ type DashboardStats = {
   totalUser: number;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 /* ========= Card style type (keep for logic compatibility) ========= */
 type CardStyle = {

@@ -31,8 +31,8 @@ type ErrorMap = Partial<Record<keyof FormData, string>>;
 const isApiError = (v: unknown): v is ApiError =>
   typeof v === "object" && v !== null && ("message" in v || "errors" in v);
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
+
 
 export function UserRegistrationForm() {
   const router = useRouter();

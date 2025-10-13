@@ -11,8 +11,9 @@ type Row = {
   id: string | number;
   userId?: string | number;
   name: string;
-  date: string;          // ISO / string dari backend
-  riskPct?: number;      // 0-100
+  date: string;             // ISO / string dari backend
+  riskPct?: number;         // 0-100 (angka, untuk logika warna)
+  riskText?: string;        // teks mentah dari backend, untuk ditampilkan apa adanya
 };
 
 type ScreeningDetail = {
@@ -22,6 +23,7 @@ type ScreeningDetail = {
 
   // tampilan header
   riskPct?: number;
+  riskText?: string;
   riskLabel?: string;
 
   // data pasien
@@ -55,7 +57,6 @@ function formatIDTime(input?: string) {
   if (!input) return "-";
   let s = String(input).trim();
 
-  // contoh input: "2025-10-09 23:13:00" (tanpa offset)
   const hasOffset = /[+-]\d{2}:\d{2}$/.test(s);
   const hasZ = /Z$/.test(s);
   const isoish = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(s);
@@ -91,7 +92,8 @@ function first<T = any>(obj: any, keys: string[], fallback?: any): T | any {
   return fallback;
 }
 function toNumber(x: any): number | undefined {
-  const n = Number(String(x).replace("%", ""));
+  if (x === undefined || x === null) return undefined;
+  const n = Number(String(x).replace("%", "").trim());
   return Number.isFinite(n) ? n : undefined;
 }
 function coerceArray(root: any): any[] {
@@ -103,6 +105,38 @@ function coerceArray(root: any): any[] {
   if (Array.isArray(root?.rows)) return root.rows;
   return [];
 }
+
+/** ambil teks persentase mentah (mis. "30.51%") tanpa modifikasi */
+function pickRiskText(x: any): string | undefined {
+  const raw =
+    first(x, ["risk_text", "riskText"]) ??
+    first(x, ["diabetes_probability", "riskPctStr", "percentage_text", "score_text"]);
+  if (raw != null) return String(raw);
+  const num =
+    toNumber(first(x, ["riskPct", "risk_percentage", "risk_percent"])) ??
+    toNumber(first(x, ["percentage", "score", "diabetes_probability"]));
+  if (typeof num === "number") {
+    // tampilkan sampai 2 desimal TANPA memaksa pembulatan jika integer
+    const s = Number.isInteger(num) ? `${num}` : num.toFixed(2);
+    return `${s}%`;
+  }
+  return undefined;
+}
+
+/** Logika Kemenkes (sama dengan halaman Input) */
+function classifyHT_Kemenkes(s: number, d: number): string {
+  if (s <= 0 || d <= 0 || isNaN(s) || isNaN(d)) return "";
+  if (s >= 140 && d < 90) return "Hipertensi Sistolik Terisolasi";
+  if (s < 120 && d < 80) return "Optimal";
+  if (s <= 129 && d <= 84) return "Normal";
+  if (s <= 139 && d <= 89) return "Normal Tinggi (Pra Hipertensi)";
+  if (s <= 159 && d <= 99) return "Hipertensi Derajat 1";
+  if (s <= 179 && d <= 109) return "Hipertensi Derajat 2";
+  if (s >= 180 || d >= 110) return "Hipertensi Derajat 3";
+  return "Tidak dapat diklasifikasikan";
+}
+
+/** Pemetaan baris list */
 function mapRow(x: any): Row {
   const id =
     x.id ?? x.screening_id ?? x.result_id ?? x._id ?? crypto.randomUUID();
@@ -112,24 +146,33 @@ function mapRow(x: any): Row {
   // urutan tanggal yang benar (jangan default ke now)
   const date =
     first(x, ["screened_at", "created_at", "date", "submitted_at"]) ?? "";
-  const risk =
+  const riskNum =
     toNumber(first(x, ["riskPct", "risk_percentage", "risk_percent"])) ??
     toNumber(first(x, ["percentage", "score", "diabetes_probability"])) ??
     undefined;
+  const riskText = pickRiskText(x);
 
   const userId = first(x, ["userId", "user_id", "user.id"]);
 
-  return { id, name, date, riskPct: risk, userId };
+  return { id, name, date, riskPct: riskNum, riskText, userId };
 }
 
+/** Pemetaan detail untuk modal */
 function mapDetail(root: any): ScreeningDetail {
   const x = root?.data ?? root ?? {};
   const riskPct =
     toNumber(first(x, ["riskPct", "risk_percentage", "risk_percent"])) ??
     toNumber(first(x, ["percentage", "score", "diabetes_probability"]));
+  const riskText = pickRiskText(x);
   const riskLabel =
     first(x, ["riskLabel", "status_risiko", "status"]) ??
-    (typeof riskPct === "number" ? (riskPct >= 60 ? "Risiko Tinggi" : "Risiko Rendah") : "Status Risiko");
+    (typeof riskPct === "number"
+      ? riskPct >= 63
+        ? "Risiko Tinggi"
+        : riskPct >= 48
+        ? "Risiko Sedang"
+        : "Risiko Rendah"
+      : "Status Risiko");
 
   // tekanan darah
   const sys = first(x, ["sistolik", "systolic", "systolic_bp", "blood_pressure_systolic"]);
@@ -143,10 +186,10 @@ function mapDetail(root: any): ScreeningDetail {
     first(x, ["gula_darah"]) ??
     (x.blood_glucose_level || x.blood_sugar ? `${x.blood_glucose_level ?? x.blood_sugar} mg/dL` : undefined);
 
-  // klasifikasi HT fallback kalau backend belum kirim
+  // klasifikasi HT: prioritas dari backend, lalu hitung fallback
   const klasHT =
-    first(x, ["klasifikasi_hipertensi", "htn_class"]) ??
-    classifyHypertension(toNumber(sys), toNumber(dia));
+    first(x, ["bp_classification", "klasifikasi_hipertensi", "htn_class"]) ??
+    classifyHT_Kemenkes(toNumber(sys) ?? 0, toNumber(dia) ?? 0);
 
   return {
     id: first(x, ["id", "screening_id", "result_id"]),
@@ -154,6 +197,7 @@ function mapDetail(root: any): ScreeningDetail {
     updated_at: first(x, ["updated_at"]),
 
     riskPct,
+    riskText,
     riskLabel,
 
     nama:
@@ -180,15 +224,6 @@ function mapDetail(root: any): ScreeningDetail {
   };
 }
 
-function classifyHypertension(s?: number, d?: number): string | undefined {
-  if (s == null && d == null) return undefined;
-  if ((s ?? 0) >= 180 || (d ?? 0) >= 120) return "Krisis Hipertensi";
-  if ((s ?? 0) >= 140 || (d ?? 0) >= 90) return "Hipertensi Derajat 2";
-  if ((s ?? 0) >= 130 || (d ?? 0) >= 80) return "Hipertensi Derajat 1";
-  if ((s ?? 0) >= 120 && (d ?? 0) < 80) return "Prahipertensi / Ditinggikan";
-  return "Normal";
-}
-
 /* ====== Endpoint list ====== */
 const LIST_PATH = "/nakes/diabetes-screenings";
 
@@ -208,11 +243,16 @@ function DetailModal({
   if (!open) return null;
 
   const d = detail ?? {};
-  const pct = d.riskPct ?? 0;
+  const pctNum = d.riskPct ?? 0;
+  const pctText = d.riskText ?? (Number.isFinite(pctNum) ? `${pctNum}%` : "-");
+
+  // tone konsisten dengan halaman Input
   const tone =
-    pct >= 60
-      ? "border-amber-300 bg-amber-50 text-amber-900"
-      : "border-emerald-300 bg-emerald-50 text-emerald-900";
+    pctNum >= 63
+      ? "border-red-200 bg-red-50 text-red-900"
+      : pctNum >= 48
+      ? "border-amber-200 bg-amber-50 text-amber-900"
+      : "border-emerald-200 bg-emerald-50 text-emerald-900";
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center">
@@ -240,10 +280,10 @@ function DetailModal({
           {/* body */}
           <div className="p-6 space-y-6">
             {/* status risiko */}
-            <div className={`rounded-xl border ${tone} px-4 py-3`}>
+            <div className={`rounded-xl border px-4 py-3 ${tone}`}>
               <p className="font-semibold">
                 {d.riskLabel ?? "Status Risiko"}{" "}
-                <span className="opacity-70">({Math.round(pct)}%)</span>
+                <span className="opacity-70">({pctText})</span>
               </p>
               <p className="text-sm opacity-70">Berdasarkan screening terbaru</p>
             </div>
@@ -269,7 +309,10 @@ function DetailModal({
                         ? `${d.sistolik ?? "-"} / ${d.diastolik ?? "-"}`
                         : "-"),
                   },
-                  { label: "Klasifikasi Hipertensi", value: d.klasifikasi_hipertensi ?? "-" },
+                  {
+                    label: "Klasifikasi Hipertensi",
+                    value: d.klasifikasi_hipertensi ?? "-",
+                  },
                   { label: "Riwayat Merokok", value: d.riwayat_merokok ?? d.smoker_status ?? "-" },
                   { label: "Riwayat Jantung", value: d.riwayat_jantung ?? "-" },
                   { label: "Gula Darah", value: d.gula_darah ?? d.blood_sugar ?? "-" },
@@ -340,15 +383,15 @@ function DetailModal({
                               <p className="text-xs text-gray-500">{r.name}</p>
                             </div>
                           </div>
-                          <RiskChip value={r.riskPct} />
+                          <RiskChip value={r.riskPct} text={r.riskText} />
                         </li>
                       ))}
                     </ul>
                   )}
                 </div>
               </div>
+              {/* end riwayat */}
             </div>
-            {/* end riwayat */}
           </div>
         </div>
       </div>
@@ -401,7 +444,6 @@ export default function LaporanKeseluruhan() {
   }
 
   useEffect(() => {
-    // load sekali (tanpa auto refresh)
     fetchList();
   }, []);
 
@@ -424,11 +466,11 @@ export default function LaporanKeseluruhan() {
         const det = await api.get(`/nakes/diabetes-screenings/${items[0].id}`);
         setDetail(mapDetail(det.data));
       } else {
-        setDetail({ nama: fallbackName, riskLabel: "Detail tidak ditemukan", riskPct: 0 });
+        setDetail({ nama: fallbackName, riskLabel: "Detail tidak ditemukan", riskPct: 0, riskText: "0%" });
       }
     } catch (e) {
       console.error(e);
-      setDetail({ nama: fallbackName, riskLabel: "Detail tidak ditemukan", riskPct: 0 });
+      setDetail({ nama: fallbackName, riskLabel: "Detail tidak ditemukan", riskPct: 0, riskText: "0%" });
     } finally {
       setDetailLoading(false);
     }
@@ -549,7 +591,7 @@ export default function LaporanKeseluruhan() {
                           </span>
                         </td>
                         <td className="py-4">
-                          <RiskChip value={r.riskPct} />
+                          <RiskChip value={r.riskPct} text={r.riskText} />
                         </td>
                         <td className="py-4 pr-6">
                           <div className="flex items-center justify-end">
@@ -582,12 +624,19 @@ export default function LaporanKeseluruhan() {
 }
 
 /* ============ Small UI ============ */
-function RiskChip({ value }: { value?: number }) {
+function RiskChip({ value, text }: { value?: number; text?: string }) {
   const pct = value ?? 0;
-  const theme = pct >= 60 ? "from-amber-500 to-orange-600" : "from-emerald-600 to-teal-600";
+  // tema warna konsisten input page
+  const theme =
+    pct >= 48
+      ? "from-red-600 to-rose-600"
+      : pct <= 40
+      ? "from-emerald-600 to-teal-600"
+      : "from-amber-500 to-orange-600";
+  const label = text ?? (Number.isFinite(pct) ? (Number.isInteger(pct) ? `${pct}%` : `${pct.toFixed(2)}%`) : "-");
   return (
     <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-white text-sm font-semibold bg-gradient-to-r ${theme}`}>
-      {Math.round(pct)}%
+      {label}
     </span>
   );
 }
