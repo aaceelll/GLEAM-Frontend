@@ -510,7 +510,7 @@ export default function HomePage() {
         </section>
 
         {/* Footer */}
-        <footer className="relative z-10 bg-gradient-to-b from-white to-emerald-50/30">
+        {/* <footer className="relative z-10 bg-gradient-to-b from-white to-emerald-50/30">
           <div className="container mx-auto px-6 py-10">
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-10 shadow-lg border-2 border-emerald-100/60">
               <div className="grid gap-10 md:grid-cols-4">
@@ -560,7 +560,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-        </footer>
+        </footer> */}
       </div>
 
       <style jsx>{`
