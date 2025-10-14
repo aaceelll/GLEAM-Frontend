@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: "Healthcare learning & monitoring",
 };
 
-// ⬇️ ini yang bikin skala tampilan pas di HP
+// ⬇️ penting untuk HP
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -20,14 +20,10 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id">
-      <body>
+      <body className="min-h-dvh antialiased">
         <Providers>{children}</Providers>
         <Toaster />
       </body>

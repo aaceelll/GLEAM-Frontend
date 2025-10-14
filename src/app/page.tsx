@@ -99,11 +99,11 @@ function DropdownButton({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`group relative inline-flex h-11 px-6 items-center rounded-2xl font-semibold overflow-hidden transition-all
-  ${label === "Daftar"
-    ? "text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl"
-    : "border-2 border-emerald-200 text-emerald-700 bg-emerald-50/50 backdrop-blur-sm hover:border-emerald-400 hover:bg-emerald-100 hover:shadow-lg hover:-translate-y-0.5"
-  }`}
+        className={`group relative inline-flex h-10 px-4 sm:h-11 sm:px-6 items-center rounded-2xl font-semibold overflow-hidden transition-all
+    ${label === "Daftar"
+      ? "text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl"
+      : "border-2 border-emerald-200 text-emerald-700 bg-emerald-50/50 backdrop-blur-sm hover:border-emerald-400 hover:bg-emerald-100 hover:shadow-lg hover:-translate-y-0.5"
+    }`}
       >
         <span className="relative z-10 flex items-center gap-2">
           {label}
@@ -177,13 +177,16 @@ export default function HomePage() {
                   { label: "Sebagai Staff",  href: "/login/staff" },
                 ]}
               />
-              <DropdownButton
-                label="Daftar"
-                items={[
-                  { label: "Sebagai Pasien", href: "/register/user" },
-                  { label: "Sebagai Staff",  href: "/register/staff" },
-                ]}
-              />
+               <Link
+                  href="/register/user"
+                  className="group relative inline-flex h-11 px-6 items-center rounded-xl text-white font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 overflow-hidden bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                >
+                  <span className="relative z-10">Daftar</span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-teal-600 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full duration-700" />
+                  </span>
+                </Link>
             </div>
           </div>
         </div>
@@ -200,7 +203,7 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 leading-tight mb-6">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 leading-tight mb-6">
                 Monitoring
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600">
@@ -218,7 +221,7 @@ export default function HomePage() {
             {/* CTA */}
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/register/user">
-                <Button className="w-full sm:w-auto group px-8 py-6 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 font-bold text-lg rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all relative overflow-hidden">
+                <Button className="w-full sm:w-auto group px-6 py-4 sm:px-8 sm:py-6 text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 font-bold text-lg rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all relative overflow-hidden">
                   <span className="relative z-10 flex items-center">
                     Mulai Sekarang
                     <TrendingUp className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -318,7 +321,7 @@ export default function HomePage() {
 
       {/* Features Section */}
       <section id="features" className="relative z-10 py-20 md:py-32 bg-gradient-to-b from-white to-emerald-50/30">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-4 sm:px-6 max-w-screen-xl">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <div className="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-bold mb-4 border border-emerald-200">
               Fitur Unggulan
@@ -406,7 +409,7 @@ export default function HomePage() {
 
       {/* How It Works */}
       <section id="how-it-works" className="relative z-10 py-20 md:py-32 bg-white">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-4 sm:px-6 max-w-screen-xl">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <div className="inline-block px-4 py-2 bg-teal-100 text-teal-700 rounded-full text-sm font-bold mb-4 border border-teal-200">
               Cara Kerja
@@ -465,7 +468,7 @@ export default function HomePage() {
 
       {/* CTA Section */}
       <section id="cta" className="relative z-10 py-20 md:py-32">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-4 sm:px-6 max-w-screen-xl">
           <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 rounded-3xl p-12 md:p-20 text-center shadow-2xl">
             <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2" />
             <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full translate-x-1/3 translate-y-1/3" />
