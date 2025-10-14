@@ -227,7 +227,7 @@ export default function ThreadDetailPage() {
   /* ========= UI ========= */
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 px-6 md:px-10 py-6">
+      <div className="min-h-screen bg-white">
         <div className="max-w-5xl mx-auto flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto mb-4" />
@@ -240,7 +240,7 @@ export default function ThreadDetailPage() {
 
   if (!thread) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 px-6 md:px-10 py-6">
+      <div className="min-h-screen bg-white">
         <div className="max-w-5xl mx-auto space-y-4">
           <Link 
             href="/dashboard/user/forum" 
@@ -290,7 +290,7 @@ export default function ThreadDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 px-4 md:px-10 py-6">
+    <div className="min-h-screen bg-white">
       <div className="max-w-5xl mx-auto space-y-6">
         
         {/* Header dengan back button dan refresh */}
@@ -367,11 +367,6 @@ export default function ThreadDetailPage() {
                   </span>
                   {thread.view_count !== undefined && (
                     <>
-                      <span className="text-gray-300">•</span>
-                      <span className="flex items-center gap-1">
-                        <Eye className="w-3 h-3" />
-                        {thread.view_count} views
-                      </span>
                     </>
                   )}
                 </div>
@@ -406,11 +401,6 @@ export default function ThreadDetailPage() {
               </span>
               {thread.like_count !== undefined && (
                 <>
-                  <span className="text-gray-300">•</span>
-                  <span className="flex items-center gap-1.5">
-                    <ThumbsUp className="w-4 h-4 text-emerald-600" />
-                    <strong className="text-gray-900">{thread.like_count}</strong> likes
-                  </span>
                 </>
               )}
             </div>
