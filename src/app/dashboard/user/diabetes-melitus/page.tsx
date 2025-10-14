@@ -156,9 +156,9 @@ function computeRisk(probStr: string | number, resultText?: string) {
   const prob = parseProb(probStr);
   let level: "low" | "mid" | "high";
   if (Number.isFinite(prob)) {
-    if (prob >= 63) level = "high";
-    else if (prob >= 48) level = "mid";
-    else level = "low";
+    if (prob >= 48) level = "high";
+    else if (prob <= 40) level = "low";
+    else level = "mid";
   } else {
     const t = (resultText || "").toLowerCase();
     if (t.includes("tinggi")) level = "high";

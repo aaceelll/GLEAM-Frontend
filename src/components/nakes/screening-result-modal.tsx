@@ -119,7 +119,7 @@ export default function ScreeningResultModal({
             onClick={onNewScreening ?? onClose}
             className="px-5 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow"
           >
-            Screening Pasien Baruu
+            Screening Pasien Baru
           </button>
         </div>
       </div>

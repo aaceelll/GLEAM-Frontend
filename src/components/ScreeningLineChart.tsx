@@ -72,9 +72,9 @@ function fmtShortDate(d: string | number | Date) {
 }
 function riskColor(prob: number) {
   // Konsisten dengan threshold di page
-  if (prob >= 63) return "#dc2626"; // red-600
-  if (prob >= 48) return "#ca8a04"; // yellow-600
-  return "#059669"; // emerald-600
+  if (prob >= 48) return "#dc2626"; // red-600
+  if (prob <= 40) return "#059669"; // yellow-600
+  return "#ca8a04"; // emerald-600
 }
 
 /** ==== Tooltip kustom ==== */
@@ -129,13 +129,6 @@ function CustomTooltip({
           <div className="text-base font-semibold text-gray-900">{item?.bmi ?? "—"}</div>
         </div>
       </div>
-
-      {item?.bp_classification ? (
-        <div className="mt-3 text-xs text-gray-600">
-          <span className="font-semibold text-gray-800">Klasifikasi BP: </span>
-          {item.bp_classification}
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -256,11 +249,11 @@ export default function ScreeningLineChart({
           </span>
           <span className="inline-flex items-center gap-2 text-xs text-gray-600">
             <span className="w-3 h-1.5 rounded-full bg-yellow-500" />
-            Batas Sedang (48%)
+            Batas Sedang (41-47%)
           </span>
           <span className="inline-flex items-center gap-2 text-xs text-gray-600">
             <span className="w-3 h-1.5 rounded-full bg-red-500" />
-            Batas Tinggi (63%)
+            Batas Tinggi (48%)
           </span>
         </div>
       </div>
@@ -373,22 +366,6 @@ export default function ScreeningLineChart({
 
       {/* Footer kecil: ringkasan terakhir */}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="text-xs text-gray-500">
-          Menampilkan {parsed.length} entri screening. Tarik selector pada mini preview untuk zoom.
-        </div>
-        {parsed?.[parsed.length - 1]?.prob !== undefined && (
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-600">Skor terakhir:</span>
-            <span
-              className="font-semibold"
-              style={{
-                color: riskColor(parsed[parsed.length - 1].prob),
-              }}
-            >
-              {parsed[parsed.length - 1].prob.toFixed(2)}%
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );
