@@ -243,7 +243,7 @@ export default function HealthCheckPage() {
         bmi,
         systolic_bp,
         diastolic_bp,
-        diabetes_probability: `${prob}%`,
+        diabetes_probability: `${prob}`,
         diabetes_result: hasil,
         bp_classification: bpClass,
         bp_recommendation: bpRek,
