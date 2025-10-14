@@ -99,11 +99,12 @@ function DropdownButton({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`group relative inline-flex h-11 px-6 items-center rounded-xl font-semibold overflow-hidden transition-all
-                    ${label === "Daftar"
-                      ? "text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl"
-                      : "text-gray-700 hover:-translate-y-0.5"
-                    }`}
+       className={`group relative inline-flex h-11 px-6 items-center rounded-2xl font-semibold overflow-hidden transition-all
+  ${label === "Daftar"
+    ? "text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl"
+    : "border-2 border-emerald-200 text-emerald-700 bg-emerald-50/50 backdrop-blur-sm hover:border-emerald-400 hover:bg-emerald-100 hover:shadow-lg hover:-translate-y-0.5"
+  }`}
+
       >
         <span className="relative z-10 flex items-center gap-2">
           {label}
@@ -143,13 +144,12 @@ function DropdownButton({
 export default function HomePage() {
   return (
     <>
-      <div className="min-h-screen bg-white relative overflow-hidden">
-        {/* Animated Background Blobs */}
-        <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute top-0 -right-40 w-[500px] h-[500px] bg-emerald-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob" />
-          <div className="absolute top-0 -left-40 w-[500px] h-[500px] bg-teal-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob animation-delay-2000" />
-          <div className="absolute -bottom-40 left-1/2 w-[500px] h-[500px] bg-green-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob animation-delay-4000" />
-        </div>
+      <div className="fixed inset-0 pointer-events-none">
+  <div className="absolute top-0 -right-40 w-[500px] h-[500px] bg-emerald-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob" />
+  <div className="absolute top-0 right-20 w-[500px] h-[500px] bg-teal-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob animation-delay-2000" />
+  <div className="absolute -bottom-40 right-1/4 w-[500px] h-[500px] bg-green-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob animation-delay-4000" />
+</div>
+
 
         {/* Header – gradient kiri & kanan, pakai GleamLogo */}
         <header className="fixed top-0 left-0 right-0 z-50 border-b border-emerald-100/50 backdrop-blur-xl">
@@ -158,7 +158,7 @@ export default function HomePage() {
             className="absolute inset-0 -z-10 opacity-90"
             style={{
               backgroundImage:
-                "radial-gradient(900px 280px at -10% 0%, rgba(16,185,129,0.16), transparent 60%), radial-gradient(900px 280px at 110% 0%, rgba(20,184,166,0.16), transparent 60%)",
+                "radial-gradient(900px 280px at -10% 0%, rgba(249, 254, 252, 1), transparent 60%), radial-gradient(900px 280px at 110% 0%, rgba(20,184,166,0.16), transparent 60%)",
               backgroundColor: "rgba(255,255,255,0.85)",
             }}
           />
@@ -561,7 +561,7 @@ export default function HomePage() {
             </div>
           </div>
         </footer> */}
-      </div>
+      
 
       <style jsx>{`
         @keyframes blob {
