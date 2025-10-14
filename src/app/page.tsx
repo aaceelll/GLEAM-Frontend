@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import { GleamLogo } from "@/components/gleam-logo";
 import {
   Activity,
@@ -67,6 +68,78 @@ const CardDescription: React.FC<React.PropsWithChildren<{ className?: string }>>
 
 /* ================== Page ================== */
 
+function DropdownButton({
+  label,
+  items,
+}: {
+  label: string;
+  items: { label: string; href: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // close on click outside / esc
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`group relative inline-flex h-11 px-6 items-center rounded-xl font-semibold overflow-hidden transition-all
+                    ${label === "Daftar"
+                      ? "text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl"
+                      : "text-gray-700 hover:-translate-y-0.5"
+                    }`}
+      >
+        <span className="relative z-10 flex items-center gap-2">
+          {label}
+          <ChevronDown className="w-4 h-4 opacity-80" />
+        </span>
+        {label !== "Daftar" && (
+          <>
+            <span className="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <span className="absolute inset-0 rounded-xl ring-2 ring-emerald-200 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </>
+        )}
+      </button>
+
+      {/* dropdown */}
+      {open && (
+        <div
+          className="absolute right-0 mt-2 w-56 rounded-xl border-2 border-gray-100 bg-white shadow-xl overflow-hidden z-50"
+          role="menu"
+        >
+          {items.map((it, i) => (
+            <Link
+              key={i}
+              href={it.href}
+              onClick={() => setOpen(false)}
+              className="block px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700"
+              role="menuitem"
+            >
+              {it.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function HomePage() {
   return (
     <>
@@ -100,15 +173,13 @@ export default function HomePage() {
 
               {/* Kanan: Auth buttons – tidak mepet */}
               <div className="flex items-center gap-3">
-                <Link
-                  href="/login/user"
-                  className="group relative inline-flex h-11 px-6 items-center rounded-xl text-gray-700 font-semibold overflow-hidden transition-all hover:-translate-y-0.5"
-                >
-                  <span className="relative z-10">Masuk</span>
-                  <span className="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <span className="absolute inset-0 rounded-xl ring-2 ring-emerald-200 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </Link>
-
+               <DropdownButton
+                label="Masuk"
+                items={[
+                  { label: "Sebagai Pasien", href: "/login/user" },
+                  { label: "Sebagai Staff",  href: "/login/staff" },
+                ]}
+              />
                 <Link
                   href="/register/user"
                   className="group relative inline-flex h-11 px-6 items-center rounded-xl text-white font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 overflow-hidden bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
