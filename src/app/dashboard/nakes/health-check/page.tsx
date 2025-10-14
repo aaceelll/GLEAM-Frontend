@@ -125,24 +125,43 @@ export default function HealthCheckPage() {
     });
   };
 
-  const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (field === "tekanan_sistol" || field === "tekanan_diastol") {
-      const sistol = field === "tekanan_sistol" ? parseFloat(value) : parseFloat(formData.tekanan_sistol);
-      const diastol = field === "tekanan_diastol" ? parseFloat(value) : parseFloat(formData.tekanan_diastol);
-      if (!isNaN(sistol) && !isNaN(diastol) && sistol > 0 && diastol > 0) {
-        let klas = "";
-        if (sistol < 120 && diastol < 80) klas = "Optimal";
-        else if (sistol <= 129 && diastol <= 84) klas = "Normal";
-        else if (sistol <= 139 && diastol <= 89) klas = "Normal Tinggi (Pra Hipertensi)";
-        else if (sistol <= 159 && diastol <= 99) klas = "Hipertensi Derajat 1";
-        else if (sistol <= 179 && diastol <= 109) klas = "Hipertensi Derajat 2";
-        else if (sistol >= 180 || diastol >= 110) klas = "Hipertensi Derajat 3";
-        else if (sistol >= 140 && diastol < 90) klas = "Hipertensi Sistolik Terisolasi";
-        setFormData((prev) => ({ ...prev, klasifikasi_hipertensi: klas }));
+ const handleChange = (field: string, value: string) => {
+  // pakai snapshot nilai terbaru biar nggak stale
+  const next = { ...formData, [field]: value };
+  setFormData(next);
+
+  if (field === "tekanan_sistol" || field === "tekanan_diastol") {
+    const sistol = parseFloat(next.tekanan_sistol);
+    const diastol = parseFloat(next.tekanan_diastol);
+
+    if (!isNaN(sistol) && !isNaN(diastol) && sistol > 0 && diastol > 0) {
+      let klas = "";
+
+      // ✅ sesuai KMK No. HK.01.07/MENKES/4334/2021
+      if (sistol < 120 && diastol < 80) {
+        klas = "Optimal";
+      } else if ((sistol >= 120 && sistol <= 129) || (diastol >= 80 && diastol <= 84)) {
+        klas = "Normal";
+      } else if ((sistol >= 130 && sistol <= 139) || (diastol >= 85 && diastol <= 89)) {
+        klas = "Normal Tinggi (Pra Hipertensi)";
+      } else if (sistol >= 180 || diastol >= 110) {
+        klas = "Hipertensi Derajat 3";
+      } else if ((sistol >= 160 && sistol <= 179) || (diastol >= 100 && diastol <= 109)) {
+        klas = "Hipertensi Derajat 2";
+      } else if (sistol >= 140 && diastol < 90) {
+        // khusus HST: syaratnya "dan", jadi cek sebelum Derajat 1
+        klas = "Hipertensi Sistolik Terisolasi";
+      } else if ((sistol >= 140 && sistol <= 159) || (diastol >= 90 && diastol <= 99)) {
+        klas = "Hipertensi Derajat 1";
+      } else {
+        klas = "Tidak dapat diklasifikasikan";
       }
+
+      setFormData(prev => ({ ...prev, klasifikasi_hipertensi: klas }));
     }
-  };
+  }
+};
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

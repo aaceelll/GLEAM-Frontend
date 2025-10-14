@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Search, X, Loader2 } from 'lucide-react';
+import React, { useState } from "react";
+import { Search, X, Loader2 } from "lucide-react";
 
 interface Patient {
   id: number;
@@ -17,38 +17,37 @@ interface Patient {
 
 export default function HealthCheckPage() {
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<Patient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
   const [formData, setFormData] = useState({
-    jenis_kelamin: '',
-    umur: '',
-    tekanan_sistol: '',
-    tekanan_diastol: '',
-    klasifikasi_hipertensi: '',
-    riwayat_penyakit_jantung: '',
-    riwayat_merokok: '',
-    bmi: '',
-    gula_darah: ''
+    jenis_kelamin: "",
+    umur: "",
+    tekanan_sistol: "",
+    tekanan_diastol: "",
+    klasifikasi_hipertensi: "",
+    riwayat_penyakit_jantung: "",
+    riwayat_merokok: "",
+    bmi: "",
+    gula_darah: "",
   });
 
+  // ========================= SEARCH =========================
   const handleSearch = async (term: string) => {
     setSearchTerm(term);
-
     if (term.length < 2) {
       setSearchResults([]);
       return;
     }
-
     setIsSearching(true);
     try {
       const response = await fetch(`/api/patients/search?q=${encodeURIComponent(term)}`);
       const data = await response.json();
       setSearchResults(data.patients || []);
     } catch (error) {
-      console.error('Error searching patients:', error);
+      console.error("Error searching patients:", error);
     } finally {
       setIsSearching(false);
     }
@@ -57,70 +56,82 @@ export default function HealthCheckPage() {
   const selectPatient = (patient: Patient) => {
     setSelectedPatient(patient);
     setSearchResults([]);
-    setSearchTerm('');
-
-    const newFormData = {
-      jenis_kelamin: patient.jenis_kelamin || '',
-      umur: patient.umur?.toString() || '',
-      tekanan_sistol: '',
-      tekanan_diastol: '',
-      klasifikasi_hipertensi: '',
-      riwayat_penyakit_jantung: patient.riwayat_penyakit_jantung || '',
-      riwayat_merokok: patient.riwayat_merokok || '',
+    setSearchTerm("");
+    setFormData({
+      jenis_kelamin: patient.jenis_kelamin || "",
+      umur: patient.umur?.toString() || "",
+      tekanan_sistol: "",
+      tekanan_diastol: "",
+      klasifikasi_hipertensi: "",
+      riwayat_penyakit_jantung: patient.riwayat_penyakit_jantung || "",
+      riwayat_merokok: patient.riwayat_merokok || "",
       bmi: (patient.bmi || patient.indeks_bmi || 0).toString(),
-      gula_darah: ''
-    };
-
-    setFormData(newFormData);
-    console.log('Form filled:', newFormData);
+      gula_darah: "",
+    });
   };
 
   const clearSelection = () => {
     setSelectedPatient(null);
     setFormData({
-      jenis_kelamin: '',
-      umur: '',
-      tekanan_sistol: '',
-      tekanan_diastol: '',
-      klasifikasi_hipertensi: '',
-      riwayat_penyakit_jantung: '',
-      riwayat_merokok: '',
-      bmi: '',
-      gula_darah: ''
+      jenis_kelamin: "",
+      umur: "",
+      tekanan_sistol: "",
+      tekanan_diastol: "",
+      klasifikasi_hipertensi: "",
+      riwayat_penyakit_jantung: "",
+      riwayat_merokok: "",
+      bmi: "",
+      gula_darah: "",
     });
   };
 
+  // ========================= FIXED HANDLE CHANGE =========================
   const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    const next = { ...formData, [field]: value };
+    setFormData(next);
 
-    if (field === 'tekanan_sistol' || field === 'tekanan_diastol') {
-      const sistol = field === 'tekanan_sistol' ? parseFloat(value) : parseFloat(formData.tekanan_sistol);
-      const diastol = field === 'tekanan_diastol' ? parseFloat(value) : parseFloat(formData.tekanan_diastol);
+    if (field === "tekanan_sistol" || field === "tekanan_diastol") {
+      const sistol = parseFloat(next.tekanan_sistol);
+      const diastol = parseFloat(next.tekanan_diastol);
 
-      if (sistol && diastol) {
-        let klasifikasi = '';
-        if (sistol < 120 && diastol < 80) klasifikasi = 'Optimal';
-        else if (sistol <= 129 && diastol <= 84) klasifikasi = 'Normal';
-        else if (sistol <= 139 && diastol <= 89) klasifikasi = 'Normal Tinggi (Pra Hipertensi)';
-        else if (sistol <= 159 && diastol <= 99) klasifikasi = 'Hipertensi Derajat 1';
-        else if (sistol <= 179 && diastol <= 109) klasifikasi = 'Hipertensi Derajat 2';
-        else if (sistol >= 180 || diastol >= 110) klasifikasi = 'Hipertensi Derajat 3';
-        else if (sistol >= 140 && diastol < 90) klasifikasi = 'Hipertensi Sistolik Terisolasi';
+      if (!isNaN(sistol) && !isNaN(diastol) && sistol > 0 && diastol > 0) {
+        let klas = "";
 
-        setFormData(prev => ({ ...prev, klasifikasi_hipertensi: klasifikasi }));
+        // Urutan paling penting sesuai KMK No. HK.01.07/MENKES/4334/2021
+if (sistol < 120 && diastol < 80) {
+  klas = "Optimal";
+} else if ((sistol >= 120 && sistol <= 129) || (diastol >= 80 && diastol <= 84)) {
+  klas = "Normal";
+} else if ((sistol >= 130 && sistol <= 139) || (diastol >= 85 && diastol <= 89)) {
+  klas = "Normal Tinggi (Pra Hipertensi)";
+} else if (sistol >= 180 || diastol >= 110) {
+  klas = "Hipertensi Derajat 3";
+} else if ((sistol >= 160 && sistol <= 179) || (diastol >= 100 && diastol <= 109)) {
+  klas = "Hipertensi Derajat 2";
+} else if (sistol >= 140 && diastol < 90) {
+  // 💡 Harus "dan", bukan "dan/atau" (khusus HST)
+  klas = "Hipertensi Sistolik Terisolasi";
+} else if ((sistol >= 140 && sistol <= 159) || (diastol >= 90 && diastol <= 99)) {
+  klas = "Hipertensi Derajat 1";
+} else {
+  klas = "Tidak dapat diklasifikasikan";
+}
+
+
+        setFormData((prev) => ({ ...prev, klasifikasi_hipertensi: klas }));
       }
     }
   };
 
+  // ========================= SUBMIT =========================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // 🔹 Request ke API HuggingFace
-      const response = await fetch('https://tcnisaa-prediksi-dm-adaboost.hf.space/predict', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("https://tcnisaa-prediksi-dm-adaboost.hf.space/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           age: parseInt(formData.umur),
           gender: formData.jenis_kelamin,
@@ -129,8 +140,8 @@ export default function HealthCheckPage() {
           heart_disease: formData.riwayat_penyakit_jantung === "Ya" ? "Ya" : "Tidak",
           smoking_history: formData.riwayat_merokok?.toLowerCase(),
           bmi: parseFloat(formData.bmi),
-          blood_glucose_level: parseFloat(formData.gula_darah)
-        })
+          blood_glucose_level: parseFloat(formData.gula_darah),
+        }),
       });
 
       const resultData = await response.json();
@@ -142,12 +153,11 @@ export default function HealthCheckPage() {
         return;
       }
 
-      // 🔹 Simpan hasil ke DB lokal
-      await fetch('/api/screenings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch("/api/screenings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          patientName: selectedPatient?.nama || 'Unknown',
+          patientName: selectedPatient?.nama || "Unknown",
           userId: selectedPatient?.id,
           nakesId: 1,
           age: formData.umur,
@@ -162,25 +172,27 @@ export default function HealthCheckPage() {
           diabetes_result: resultData.hasil_diabetes,
           bp_classification: resultData.tekanan_darah?.klasifikasi,
           bp_recommendation: resultData.tekanan_darah?.rekomendasi,
-          full_result: resultData.hasil_lengkap
-        })
+          full_result: resultData.hasil_lengkap,
+        }),
       });
 
       alert(`Hasil: ${resultData.probabilitas_diabetes} - ${resultData.hasil_diabetes}`);
     } catch (error) {
-      console.error('Error:', error);
-      alert('Terjadi kesalahan');
+      console.error("Error:", error);
+      alert("Terjadi kesalahan");
     } finally {
       setLoading(false);
     }
   };
 
+  // ========================= UI =========================
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-sm p-8">
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Form Screening Diabetes</h1>
 
+          {/* --- Pencarian --- */}
           {!selectedPatient ? (
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">Cari Pasien</label>
@@ -204,12 +216,13 @@ export default function HealthCheckPage() {
                       className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
                     >
                       <p className="font-medium text-gray-800">{patient.nama}</p>
-                      <p className="text-sm text-gray-600">{patient.umur} tahun • {patient.jenis_kelamin}</p>
+                      <p className="text-sm text-gray-600">
+                        {patient.umur} tahun • {patient.jenis_kelamin}
+                      </p>
                     </button>
                   ))}
                 </div>
               )}
-
               {isSearching && <p className="text-sm text-gray-500 mt-2">Mencari...</p>}
             </div>
           ) : (
@@ -228,6 +241,7 @@ export default function HealthCheckPage() {
             </div>
           )}
 
+          {/* --- FORM --- */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -240,7 +254,6 @@ export default function HealthCheckPage() {
                   disabled={!!selectedPatient}
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium mb-2">Umur (tahun) *</label>
                 <input
@@ -259,18 +272,17 @@ export default function HealthCheckPage() {
                 <input
                   type="number"
                   value={formData.tekanan_sistol}
-                  onChange={(e) => handleChange('tekanan_sistol', e.target.value)}
+                  onChange={(e) => handleChange("tekanan_sistol", e.target.value)}
                   className="w-full px-4 py-2.5 border rounded-lg"
                   required
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium mb-2">Tekanan Darah Diastol (mmHg) *</label>
                 <input
                   type="number"
                   value={formData.tekanan_diastol}
-                  onChange={(e) => handleChange('tekanan_diastol', e.target.value)}
+                  onChange={(e) => handleChange("tekanan_diastol", e.target.value)}
                   className="w-full px-4 py-2.5 border rounded-lg"
                   required
                 />
@@ -299,7 +311,6 @@ export default function HealthCheckPage() {
                   placeholder={!formData.riwayat_penyakit_jantung ? "Data belum diisi di profil" : ""}
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium mb-2">Riwayat Merokok *</label>
                 <input
@@ -321,7 +332,7 @@ export default function HealthCheckPage() {
                 className="w-full px-4 py-2.5 border rounded-lg bg-green-50"
                 readOnly
                 disabled={!!selectedPatient}
-                placeholder={!formData.bmi || formData.bmi === '0' ? "Data belum diisi di profil" : ""}
+                placeholder={!formData.bmi || formData.bmi === "0" ? "Data belum diisi di profil" : ""}
               />
             </div>
 
@@ -330,7 +341,7 @@ export default function HealthCheckPage() {
               <input
                 type="number"
                 value={formData.gula_darah}
-                onChange={(e) => handleChange('gula_darah', e.target.value)}
+                onChange={(e) => handleChange("gula_darah", e.target.value)}
                 className="w-full px-4 py-2.5 border rounded-lg"
                 placeholder="170"
                 required
@@ -342,7 +353,7 @@ export default function HealthCheckPage() {
                 type="button"
                 onClick={() => {
                   clearSelection();
-                  setSearchTerm('');
+                  setSearchTerm("");
                 }}
                 className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50"
               >
@@ -359,7 +370,7 @@ export default function HealthCheckPage() {
                     Memproses...
                   </>
                 ) : (
-                  'Lakukan Screening'
+                  "Lakukan Screening"
                 )}
               </button>
             </div>
