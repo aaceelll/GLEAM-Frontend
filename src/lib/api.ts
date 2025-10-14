@@ -1,11 +1,10 @@
-// src/lib/api.ts
 import axios, { AxiosHeaders } from "axios";
 import type { ApiRegisterRequest } from "@/types";
 
-// Base URL API Laravel (sudah ada /api di belakang)
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
+// Base URL API Laravel
+const RAW_API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, ""); // buang trailing slash
 console.log("[API_BASE_URL]", API_BASE_URL);
-
 
 // ===== Helpers (aman untuk SSR) =====
 const isBrowser = () => typeof window !== "undefined";
@@ -52,10 +51,10 @@ export const api = axios.create({
     "Content-Type": "application/json",
     Accept: "application/json",
   },
-  withCredentials: false, // pakai Bearer token, cookie nggak perlu
+  withCredentials: false, // pakai Bearer token
 });
 
-// Sisipkan Authorization Bearer ke setiap request (FIX Axios v1)
+// Sisipkan Authorization Bearer ke setiap request
 api.interceptors.request.use((config) => {
   const token = getToken() || getCookieToken();
   if (token) {
@@ -89,7 +88,7 @@ api.interceptors.response.use(
 export const authAPI = {
   registerUser: (data: ApiRegisterRequest) =>
     api.post("/auth/register/user", data),
-  login: (data: { login: string; password: string }) =>  // ✅ Ubah jadi login
+  login: (data: { login: string; password: string }) =>
     api.post("/auth/login", data),
   me: () => api.get("/auth/me"),
   logout: () => api.post("/auth/logout"),

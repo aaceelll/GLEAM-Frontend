@@ -13,14 +13,16 @@ import {
   Download,
   Calendar,
   Clock,
-  Upload,
 } from "lucide-react";
 import axios from "axios";
 import { api } from "@/lib/api";
 
 /* ================= Helper (SATU VERSI SAJA) ================= */
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(/\/+$/, "");
 const FILE_HOST = API_BASE.replace(/\/api\/?$/, "");
+
+// ⬇️ Materi yang dikelola halaman ini
+const MATERI_SLUG = "diabetes-melitus";
 
 function toAbsolute(url?: string | null) {
   if (!url) return "";
@@ -96,7 +98,7 @@ export default function MateriPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // ⬇️ Modal konfirmasi hapus (dipindah ke komponen)
+  // Modal konfirmasi hapus
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; title: string } | null>(null);
 
   const [formData, setFormData] = useState({
@@ -116,7 +118,8 @@ export default function MateriPage() {
   async function fetchKonten() {
     setLoading(true);
     try {
-      const res = await api.get("/admin/materi/konten");
+      // ⬇️ kirim slug saat memuat daftar
+      const res = await api.get("/admin/materi/konten", { params: { slug: MATERI_SLUG } });
       setKontenList(res.data?.data || []);
     } catch (error) {
       console.error("Gagal memuat konten:", error);
@@ -156,6 +159,8 @@ export default function MateriPage() {
     setSubmitting(true);
     try {
       const fd = new FormData();
+      // ⬇️ sertakan slug supaya BE tahu materi mana
+      fd.append("slug", MATERI_SLUG);
       fd.append("judul", formData.judul);
       fd.append("deskripsi", formData.deskripsi);
       if (!formData.tanpa_video && formData.video_id.trim()) {
@@ -199,7 +204,6 @@ export default function MateriPage() {
     }
   }
 
-  // Hapus tanpa confirm browser; confirm pakai modal
   async function handleDelete(kontenId: string) {
     try {
       await api.delete(`/admin/materi/konten/${kontenId}`, { withCredentials: true });
@@ -299,13 +303,11 @@ export default function MateriPage() {
                     key={konten.id}
                     className="group relative bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden"
                   >
-                    {/* overlay hijau */}
-                    <div className={`absolute inset-0 bg-gradient-to-r ${greenGrad} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${greenGrad} opacity-5 rounded-bl-full`} />
+                    <div className={`absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500 to-teal-500 opacity-5 rounded-bl-full`} />
 
                     <div className="relative flex items-start gap-5">
-                      {/* badge nomor hijau */}
-                      <div className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${greenGrad} text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                      <div className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                         {index + 1}
                       </div>
 
