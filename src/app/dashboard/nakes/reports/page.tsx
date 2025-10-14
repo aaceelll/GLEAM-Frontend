@@ -167,11 +167,11 @@ function mapDetail(root: any): ScreeningDetail {
   const riskLabel =
     first(x, ["riskLabel", "status_risiko", "status"]) ??
     (typeof riskPct === "number"
-      ? riskPct >= 63
+      ? riskPct >= 48
         ? "Risiko Tinggi"
-        : riskPct >= 48
-        ? "Risiko Sedang"
-        : "Risiko Rendah"
+        : riskPct <= 40
+        ? "Risiko Rendah"
+        : "Risiko Sedang"
       : "Status Risiko");
 
   // tekanan darah
@@ -246,14 +246,20 @@ function DetailModal({
   const pctNum = d.riskPct ?? 0;
   const pctText = d.riskText ?? (Number.isFinite(pctNum) ? `${pctNum}%` : "-");
 
+  const labelByPct =
+  Number.isFinite(pctNum)
+    ? (pctNum >= 48 ? "Risiko Tinggi" : (pctNum <= 40 ? "Risiko Rendah" : "Risiko Sedang"))
+    : (d.riskLabel ?? "Status Risiko");
+
   // tone konsisten dengan halaman Input
   const tone =
-    pctNum >= 63
+    pctNum >= 48
       ? "border-red-200 bg-red-50 text-red-900"
-      : pctNum >= 48
-      ? "border-amber-200 bg-amber-50 text-amber-900"
-      : "border-emerald-200 bg-emerald-50 text-emerald-900";
+      : pctNum <= 40
+      ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+      : "border-amber-200 bg-amber-50 text-amber-900";
 
+      
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
@@ -282,8 +288,7 @@ function DetailModal({
             {/* status risiko */}
             <div className={`rounded-xl border px-4 py-3 ${tone}`}>
               <p className="font-semibold">
-                {d.riskLabel ?? "Status Risiko"}{" "}
-                <span className="opacity-70">({pctText})</span>
+                {labelByPct} <span className="opacity-90">({pctText})</span>
               </p>
               <p className="text-sm opacity-70">Berdasarkan screening terbaru</p>
             </div>
