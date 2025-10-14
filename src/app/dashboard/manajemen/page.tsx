@@ -36,7 +36,7 @@ export default function DashboardManajemen() {
 
   const fetchDashboardData = async () => {
     try {
-      const { data } = await api.get("/locations/statistics");
+      const { data } = await api.get("/manajemen/statistics");
       if (data.success) {
         const d = data.data;
         setStats({
@@ -136,22 +136,6 @@ export default function DashboardManajemen() {
 
           <Card className="relative overflow-hidden border-2 border-emerald-100 bg-white rounded-3xl shadow-sm transition-all duration-500 hover:border-emerald-300 hover:shadow-[0_10px_40px_rgba(16,185,129,0.15)] hover:-translate-y-1">
             <CardContent className="p-6">
-              {/* Main Stats */}
-              <div className="mb-6 p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700 mb-1">Total Kasus Terdaftar</p>
-                    <p className="text-5xl font-black bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                      {stats.diabetes_cases}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-2">Pasien dengan Diabetes Melitus</p>
-                  </div>
-                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xl">
-                    <Heart className="h-12 w-12 text-white" />
-                  </div>
-                </div>
-              </div>
-
               {/* Status Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatusCard
