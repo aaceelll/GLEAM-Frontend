@@ -1,17 +1,23 @@
 // app/layout.tsx
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Providers from "./providers";
-import "leaflet/dist/leaflet.css";  // 👈 TAMBAHKAN INI
-import "leaflet.markercluster/dist/MarkerCluster.css";  // 👈 TAMBAHKAN INI
-import "leaflet.markercluster/dist/MarkerCluster.Default.css";  // 👈
-
-// ⬇️ pastikan file ini ada: src/components/ui/toaster.tsx (shadcn toast)
+import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: "GLEAM",
   description: "Healthcare learning & monitoring",
+};
+
+// ⬇️ ini yang bikin skala tampilan pas di HP
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -23,7 +29,6 @@ export default function RootLayout({
     <html lang="id">
       <body>
         <Providers>{children}</Providers>
-        {/* 🔔 toast container (wajib agar toast tampil) */}
         <Toaster />
       </body>
     </html>

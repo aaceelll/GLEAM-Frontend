@@ -123,18 +123,33 @@ function pickRiskText(x: any): string | undefined {
   return undefined;
 }
 
-/** Logika Kemenkes (sama dengan halaman Input) */
+/** ✅ Klasifikasi sesuai KMK No. HK.01.07/MENKES/4334/2021 */
 function classifyHT_Kemenkes(s: number, d: number): string {
-  if (s <= 0 || d <= 0 || isNaN(s) || isNaN(d)) return "";
-  if (s >= 140 && d < 90) return "Hipertensi Sistolik Terisolasi";
-  if (s < 120 && d < 80) return "Optimal";
-  if (s <= 129 && d <= 84) return "Normal";
-  if (s <= 139 && d <= 89) return "Normal Tinggi (Pra Hipertensi)";
-  if (s <= 159 && d <= 99) return "Hipertensi Derajat 1";
-  if (s <= 179 && d <= 109) return "Hipertensi Derajat 2";
-  if (s >= 180 || d >= 110) return "Hipertensi Derajat 3";
+  const sistol = Number(s);
+  const diastol = Number(d);
+  if (!Number.isFinite(sistol) || !Number.isFinite(diastol) || sistol <= 0 || diastol <= 0) {
+    return "";
+  }
+
+  if (sistol < 120 && diastol < 80) {
+    return "Optimal";
+  } else if ((sistol >= 120 && sistol <= 129) || (diastol >= 80 && diastol <= 84)) {
+    return "Normal";
+  } else if ((sistol >= 130 && sistol <= 139) || (diastol >= 85 && diastol <= 89)) {
+    return "Normal Tinggi (Pra Hipertensi)";
+  } else if (sistol >= 180 || diastol >= 110) {
+    return "Hipertensi Derajat 3";
+  } else if ((sistol >= 160 && sistol <= 179) || (diastol >= 100 && diastol <= 109)) {
+    return "Hipertensi Derajat 2";
+  } else if (sistol >= 140 && diastol < 90) {
+    // khusus HST: syarat "dan", cek sebelum Derajat 1
+    return "Hipertensi Sistolik Terisolasi";
+  } else if ((sistol >= 140 && sistol <= 159) || (diastol >= 90 && diastol <= 99)) {
+    return "Hipertensi Derajat 1";
+  }
   return "Tidak dapat diklasifikasikan";
 }
+
 
 /** Pemetaan baris list */
 function mapRow(x: any): Row {
