@@ -1,30 +1,38 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { cookies } from 'next/headers';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+function apiBase() {
+  const raw = process.env.NEXT_PUBLIC_API_URL || '';
+  return raw.replace(/\/+$/, '');
+}
 
 export async function GET() {
   try {
-    // Ambil screening terbaru
-    const [latestRows] = await db.query(
-      `SELECT * FROM diabetes_screenings 
-       ORDER BY created_at DESC 
-       LIMIT 1`
-    );
+    const token =
+      cookies().get('auth_token')?.value ||
+      cookies().get('gleam_token')?.value ||
+      '';
 
-    // Ambil history 10 screening terakhir
-    const [historyRows] = await db.query(
-      `SELECT * FROM diabetes_screenings 
-       ORDER BY created_at DESC 
-       LIMIT 10`
-    );
-
-    return NextResponse.json({
-      latest: (latestRows as any[])[0] || null,
-      history: historyRows as any[] || []
+    const resp = await fetch(`${apiBase()}/screenings/latest`, {
+      headers: {
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      cache: 'no-store',
     });
-  } catch (error) {
-    console.error('Error fetching screening results:', error);
+
+    const text = await resp.text();
+    return new NextResponse(text, {
+      status: resp.status,
+      headers: { 'Content-Type': resp.headers.get('content-type') ?? 'application/json' },
+    });
+  } catch (error: any) {
+    console.error('Proxy error fetching latest screenings:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch results' },
+      { error: error?.message || 'Proxy error' },
       { status: 500 }
     );
   }
