@@ -29,42 +29,30 @@ const CenterModal: React.FC<{
 }> = ({ state, autoCloseMs = 0 }) => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 🔍 DEBUG LOG
-  console.log('🔴 CenterModal render:', {
-    open: state.open,
-    autoCloseMs,
-    title: state.title
-  });
-
-  if (!state.open) {
-    console.log('❌ Modal closed, returning null');
-    return null;
-  }
-
+  // ✅ useEffect HARUS DI ATAS sebelum any return
   useEffect(() => {
-    console.log('⏰ useEffect triggered:', { open: state.open, autoCloseMs });
+    if (!state.open || !autoCloseMs) return;
     
     if (timerRef.current) {
-      console.log('🗑️ Clearing old timer');
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
 
     if (state.open && autoCloseMs > 0) {
-      console.log(`⏱️ Setting timer for ${autoCloseMs}ms`);
       timerRef.current = setTimeout(() => {
-        console.log('💥 Timer fired! Closing modal');
         state.onCta();
       }, autoCloseMs);
     }
 
     return () => {
-      console.log('🧹 Cleanup');
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
     };
   }, [state.open, autoCloseMs]);
+
+  // ✅ Early return SETELAH useEffect
+  if (!state.open) return null;
 
   const icon =
     state.kind === "success" ? (
@@ -80,12 +68,8 @@ const CenterModal: React.FC<{
       
       {/* Modal content */}
       <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header gradient */}
-        <div className={`p-6 ${
-          state.kind === "success" 
-            ? "bg-gradient-to-r from-emerald-600 to-teal-600" 
-            : "bg-gradient-to-r from-red-600 to-rose-600"
-        }`}>
+        {/* Header gradient - SEMUA HIJAU */}
+        <div className="p-6 bg-gradient-to-r from-emerald-600 to-teal-600">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 mt-0.5">{icon}</div>
             <div className="flex-1">
@@ -99,15 +83,11 @@ const CenterModal: React.FC<{
           </div>
         </div>
 
-        {/* Footer tombol */}
+        {/* Footer tombol - SEMUA HIJAU */}
         <div className="p-6">
           <button
             onClick={state.onCta}
-            className={`w-full h-12 rounded-xl font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg ${
-              state.kind === "success"
-                ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
-                : "bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700"
-            }`}
+            className="w-full h-12 rounded-xl font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
           >
             {state.ctaLabel}
           </button>
@@ -164,7 +144,7 @@ export const UserLoginForm: React.FC = () => {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1) Validasi form — tampilkan modal error & stop
+    // 1) Validasi form
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -184,19 +164,19 @@ export const UserLoginForm: React.FC = () => {
       setLoading(true);
       const user = await login(formData);
 
-      // 3) Guard: paksa gagal kalau tidak ada role
+      // 3) Guard
       if (!user || !("role" in user) || !user.role) {
         throw new Error("Email/Username atau password salah. Silakan coba lagi.");
       }
 
-      // 4) Routing berdasarkan role
+      // 4) Routing
       const role = user.role as string;
       if (role === "super_admin" || role === "admin") router.replace("/dashboard/admin");
       else if (role === "manajemen") router.replace("/dashboard/manajemen");
       else if (role === "nakes") router.replace("/dashboard/nakes");
       else router.replace("/dashboard/user");
     } catch (error: any) {
-      // 5) Modal error - auto-close setelah 45 detik
+      // 5) Modal error - auto-close 45 detik
       const msg =
         error?.response?.data?.message ||
         error?.response?.data?.errors ||
@@ -218,7 +198,7 @@ export const UserLoginForm: React.FC = () => {
 
   return (
     <div className="w-full">
-      {/* Modal - auto-close setelah 45 detik */}
+      {/* Modal - auto-close 45 detik */}
       <CenterModal
         state={modal}
         autoCloseMs={45000}
