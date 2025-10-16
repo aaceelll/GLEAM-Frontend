@@ -155,9 +155,14 @@ export const UserLoginForm: React.FC = () => {
 
     try {
       setLoading(true);
-      await login(formData);
-      // langsung redirect (tanpa popup sukses)
-      router.replace("/dashboard/user");
+       const user = await login(formData);
+
+      const role = user.role as string;
+      if (role === "super_admin" || role === "admin") router.replace("/dashboard/admin");
+      else if (role === "manajemen") router.replace("/dashboard/manajemen");
+      else if (role === "nakes") router.replace("/dashboard/nakes");
+      else router.replace("/dashboard/user");
+      
     } catch (error: any) {
       const msg =
         error?.response?.data?.message ||
