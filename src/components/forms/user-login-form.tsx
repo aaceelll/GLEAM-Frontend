@@ -29,30 +29,42 @@ const CenterModal: React.FC<{
 }> = ({ state, autoCloseMs = 0 }) => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  if (!state.open) return null;
+  // 🔍 DEBUG LOG
+  console.log('🔴 CenterModal render:', {
+    open: state.open,
+    autoCloseMs,
+    title: state.title
+  });
 
-  // Auto-close logic dengan useEffect
+  if (!state.open) {
+    console.log('❌ Modal closed, returning null');
+    return null;
+  }
+
   useEffect(() => {
-    // Clear timer lama jika ada
+    console.log('⏰ useEffect triggered:', { open: state.open, autoCloseMs });
+    
     if (timerRef.current) {
+      console.log('🗑️ Clearing old timer');
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
 
-    // Set timer baru jika ada autoCloseMs
     if (state.open && autoCloseMs > 0) {
+      console.log(`⏱️ Setting timer for ${autoCloseMs}ms`);
       timerRef.current = setTimeout(() => {
+        console.log('💥 Timer fired! Closing modal');
         state.onCta();
       }, autoCloseMs);
     }
 
-    // Cleanup saat unmount
     return () => {
+      console.log('🧹 Cleanup');
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
     };
-  }, [state.open, autoCloseMs]); // Hanya depend pada open dan autoCloseMs
+  }, [state.open, autoCloseMs]);
 
   const icon =
     state.kind === "success" ? (
