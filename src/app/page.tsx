@@ -179,7 +179,7 @@ export default function HomePage() {
               <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full duration-700" />
               </span>
-            </Link
+            </Link>
 
                <Link
                   href="/register/user"
