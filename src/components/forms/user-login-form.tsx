@@ -143,57 +143,65 @@ export const UserLoginForm: React.FC = () => {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      setModal({
-        open: true,
-        kind: "error",
-        title: "Data Tidak Lengkap",
-        message: "Mohon lengkapi semua kolom yang bertanda merah.",
-        ctaLabel: "Tutup",
-        onCta: () => setModal((s) => ({ ...s, open: false })),
-      });
-      return;
-    }
+     // 1) Validasi form — tampilkan modal error & stop
+  const validationErrors = validateForm();
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    setModal({
+      open: true,
+      kind: "error",
+      title: "Data Tidak Lengkap",
+      message: "Mohon lengkapi semua kolom yang bertanda merah.",
+      ctaLabel: "Tutup",
+      onCta: () => setModal((s) => ({ ...s, open: false })),
+    });
+    return;
+  }
 
     try {
-      setLoading(true);
-      const user = await login(formData);
+    // 2) Proses login
+    setLoading(true);
 
-      const role = user.role as string;
-      if (role === "super_admin" || role === "admin") router.replace("/dashboard/admin");
-      else if (role === "manajemen") router.replace("/dashboard/manajemen");
-      else if (role === "nakes") router.replace("/dashboard/nakes");
-      else router.replace("/dashboard/user");
-      
-    } catch (error: any) {
-      const msg =
-        error?.response?.data?.message ||
-        error?.response?.data?.errors ||
-        "Email/Username atau password salah. Silakan coba lagi.";
+    const user = await login(formData);
 
-      // Modal error - HANYA bisa ditutup dengan klik tombol "Tutup"
-      setModal({
-        open: true,
-        kind: "error",
-        title: "Login Gagal",
-        message: msg,
-        ctaLabel: "Tutup",
-        onCta: () => setModal((s) => ({ ...s, open: false })),
-      });
-    } finally {
-      setLoading(false);
+    // 3) Guard: paksa gagal kalau tidak ada role
+    if (!user || !("role" in user) || !user.role) {
+      throw new Error("Email/Username atau password salah. Silakan coba lagi.");
     }
-  };
+
+      // 4) Routing berdasarkan role
+    const role = user.role as string;
+    if (role === "super_admin" || role === "admin") router.replace("/dashboard/admin");
+    else if (role === "manajemen") router.replace("/dashboard/manajemen");
+    else if (role === "nakes") router.replace("/dashboard/nakes");
+    else router.replace("/dashboard/user");
+  } catch (error: any) {
+    // 5) Modal error manual-close (tidak auto-close)
+    const msg =
+      error?.response?.data?.message ||
+      error?.response?.data?.errors ||
+      (typeof error === "string" ? error : error?.message) ||
+      "Email/Username atau password salah. Silakan coba lagi.";
+
+    setModal({
+      open: true,
+      kind: "error",
+      title: "Login Gagal",
+      message: typeof msg === "string" ? msg : JSON.stringify(msg),
+      ctaLabel: "Tutup",
+      onCta: () => setModal((s) => ({ ...s, open: false })),
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="w-full">
       {/* Modal - TIDAK auto-close */}
       <CenterModal
         state={modal}
-        autoCloseMs={modal.open ? 30000 : 0}  // ✅ 30 detik = 30000 ms
-        onClose={() => setModal((s) => ({ ...s, open: false }))}
+        autoCloseMs={0}
       />
 
       {/* Card + Form */}
