@@ -186,7 +186,7 @@ export const UserLoginForm: React.FC = () => {
       {/* Modal - TIDAK auto-close */}
       <CenterModal
         state={modal}
-        autoCloseMs={0}
+        autoCloseMs={99999999}
       />
 
       {/* Card + Form */}
