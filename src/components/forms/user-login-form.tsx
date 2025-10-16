@@ -1,7 +1,7 @@
 // src/components/forms/user-login-form.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Eye, EyeOff, Sparkles, AlertCircle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -23,8 +23,36 @@ interface ModalState {
   onCta: () => void;
 }
 
-const CenterModal: React.FC<{ state: ModalState }> = ({ state }) => {
+const CenterModal: React.FC<{ 
+  state: ModalState;
+  autoCloseMs?: number;
+}> = ({ state, autoCloseMs = 0 }) => {
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
   if (!state.open) return null;
+
+  // Auto-close logic dengan useEffect
+  useEffect(() => {
+    // Clear timer lama jika ada
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    // Set timer baru jika ada autoCloseMs
+    if (state.open && autoCloseMs > 0) {
+      timerRef.current = setTimeout(() => {
+        state.onCta();
+      }, autoCloseMs);
+    }
+
+    // Cleanup saat unmount
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [state.open, autoCloseMs]); // Hanya depend pada open dan autoCloseMs
 
   const icon =
     state.kind === "success" ? (
@@ -34,13 +62,18 @@ const CenterModal: React.FC<{ state: ModalState }> = ({ state }) => {
     );
 
   return (
-  <div className="fixed inset-0 z-[9999] grid place-items-center bg-black/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl" onClick={(e)=>e.stopPropagation()}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      {/* Backdrop - TANPA onClick */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       
       {/* Modal content */}
-      <div className="relative w-full max-w-md bg-gradient-to-br from-white to-gray-50 border-2 border-emerald-200 rounded-3xl shadow-2xl overflow-hidden">
-        {/* Header gradient hijau */}
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6">
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+        {/* Header gradient */}
+        <div className={`p-6 ${
+          state.kind === "success" 
+            ? "bg-gradient-to-r from-emerald-600 to-teal-600" 
+            : "bg-gradient-to-r from-red-600 to-rose-600"
+        }`}>
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 mt-0.5">{icon}</div>
             <div className="flex-1">
@@ -58,7 +91,11 @@ const CenterModal: React.FC<{ state: ModalState }> = ({ state }) => {
         <div className="p-6">
           <button
             onClick={state.onCta}
-            className="w-full h-12 rounded-xl font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+            className={`w-full h-12 rounded-xl font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg ${
+              state.kind === "success"
+                ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                : "bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700"
+            }`}
           >
             {state.ctaLabel}
           </button>
@@ -96,22 +133,6 @@ export const UserLoginForm: React.FC = () => {
     return () => { document.body.style.overflow = prev; };
   }, [modal.open]);
 
-  // tangkap window.alert -> ganti modal hijau
-  {/* useEffect(() => {
-    const originalAlert = window.alert;
-    window.alert = (msg?: any) => {
-      setModal({
-        open: true,
-        kind: "error",
-        title: "Login Gagal",
-        message: String(msg ?? ""),
-        ctaLabel: "Tutup",
-        onCta: () => setModal((s) => ({ ...s, open: false })),
-      });
-    };
-    return () => { window.alert = originalAlert; };
-  }, []); */}
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -131,62 +152,64 @@ export const UserLoginForm: React.FC = () => {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-     // 1) Validasi form — tampilkan modal error & stop
-  const validationErrors = validateForm();
-  if (Object.keys(validationErrors).length > 0) {
-    setErrors(validationErrors);
-    setModal({
-      open: true,
-      kind: "error",
-      title: "Data Tidak Lengkap",
-      message: "Mohon lengkapi semua kolom yang bertanda merah.",
-      ctaLabel: "Tutup",
-      onCta: () => setModal((s) => ({ ...s, open: false })),
-    });
-    return;
-  }
+    // 1) Validasi form — tampilkan modal error & stop
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setModal({
+        open: true,
+        kind: "error",
+        title: "Data Tidak Lengkap",
+        message: "Mohon lengkapi semua kolom yang bertanda merah.",
+        ctaLabel: "Tutup",
+        onCta: () => setModal((s) => ({ ...s, open: false })),
+      });
+      return;
+    }
 
-  try {
-  setLoading(true);
+    try {
+      // 2) Proses login
+      setLoading(true);
+      const user = await login(formData);
 
-  // ⬇️ WAJIB ada baris ini (kadang ke-skip, bikin ReferenceError sehingga effect lain jalan)
-  const user = await login(formData);
+      // 3) Guard: paksa gagal kalau tidak ada role
+      if (!user || !("role" in user) || !user.role) {
+        throw new Error("Email/Username atau password salah. Silakan coba lagi.");
+      }
 
-  if (!user || !("role" in user) || !user.role) {
-    throw new Error("Email/Username atau password salah. Silakan coba lagi.");
-  }
+      // 4) Routing berdasarkan role
+      const role = user.role as string;
+      if (role === "super_admin" || role === "admin") router.replace("/dashboard/admin");
+      else if (role === "manajemen") router.replace("/dashboard/manajemen");
+      else if (role === "nakes") router.replace("/dashboard/nakes");
+      else router.replace("/dashboard/user");
+    } catch (error: any) {
+      // 5) Modal error - auto-close setelah 45 detik
+      const msg =
+        error?.response?.data?.message ||
+        error?.response?.data?.errors ||
+        (typeof error === "string" ? error : error?.message) ||
+        "Email/Username atau password salah. Silakan coba lagi.";
 
-  const role = user.role as string;
-  if (role === "super_admin" || role === "admin") router.replace("/dashboard/admin");
-  else if (role === "manajemen") router.replace("/dashboard/manajemen");
-  else if (role === "nakes") router.replace("/dashboard/nakes");
-  else router.replace("/dashboard/user");
-} catch (error: any) {
-  const msg =
-    error?.response?.data?.message ||
-    error?.response?.data?.errors ||
-    (typeof error === "string" ? error : error?.message) ||
-    "Email/Username atau password salah. Silakan coba lagi.";
-
-  setModal({
-    open: true,
-    kind: "error",
-    title: "Login Gagal",
-    message: typeof msg === "string" ? msg : JSON.stringify(msg),
-    ctaLabel: "Tutup",
-    onCta: () => setModal((s) => ({ ...s, open: false })),
-  });
-} finally {
-  setLoading(false);
-}
-};
+      setModal({
+        open: true,
+        kind: "error",
+        title: "Login Gagal",
+        message: typeof msg === "string" ? msg : JSON.stringify(msg),
+        ctaLabel: "Tutup",
+        onCta: () => setModal((s) => ({ ...s, open: false })),
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="w-full">
-      {/* Modal - TIDAK auto-close */}
+      {/* Modal - auto-close setelah 45 detik */}
       <CenterModal
         state={modal}
-        autoCloseMs={99999999}
+        autoCloseMs={45000}
       />
 
       {/* Card + Form */}
