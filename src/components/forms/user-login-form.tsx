@@ -34,7 +34,7 @@ const CenterModal: React.FC<{
     if (!state.open || !autoCloseMs) return;
     const t = setTimeout(() => (onClose ?? state.onCta)(), autoCloseMs);
     return () => clearTimeout(t);
-  }, [state.open, autoCloseMs, onClose, state]);
+  }, [state.open, autoCloseMs, onClose, onCta]);
 
   const icon =
     state.kind === "success" ? (
