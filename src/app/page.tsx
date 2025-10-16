@@ -170,12 +170,16 @@ export default function HomePage() {
 
             {/* Kanan: Auth dropdowns */}
             <div className="flex items-center gap-3">
-            <a
+            <Link
               href="/login"
               className="group relative inline-flex h-11 px-6 items-center rounded-xl text-white font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 overflow-hidden bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
             >
-              Masuk
-            </a>
+              <span className="relative z-10">Masuk</span>
+              <span className="absolute inset-0 bg-gradient-to-r from-teal-600 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full duration-700" />
+              </span>
+            </Link
 
                <Link
                   href="/register/user"
