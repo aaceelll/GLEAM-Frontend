@@ -23,18 +23,8 @@ interface ModalState {
   onCta: () => void;
 }
 
-const CenterModal: React.FC<{
-  state: ModalState;
-  autoCloseMs?: number;
-  onClose?: () => void;
-}> = ({ state, autoCloseMs = 0, onClose }) => {
+const CenterModal: React.FC<{ state: ModalState }> = ({ state }) => {
   if (!state.open) return null;
-
-  useEffect(() => {
-    if (!state.open || !autoCloseMs) return;
-    const t = setTimeout(() => (onClose ?? state.onCta)(), autoCloseMs);
-    return () => clearTimeout(t);
-  }, [state.open, autoCloseMs, onClose, onCta]);
 
   const icon =
     state.kind === "success" ? (
@@ -44,10 +34,8 @@ const CenterModal: React.FC<{
     );
 
   return (
-    // ✅ BACKDROP TANPA onClick - TIDAK BISA DI-KLIK UNTUK CLOSE
-    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-      {/* Backdrop hitam - TANPA onClick */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+  <div className="fixed inset-0 z-[9999] grid place-items-center bg-black/50 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl" onClick={(e)=>e.stopPropagation()}>
       
       {/* Modal content */}
       <div className="relative w-full max-w-md bg-gradient-to-br from-white to-gray-50 border-2 border-emerald-200 rounded-3xl shadow-2xl overflow-hidden">
@@ -109,7 +97,7 @@ export const UserLoginForm: React.FC = () => {
   }, [modal.open]);
 
   // tangkap window.alert -> ganti modal hijau
-  useEffect(() => {
+  {/* useEffect(() => {
     const originalAlert = window.alert;
     window.alert = (msg?: any) => {
       setModal({
@@ -122,7 +110,7 @@ export const UserLoginForm: React.FC = () => {
       });
     };
     return () => { window.alert = originalAlert; };
-  }, []);
+  }, []); */}
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -158,42 +146,39 @@ export const UserLoginForm: React.FC = () => {
     return;
   }
 
-    try {
-    // 2) Proses login
-    setLoading(true);
+  try {
+  setLoading(true);
 
-    const user = await login(formData);
+  // ⬇️ WAJIB ada baris ini (kadang ke-skip, bikin ReferenceError sehingga effect lain jalan)
+  const user = await login(formData);
 
-    // 3) Guard: paksa gagal kalau tidak ada role
-    if (!user || !("role" in user) || !user.role) {
-      throw new Error("Email/Username atau password salah. Silakan coba lagi.");
-    }
-
-      // 4) Routing berdasarkan role
-    const role = user.role as string;
-    if (role === "super_admin" || role === "admin") router.replace("/dashboard/admin");
-    else if (role === "manajemen") router.replace("/dashboard/manajemen");
-    else if (role === "nakes") router.replace("/dashboard/nakes");
-    else router.replace("/dashboard/user");
-  } catch (error: any) {
-    // 5) Modal error manual-close (tidak auto-close)
-    const msg =
-      error?.response?.data?.message ||
-      error?.response?.data?.errors ||
-      (typeof error === "string" ? error : error?.message) ||
-      "Email/Username atau password salah. Silakan coba lagi.";
-
-    setModal({
-      open: true,
-      kind: "error",
-      title: "Login Gagal",
-      message: typeof msg === "string" ? msg : JSON.stringify(msg),
-      ctaLabel: "Tutup",
-      onCta: () => setModal((s) => ({ ...s, open: false })),
-    });
-  } finally {
-    setLoading(false);
+  if (!user || !("role" in user) || !user.role) {
+    throw new Error("Email/Username atau password salah. Silakan coba lagi.");
   }
+
+  const role = user.role as string;
+  if (role === "super_admin" || role === "admin") router.replace("/dashboard/admin");
+  else if (role === "manajemen") router.replace("/dashboard/manajemen");
+  else if (role === "nakes") router.replace("/dashboard/nakes");
+  else router.replace("/dashboard/user");
+} catch (error: any) {
+  const msg =
+    error?.response?.data?.message ||
+    error?.response?.data?.errors ||
+    (typeof error === "string" ? error : error?.message) ||
+    "Email/Username atau password salah. Silakan coba lagi.";
+
+  setModal({
+    open: true,
+    kind: "error",
+    title: "Login Gagal",
+    message: typeof msg === "string" ? msg : JSON.stringify(msg),
+    ctaLabel: "Tutup",
+    onCta: () => setModal((s) => ({ ...s, open: false })),
+  });
+} finally {
+  setLoading(false);
+}
 };
 
   return (
