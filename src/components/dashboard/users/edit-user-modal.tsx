@@ -85,6 +85,8 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
     }
   }
 
+  const isUser = user.role === "user";
+
   return (
     <div
       className="fixed inset-0 z-50 grid place-items-center p-4"
@@ -164,16 +166,18 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
             <select
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value as User["role"] })}
+              disabled={isUser}
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
             >
               <option value="admin">Admin</option>
               <option value="manajemen">Manajemen</option>
               <option value="nakes">Nakes</option>
-              {/* <option value="user">User</option> */}
+              <option value="user">User</option> 
             </select>
           </div>
 
           {/* Password Opsional */}
+          {!isUSer&&(
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-sm font-semibold text-gray-900">Password Baru</label>
@@ -198,7 +202,7 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
               />
             </div>
           </div>
-
+          )}
           {/* Footer */}
           <div className="flex items-center gap-3 pt-4 border-t-2 border-gray-100">
             <button
