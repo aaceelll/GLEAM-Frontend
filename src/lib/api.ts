@@ -76,7 +76,16 @@ api.interceptors.response.use(
     if (status === 401) {
       clearToken();
       clearTokenCookie();
-      if (isBrowser()) window.location.href = "/login";
+      if (isBrowser()) {
+        const currentPath = window.location.pathname;
+        const isAuthPage = currentPath.includes('/login') || 
+                          currentPath.includes('/register') || 
+                          currentPath.includes('/forgot-password');
+        
+        if (!isAuthPage) {
+          window.location.href = "/login";
+        }
+      }
     }
     return Promise.reject(err);
   }
