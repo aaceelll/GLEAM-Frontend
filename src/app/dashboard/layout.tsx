@@ -19,7 +19,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     const userData = localStorage.getItem("user_data");
     if (!userData) {
-      router.replace("/login/user");
+      router.replace("/login");
       return;
     }
     try {
