@@ -177,7 +177,7 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
           </div>
 
           {/* Password Opsional */}
-          {!isUSer&&(
+          {!isUser&&(
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-sm font-semibold text-gray-900">Password Baru</label>
