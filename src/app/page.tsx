@@ -175,6 +175,7 @@ export default function HomePage() {
                 items={[
                   { label: "Sebagai Pasien", href: "/login/user" },
                   { label: "Sebagai Staff",  href: "/login/staff" },
+                   { label: "Sebagai Testing",  href: "/login" },
                 ]}
               />
                <Link
