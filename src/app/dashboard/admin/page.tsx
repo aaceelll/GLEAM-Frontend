@@ -73,7 +73,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const token = localStorage.getItem("gleam_token");
     if (!token) {
-      router.replace("/login/staff");
+      router.replace("/login");
       return;
     }
     fetchDashboardStats(token);
