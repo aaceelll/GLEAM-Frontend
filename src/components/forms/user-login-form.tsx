@@ -192,7 +192,8 @@ export const UserLoginForm: React.FC = () => {
       {/* Modal - TIDAK auto-close */}
       <CenterModal
         state={modal}
-        autoCloseMs={0}
+        autoCloseMs={modal.open ? 30000 : 0}  // ✅ 30 detik = 30000 ms
+        onClose={() => setModal((s) => ({ ...s, open: false }))}
       />
 
       {/* Card + Form */}
