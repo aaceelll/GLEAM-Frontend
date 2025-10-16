@@ -38,31 +38,34 @@ const CenterModal: React.FC<{
 
   const icon =
     state.kind === "success" ? (
-      <CheckCircle2 className="w-16 h-16 text-emerald-600" />
+      <CheckCircle2 className="w-6 h-6 text-white" />
     ) : (
-      <AlertCircle className="w-16 h-16 text-red-600" />
+      <AlertCircle className="w-6 h-6 text-white" />
     );
 
-  const bg = state.kind === "success" ? "from-emerald-50 to-teal-50" : "from-red-50 to-orange-50";
-  const border = state.kind === "success" ? "border-emerald-200" : "border-red-200";
-
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={state.onCta} />
-      <div
-        className={`relative w-full max-w-md bg-gradient-to-br ${bg} border-2 ${border} rounded-3xl shadow-2xl p-8 transform scale-100 animate-in fade-in zoom-in duration-300`}
-      >
-        <div className="flex flex-col items-center text-center space-y-4">
-          {icon}
-          <h3 className="text-2xl font-bold text-gray-900">{state.title}</h3>
-          {state.message && <p className="text-gray-700 text-base leading-relaxed">{state.message}</p>}
+    <div className="fixed inset-0 z-[9999] grid place-items-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl" onClick={(e)=>e.stopPropagation()}>
+        {/* Header gradient hijau */}
+        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-t-2xl p-6">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-0.5">{icon}</div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-white">{state.title}</h3>
+              {state.message && (
+                <p className="mt-1.5 text-sm text-white/90 leading-relaxed">
+                  {state.message}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer tombol */}
+        <div className="p-6">
           <button
             onClick={state.onCta}
-            className={`mt-4 px-8 py-3 rounded-xl font-semibold text-white transition-all transform hover:scale-105 shadow-lg ${
-              state.kind === "success"
-                ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
-                : "bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700"
-            }`}
+            className="w-full h-12 rounded-xl font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
           >
             {state.ctaLabel}
           </button>
@@ -71,24 +74,36 @@ const CenterModal: React.FC<{
     </div>
   );
 };
+/* ====================================================================== */
 
-/* =============== User Login Form =============== */
 export const UserLoginForm: React.FC = () => {
   const router = useRouter();
   const { login } = useAuth();
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<LoginData>({ login: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState<LoginData>({ login: "", password: "" });
+
+  // Modal state
   const [modal, setModal] = useState<ModalState>({
     open: false,
     kind: "success",
     title: "",
     message: "",
-    ctaLabel: "Tutup",
+    ctaLabel: "OK",
     onCta: () => setModal((s) => ({ ...s, open: false })),
   });
 
+  // kunci scroll saat modal
+  useEffect(() => {
+    if (!modal.open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [modal.open]);
+
+  // tangkap window.alert -> ganti modal hijau
   useEffect(() => {
     const originalAlert = window.alert;
     window.alert = (msg?: any) => {
@@ -139,7 +154,9 @@ export const UserLoginForm: React.FC = () => {
 
     try {
       setLoading(true);
-      const user = await login(formData);
+       if (!user || !("role" in user) || !user.role) {
+        throw new Error("Email/Username atau password salah. Silakan coba lagi.");
+      }
 
       const role = user.role as string;
       if (role === "super_admin" || role === "admin") router.replace("/dashboard/admin");
@@ -151,30 +168,25 @@ export const UserLoginForm: React.FC = () => {
       const msg =
         error?.response?.data?.message ||
         error?.response?.data?.errors ||
+        (typeof error === "string" ? error : error?.message) ||
         "Email/Username atau password salah. Silakan coba lagi.";
 
-      // Modal error - TANPA auto close, harus klik tombol Tutup
       setModal({
-        open: true,
-        kind: "error",
-        title: "Login Gagal",
-        message: msg,
-        ctaLabel: "Tutup",
-        onCta: () => setModal((s) => ({ ...s, open: false })),
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    open: true,
+    kind: "error",
+    title: "Login Gagal",
+    message: typeof msg === "string" ? msg : JSON.stringify(msg),
+    ctaLabel: "Tutup",
+    onCta: () => setModal((s) => ({ ...s, open: false })),
+  });
+} finally {
+  setLoading(false);
+}
 
   return (
     <div className="w-full">
-      {/* Modal - HANYA auto-close untuk success, error harus manual */}
-      <CenterModal
-        state={modal}
-        autoCloseMs={0}
-        onClose={() => setModal((s) => ({ ...s, open: false }))}
-      />
+      {/* Modal (auto-close 45 detik) */}
+      <CenterModal state={modal} autoCloseMs={0} />
 
       {/* Card + Form */}
       <div className="w-full max-w-md mx-auto py-12">
@@ -261,7 +273,7 @@ export const UserLoginForm: React.FC = () => {
               )}
             </div>
 
-            {/* Forgot Password */}
+            {/* Lupa password */}
             <div className="flex justify-end">
               <Link
                 href="/forgot-password"
@@ -271,23 +283,32 @@ export const UserLoginForm: React.FC = () => {
               </Link>
             </div>
 
-            {/* Submit Button */}
+            {/* Submit Button — hover sama seperti awal (overlay + shimmer + scale) */}
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full h-13 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-base rounded-xl shadow-lg shadow-emerald-300/50 hover:shadow-emerald-400/60 hover:shadow-xl transition-all duration-300 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] py-3"
+              className="group relative w-full h-13 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-base rounded-xl shadow-lg shadow-emerald-300/50 hover:shadow-emerald-400/60 hover:shadow-xl transition-all duration-300 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02]"
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                {loading ? "Memproses..." : "Masuk"}
+                {loading ? (
+                  <>
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Memproses...
+                  </>
+                ) : (
+                  "Masuk Sekarang"
+                )}
               </span>
+              {/* overlay gradient saat hover */}
               <div className="absolute inset-0 bg-gradient-to-r from-teal-600 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              {/* shimmer swipe */}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               </div>
             </button>
 
-            {/* Register Link */}
-            <div className="pt-4 border-t-2 border-emerald-100/50 text-center">
+            {/* Register */}
+            <div className="text-center pt-4 border-t border-gray-200">
               <p className="text-sm text-gray-600">
                 Belum punya akun?{" "}
                 <Link
