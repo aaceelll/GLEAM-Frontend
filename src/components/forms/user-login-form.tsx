@@ -170,16 +170,16 @@ export const UserLoginForm: React.FC = () => {
         "Email/Username atau password salah. Silakan coba lagi.";
 
       // modal error — auto close 45 detik
-      setModal({
-        open: true,
-        kind: "error",
-        title: "Login Gagal",
-        message: msg,
-        ctaLabel: "Tutup",
-        onCta: () => setModal((s) => ({ ...s, open: false })),
-      });
-    } finally {
-      setLoading(false);
+    //   setModal({
+    //     open: true,
+    //     kind: "error",
+    //     title: "Login Gagal",
+    //     message: msg,
+    //     ctaLabel: "Tutup",
+    //     onCta: () => setModal((s) => ({ ...s, open: false })),
+    //   });
+    // } finally {
+    //   setLoading(false);
     }
   };
 
