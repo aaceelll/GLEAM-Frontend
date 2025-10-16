@@ -44,8 +44,7 @@ const CenterModal: React.FC<{
     );
 
   return (
-    <div className="fixed inset-0 z-[999] grid place-items-center bg-black/50 backdrop-blur-sm p-4"
-         onClick={onClose}>
+    <div className="fixed inset-0 z-[999] grid place-items-center bg-black/50 backdrop-blur-sm p-4">
       <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl" onClick={(e)=>e.stopPropagation()}>
         {/* Header gradient hijau */}
         <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-t-2xl p-6">
@@ -169,28 +168,22 @@ export const UserLoginForm: React.FC = () => {
         error?.response?.data?.errors ||
         "Email/Username atau password salah. Silakan coba lagi.";
 
-      // modal error — auto close 45 detik
-    //   setModal({
-    //     open: true,
-    //     kind: "error",
-    //     title: "Login Gagal",
-    //     message: msg,
-    //     ctaLabel: "Tutup",
-    //     onCta: () => setModal((s) => ({ ...s, open: false })),
-    //   });
-    // } finally {
-    //   setLoading(false);
-    }
-  };
+      setModal({
+    open: true,
+    kind: "error",
+    title: "Login Gagal",
+    message: typeof msg === "string" ? msg : JSON.stringify(msg),
+    ctaLabel: "Tutup",
+    onCta: () => setModal((s) => ({ ...s, open: false })),
+  });
+} finally {
+  setLoading(false);
+}
 
   return (
     <div className="w-full">
       {/* Modal (auto-close 45 detik) */}
-      <CenterModal
-        state={modal}
-        autoCloseMs={modal.open ? 45000 : 0}
-        onClose={() => setModal((s) => ({ ...s, open: false }))}
-      />
+      <CenterModal state={modal} autoCloseMs={0} />
 
       {/* Card + Form */}
       <div className="w-full max-w-md mx-auto py-12">
