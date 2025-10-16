@@ -185,7 +185,7 @@ export default function AddUserModal({ onCreated, onClose }: Props) {
               <option value="admin">Admin</option>
               <option value="manajemen">Manajemen</option>
               <option value="nakes">Nakes</option>
-              <option value="user">User</option>
+
             </select>
           </div>
 
