@@ -170,14 +170,13 @@ export default function HomePage() {
 
             {/* Kanan: Auth dropdowns */}
             <div className="flex items-center gap-3">
-              <DropdownButton
-                label="Masuk"
-                items={[
-                  { label: "Sebagai Pasien", href: "/login/user" },
-                  { label: "Sebagai Staff",  href: "/login/staff" },
-                   { label: "Sebagai Testing",  href: "/login" },
-                ]}
-              />
+            <a
+              href="/login"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition"
+            >
+              Masuk
+            </a>
+
                <Link
                   href="/register/user"
                   className="group relative inline-flex h-11 px-6 items-center rounded-xl text-white font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 overflow-hidden bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
