@@ -172,7 +172,7 @@ export default function HomePage() {
             <div className="flex items-center gap-3">
             <a
               href="/login"
-              className="bg-emerald-400 hover:bg-emerald-600 text-white font-medium px-4 py-2 rounded-lg transition"
+              className="group relative inline-flex h-11 px-6 items-center rounded-xl text-white font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 overflow-hidden bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
             >
               Masuk
             </a>
