@@ -23,18 +23,8 @@ interface ModalState {
   onCta: () => void;
 }
 
-const CenterModal: React.FC<{
-  state: ModalState;
-  autoCloseMs?: number;
-  onClose?: () => void;
-}> = ({ state, autoCloseMs = 0, onClose }) => {
+const CenterModal: React.FC<{ state: ModalState }> = ({ state }) => {
   if (!state.open) return null;
-
-  useEffect(() => {
-    if (!state.open || !autoCloseMs) return;
-    const t = setTimeout(() => (onClose ?? state.onCta)(), autoCloseMs);
-    return () => clearTimeout(t);
-  }, [state.open, autoCloseMs, onClose, state]);
 
   const icon =
     state.kind === "success" ? (
@@ -104,20 +94,20 @@ export const UserLoginForm: React.FC = () => {
   }, [modal.open]);
 
   // tangkap window.alert -> ganti modal hijau
-  useEffect(() => {
-    const originalAlert = window.alert;
-    window.alert = (msg?: any) => {
-      setModal({
-        open: true,
-        kind: "error",
-        title: "Login Gagal",
-        message: String(msg ?? ""),
-        ctaLabel: "Tutup",
-        onCta: () => setModal((s) => ({ ...s, open: false })),
-      });
-    };
-    return () => { window.alert = originalAlert; };
-  }, []);
+  // useEffect(() => {
+  //   const originalAlert = window.alert;
+  //   window.alert = (msg?: any) => {
+  //     setModal({
+  //       open: true,
+  //       kind: "error",
+  //       title: "Login Gagal",
+  //       message: String(msg ?? ""),
+  //       ctaLabel: "Tutup",
+  //       onCta: () => setModal((s) => ({ ...s, open: false })),
+  //     });
+  //   };
+  //   return () => { window.alert = originalAlert; };
+  // }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -165,13 +155,13 @@ export const UserLoginForm: React.FC = () => {
       else router.replace("/dashboard/user");
       
     } catch (error: any) {
-      const msg =
-        error?.response?.data?.message ||
-        error?.response?.data?.errors ||
-        (typeof error === "string" ? error : error?.message) ||
-        "Email/Username atau password salah. Silakan coba lagi.";
+  const msg =
+    error?.response?.data?.message ||
+    error?.response?.data?.errors ||
+    (typeof error === "string" ? error : error?.message) ||
+    "Email/Username atau password salah. Silakan coba lagi.";
 
-      setModal({
+  setModal({
     open: true,
     kind: "error",
     title: "Login Gagal",
@@ -186,7 +176,7 @@ export const UserLoginForm: React.FC = () => {
   return (
     <div className="w-full">
       {/* Modal (auto-close 45 detik) */}
-      <CenterModal state={modal} autoCloseMs={0} />
+      <CenterModal state={modal} />
 
       {/* Card + Form */}
       <div className="w-full max-w-md mx-auto py-12">
