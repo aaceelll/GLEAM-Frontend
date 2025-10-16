@@ -203,6 +203,7 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
             </div>
           </div>
           )}
+          
           {/* Footer */}
           <div className="flex items-center gap-3 pt-4 border-t-2 border-gray-100">
             <button
