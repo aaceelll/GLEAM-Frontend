@@ -23,8 +23,18 @@ interface ModalState {
   onCta: () => void;
 }
 
-const CenterModal: React.FC<{ state: ModalState }> = ({ state }) => {
+const CenterModal: React.FC<{
+  state: ModalState;
+  autoCloseMs?: number;
+  onClose?: () => void;
+}> = ({ state, autoCloseMs = 0, onClose }) => {
   if (!state.open) return null;
+
+  useEffect(() => {
+    if (!state.open || !autoCloseMs) return;
+    const t = setTimeout(() => (onClose ?? state.onCta)(), autoCloseMs);
+    return () => clearTimeout(t);
+  }, [state.open, autoCloseMs, onClose, state]);
 
   const icon =
     state.kind === "success" ? (
@@ -34,10 +44,15 @@ const CenterModal: React.FC<{ state: ModalState }> = ({ state }) => {
     );
 
   return (
-    <div className="fixed inset-0 z-[9999] grid place-items-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl" onClick={(e)=>e.stopPropagation()}>
+    // ✅ BACKDROP TANPA onClick - TIDAK BISA DI-KLIK UNTUK CLOSE
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+      {/* Backdrop hitam - TANPA onClick */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      
+      {/* Modal content */}
+      <div className="relative w-full max-w-md bg-gradient-to-br from-white to-gray-50 border-2 border-emerald-200 rounded-3xl shadow-2xl overflow-hidden">
         {/* Header gradient hijau */}
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-t-2xl p-6">
+        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 mt-0.5">{icon}</div>
             <div className="flex-1">
@@ -94,20 +109,20 @@ export const UserLoginForm: React.FC = () => {
   }, [modal.open]);
 
   // tangkap window.alert -> ganti modal hijau
-  // useEffect(() => {
-  //   const originalAlert = window.alert;
-  //   window.alert = (msg?: any) => {
-  //     setModal({
-  //       open: true,
-  //       kind: "error",
-  //       title: "Login Gagal",
-  //       message: String(msg ?? ""),
-  //       ctaLabel: "Tutup",
-  //       onCta: () => setModal((s) => ({ ...s, open: false })),
-  //     });
-  //   };
-  //   return () => { window.alert = originalAlert; };
-  // }, []);
+  useEffect(() => {
+    const originalAlert = window.alert;
+    window.alert = (msg?: any) => {
+      setModal({
+        open: true,
+        kind: "error",
+        title: "Login Gagal",
+        message: String(msg ?? ""),
+        ctaLabel: "Tutup",
+        onCta: () => setModal((s) => ({ ...s, open: false })),
+      });
+    };
+    return () => { window.alert = originalAlert; };
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -144,9 +159,7 @@ export const UserLoginForm: React.FC = () => {
 
     try {
       setLoading(true);
-       if (!user || !("role" in user) || !user.role) {
-        throw new Error("Email/Username atau password salah. Silakan coba lagi.");
-      }
+      const user = await login(formData);
 
       const role = user.role as string;
       if (role === "super_admin" || role === "admin") router.replace("/dashboard/admin");
@@ -155,28 +168,32 @@ export const UserLoginForm: React.FC = () => {
       else router.replace("/dashboard/user");
       
     } catch (error: any) {
-  const msg =
-    error?.response?.data?.message ||
-    error?.response?.data?.errors ||
-    (typeof error === "string" ? error : error?.message) ||
-    "Email/Username atau password salah. Silakan coba lagi.";
+      const msg =
+        error?.response?.data?.message ||
+        error?.response?.data?.errors ||
+        "Email/Username atau password salah. Silakan coba lagi.";
 
-  setModal({
-    open: true,
-    kind: "error",
-    title: "Login Gagal",
-    message: typeof msg === "string" ? msg : JSON.stringify(msg),
-    ctaLabel: "Tutup",
-    onCta: () => setModal((s) => ({ ...s, open: false })),
-  });
-} finally {
-  setLoading(false);
-}
+      // Modal error - HANYA bisa ditutup dengan klik tombol "Tutup"
+      setModal({
+        open: true,
+        kind: "error",
+        title: "Login Gagal",
+        message: msg,
+        ctaLabel: "Tutup",
+        onCta: () => setModal((s) => ({ ...s, open: false })),
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="w-full">
-      {/* Modal (auto-close 45 detik) */}
-      <CenterModal state={modal} />
+      {/* Modal - TIDAK auto-close */}
+      <CenterModal
+        state={modal}
+        autoCloseMs={0}
+      />
 
       {/* Card + Form */}
       <div className="w-full max-w-md mx-auto py-12">
@@ -263,7 +280,7 @@ export const UserLoginForm: React.FC = () => {
               )}
             </div>
 
-            {/* Lupa password */}
+            {/* Forgot Password */}
             <div className="flex justify-end">
               <Link
                 href="/forgot-password"
@@ -273,32 +290,23 @@ export const UserLoginForm: React.FC = () => {
               </Link>
             </div>
 
-            {/* Submit Button — hover sama seperti awal (overlay + shimmer + scale) */}
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full h-13 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-base rounded-xl shadow-lg shadow-emerald-300/50 hover:shadow-emerald-400/60 hover:shadow-xl transition-all duration-300 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02]"
+              className="group relative w-full h-13 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-base rounded-xl shadow-lg shadow-emerald-300/50 hover:shadow-emerald-400/60 hover:shadow-xl transition-all duration-300 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] py-3"
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                {loading ? (
-                  <>
-                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Memproses...
-                  </>
-                ) : (
-                  "Masuk Sekarang"
-                )}
+                {loading ? "Memproses..." : "Masuk"}
               </span>
-              {/* overlay gradient saat hover */}
               <div className="absolute inset-0 bg-gradient-to-r from-teal-600 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              {/* shimmer swipe */}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               </div>
             </button>
 
-            {/* Register */}
-            <div className="text-center pt-4 border-t border-gray-200">
+            {/* Register Link */}
+            <div className="pt-4 border-t-2 border-emerald-100/50 text-center">
               <p className="text-sm text-gray-600">
                 Belum punya akun?{" "}
                 <Link
