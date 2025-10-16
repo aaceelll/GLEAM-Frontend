@@ -76,7 +76,7 @@ api.interceptors.response.use(
     if (status === 401) {
       clearToken();
       clearTokenCookie();
-      if (isBrowser()) window.location.href = "/login/user";
+      if (isBrowser()) window.location.href = "/login";
     }
     return Promise.reject(err);
   }
