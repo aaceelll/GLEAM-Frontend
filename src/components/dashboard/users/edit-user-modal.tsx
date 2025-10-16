@@ -172,7 +172,7 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
               <option value="admin">Admin</option>
               <option value="manajemen">Manajemen</option>
               <option value="nakes">Nakes</option>
-              <option value="user">User</option> 
+              {isUser && <option value="user">User</option>} 
             </select>
           </div>
 
