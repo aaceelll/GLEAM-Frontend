@@ -10,6 +10,11 @@ import { Toaster } from "@/components/ui/toaster";
 export const metadata: Metadata = {
   title: "GLEAM",
   description: "Healthcare learning & monitoring",
+  icons: {
+    icon: [
+      { url: "/icon.png?v=gleam2" },                     
+    ],
+  },
 };
 
 // ⬇️ penting untuk HP
