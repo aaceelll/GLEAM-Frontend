@@ -11,9 +11,9 @@ export const metadata: Metadata = {
   title: "GLEAM",
   description: "Healthcare learning & monitoring",
   icons: {
-    icon: '/favicon.ico',        
-    shortcut: '/favicon.ico',    
-    apple: '/favicon.ico',       
+    icon: '/icon.png',        
+    shortcut: '/icon.png',    
+    apple: '/icon.png',       
   },
 };
 
