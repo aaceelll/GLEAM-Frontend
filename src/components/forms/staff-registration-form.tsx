@@ -313,7 +313,7 @@
                   <p className="text-sm text-gray-600">
                     Sudah punya akun?{" "}
                     <Link
-                      href="/login/staff"
+                      href="/login"
                       className="font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors"
                     >
                       Masuk Sekarang
