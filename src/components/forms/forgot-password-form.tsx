@@ -64,7 +64,7 @@ export function ForgotPasswordForm() {
       const data = await response.json();
       if (!response.ok) throw new Error(data?.message || "Gagal mengubah password");
       setSuccess(true);
-      setTimeout(() => router.push("/login/user"), 2000);
+      setTimeout(() => router.push("/login"), 2000);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Terjadi kesalahan saat mengubah password");
