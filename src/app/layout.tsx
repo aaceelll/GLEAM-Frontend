@@ -12,7 +12,10 @@ export const metadata: Metadata = {
   description: "Healthcare learning & monitoring",
   icons: {
     icon: [
-      { url: "/icon.png?v=gleam2" },                     
+      { url: "/favicon.ico?v=4", type: "image/x-icon" }, // langsung refer ke favicon di src/app
+    ],
+    apple: [
+      { url: "/favicon.ico?v=4" },
     ],
   },
 };
