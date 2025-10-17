@@ -168,7 +168,9 @@ export default function MateriPage() {
       } else {
         fd.append("video_id", "");
       }
-      if (formData.file_pdf) fd.append("file_pdf", formData.file_pdf);
+      if (formData.file_pdf instanceof File) {
+      fd.append("file_pdf", formData.file_pdf, formData.file_pdf.name);
+    }
 
       if (editMode && editId) {
         fd.append("_method", "PATCH");
@@ -178,11 +180,6 @@ export default function MateriPage() {
         });
         setMsg({ type: "success", text: "Konten berhasil diperbarui!" });
       } else {
-        if (!formData.file_pdf) {
-          setMsg({ type: "error", text: "File PDF wajib diunggah." });
-          setSubmitting(false);
-          return;
-        }
         await api.post("/admin/materi/konten", fd, {
           headers: { "Content-Type": "multipart/form-data" },
           withCredentials: true,
@@ -191,6 +188,7 @@ export default function MateriPage() {
       }
 
       setShowModal(false);
+      setFormData((s) => ({ ...s, file_pdf: null }));
       fetchKonten();
       setTimeout(() => setMsg(null), 3000);
     } catch (error: any) {
