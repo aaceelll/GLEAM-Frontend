@@ -168,9 +168,7 @@ export default function MateriPage() {
       } else {
         fd.append("video_id", "");
       }
-      if (formData.file_pdf instanceof File) {
-      fd.append("file_pdf", formData.file_pdf, formData.file_pdf.name);
-    }
+      if (formData.file_pdf) fd.append("file_pdf", formData.file_pdf);
 
       if (editMode && editId) {
         fd.append("_method", "PATCH");
@@ -180,6 +178,11 @@ export default function MateriPage() {
         });
         setMsg({ type: "success", text: "Konten berhasil diperbarui!" });
       } else {
+        if (!formData.file_pdf) {
+          setMsg({ type: "error", text: "File PDF wajib diunggah." });
+          setSubmitting(false);
+          return;
+        }
         await api.post("/admin/materi/konten", fd, {
           headers: { "Content-Type": "multipart/form-data" },
           withCredentials: true,
@@ -188,7 +191,6 @@ export default function MateriPage() {
       }
 
       setShowModal(false);
-      setFormData((s) => ({ ...s, file_pdf: null }));
       fetchKonten();
       setTimeout(() => setMsg(null), 3000);
     } catch (error: any) {
@@ -301,11 +303,11 @@ export default function MateriPage() {
                     key={konten.id}
                     className="group relative bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden"
                   >
-                    <div className={`absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500 to-teal-500 opacity-5 rounded-bl-full`} />
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500 to-teal-500 opacity-5 rounded-bl-full" />
 
                     <div className="relative flex items-start gap-5">
-                      <div className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                      <div className="flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
                         {index + 1}
                       </div>
 
