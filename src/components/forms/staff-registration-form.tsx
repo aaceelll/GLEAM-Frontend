@@ -85,7 +85,7 @@
 
 
         const next = formData.role ? rolePath[formData.role] : "/";
-        router.push(`/login/staff?registered=1&next=${encodeURIComponent(next)}`);
+        router.push("/login?registered=1");
       } catch (err: any) {
         setError(err?.message || "Terjadi kesalahan server.");
       } finally {

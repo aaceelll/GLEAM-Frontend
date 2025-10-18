@@ -169,7 +169,14 @@ export default function AdminForumPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="relative p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Total Diskusi</h3>
+                <button
+                  type="button"
+                  data-testid="stat-total-diskusi"
+                  onClick={() => toast.info(`Total diskusi: ${threads.length}`)}
+                  className="text-left text-lg font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-300 rounded-md cursor-pointer bg-transparent"
+                >
+                  Total Diskusi
+                </button>
                 <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
                   <MessageSquare className="h-6 w-6 text-white" />
                 </div>
@@ -191,7 +198,14 @@ export default function AdminForumPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="relative p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Dipin</h3>
+                <button
+                  type="button"
+                  data-testid="stat-dipin"
+                  onClick={() => toast.info(`Dipin: ${threads.filter(t => t.is_pinned).length}`)}
+                  className="text-left text-lg font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-300 rounded-md cursor-pointer bg-transparent"
+                >
+                  Dipin
+                </button>
                 <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
                   <Pin className="h-6 w-6 text-white" />
                 </div>
@@ -215,7 +229,14 @@ export default function AdminForumPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="relative p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Dikunci</h3>
+                <button
+                  type="button"
+                  data-testid="stat-dikunci"
+                  onClick={() => toast.info(`Dikunci: ${threads.filter(t => t.is_locked).length}`)}
+                  className="text-left text-lg font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-300 rounded-md cursor-pointer bg-transparent"
+                >
+                  Dikunci
+                </button>
                 <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
                   <Lock className="h-6 w-6 text-white" />
                 </div>
