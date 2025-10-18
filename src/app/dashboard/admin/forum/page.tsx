@@ -129,7 +129,7 @@ export default function AdminForumPage() {
   const hoverCard =
     "group relative overflow-hidden rounded-2xl border-2 border-emerald-100 bg-white " +
     "transition-all duration-500 hover:border-emerald-400 " +
-    "hover:shadow-[0_10px_40px_rgba(16,185,129,0.15)] hover:-translate-y-1 cursor-pointer";
+    "hover:shadow-[0_10px_40px_rgba(16,185,129,0.15)] hover:-translate-y-1 cursor-pointer"
 
   return (
     <div className="min-h-screen bg-white p-6">
@@ -168,69 +168,41 @@ export default function AdminForumPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="relative p-6">
               <div className="flex items-center justify-between mb-4">
-                <button
-                  type="button"
-                  data-testid="stat-total-diskusi"
-                  onClick={() => toast.info(`Total diskusi: ${threads.length}`)}
-                  className="text-left text-lg font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-300 rounded-md cursor-pointer bg-transparent"
-                >
-                  Total Diskusi
-                </button>
+                <h3 className="text-lg font-semibold text-gray-900">Total Diskusi</h3>
                 <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
                   <MessageSquare className="h-6 w-6 text-white" />
                 </div>
               </div>
               <div className="flex items-baseline gap-3 mb-3">
-                <div
-                  data-testid="stat-total-count"
-                  className="text-5xl font-bold text-gray-900"
-                >
-                  {threads.length}
-                </div>
+                <div className="text-5xl font-bold text-gray-900">{threads.length}</div>
               </div>
               <div className="inline-flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-200">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span
-                  data-testid="stat-total-label"
-                  className="text-sm font-medium text-emerald-700"
-                >
+                <span className="text-sm font-medium text-emerald-700">
                   {loading ? "Memuat…" : "Terdata saat ini"}
                 </span>
               </div>
             </div>
           </Card>
 
-          {/* Dipinned */}
+          {/* Dipin */}
           <Card className={hoverCard}>
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="relative p-6">
               <div className="flex items-center justify-between mb-4">
-                <button
-                  type="button"
-                  data-testid="stat-dipin"
-                  onClick={() => toast.info(`Dipin: ${threads.filter(t => t.is_pinned).length}`)}
-                  className="text-left text-lg font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-300 rounded-md cursor-pointer bg-transparent"
-                >
-                  Dipin
-                </button>
+                <h3 className="text-lg font-semibold text-gray-900">Dipin</h3>
                 <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
                   <Pin className="h-6 w-6 text-white" />
                 </div>
               </div>
               <div className="flex items-baseline gap-3 mb-3">
-                <div
-                  data-testid="stat-pinned-count"
-                  className="text-5xl font-bold text-gray-900"
-                >
+                <div className="text-5xl font-bold text-gray-900">
                   {threads.filter((t) => t.is_pinned).length}
                 </div>
               </div>
               <div className="inline-flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-200">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span
-                  data-testid="stat-pinned-label"
-                  className="text-sm font-medium text-emerald-700"
-                >
+                <span className="text-sm font-medium text-emerald-700">
                   {loading ? "Memuat…" : "Aktif diprioritaskan"}
                 </span>
               </div>
@@ -242,32 +214,19 @@ export default function AdminForumPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="relative p-6">
               <div className="flex items-center justify-between mb-4">
-                <button
-                  type="button"
-                  data-testid="stat-dikunci"
-                  onClick={() => toast.info(`Dikunci: ${threads.filter(t => t.is_locked).length}`)}
-                  className="text-left text-lg font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-300 rounded-md cursor-pointer bg-transparent"
-                >
-                  Dikunci
-                </button>
+                <h3 className="text-lg font-semibold text-gray-900">Dikunci</h3>
                 <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300">
                   <Lock className="h-6 w-6 text-white" />
                 </div>
               </div>
               <div className="flex items-baseline gap-3 mb-3">
-                <div
-                  data-testid="stat-locked-count"
-                  className="text-5xl font-bold text-gray-900"
-                >
+                <div className="text-5xl font-bold text-gray-900">
                   {threads.filter((t) => t.is_locked).length}
                 </div>
               </div>
               <div className="inline-flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-lg border border-emerald-200">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span
-                  data-testid="stat-locked-label"
-                  className="text-sm font-medium text-emerald-700"
-                >
+                <span className="text-sm font-medium text-emerald-700">
                   {loading ? "Memuat…" : "Tidak menerima balasan"}
                 </span>
               </div>
@@ -300,7 +259,6 @@ export default function AdminForumPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-400" />
               <Input
-                data-testid="forum-search"
                 placeholder="Cari diskusi..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -329,7 +287,6 @@ export default function AdminForumPage() {
                 {threads.map((thread, index) => (
                   <div
                     key={thread.id}
-                    data-testid={`thread-card-${thread.id}`}
                     className="group relative bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden"
                   >
                     {/* Overlay gradient */}
@@ -398,8 +355,6 @@ export default function AdminForumPage() {
                         {/* Action Buttons */}
                         <div className="flex items-center gap-2 pt-3 flex-wrap">
                           <button
-                            data-testid={`thread-pin-toggle-${thread.id}`}
-                            data-state={thread.is_pinned ? 'pinned' : 'unpinned'}
                             onClick={() => handlePinThread(thread.id)}
                             className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow-md hover:scale-105 ${
                               thread.is_pinned
@@ -412,8 +367,6 @@ export default function AdminForumPage() {
                           </button>
 
                           <button
-                            data-testid={`thread-lock-toggle-${thread.id}`}
-                            data-state={thread.is_locked ? 'locked' : 'unlocked'}
                             onClick={() => handleLockThread(thread.id)}
                             className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow-md hover:scale-105 ${
                               thread.is_locked
@@ -426,7 +379,6 @@ export default function AdminForumPage() {
                           </button>
 
                           <button
-                            data-testid={`thread-delete-${thread.id}`}
                             onClick={() => setConfirmDelete({ id: thread.id, title: thread.title })}
                             className="px-4 py-2 rounded-xl text-sm font-semibold bg-gray-100 text-red-600 border-2 border-gray-200 hover:bg-red-50 hover:border-red-300 transition-all shadow-sm hover:shadow-md hover:scale-105"
                           >
@@ -434,11 +386,7 @@ export default function AdminForumPage() {
                             Hapus
                           </button>
 
-                          <Link
-                            href={`/dashboard/admin/forum/${thread.id}`}
-                            data-testid={`thread-detail-${thread.id}`}
-                            className="ml-auto"
-                          >
+                          <Link href={`/dashboard/admin/forum/${thread.id}`} className="ml-auto">
                             <button className={`px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r ${greenGrad} text-white shadow-md hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2`}>
                               Lihat Detail
                               <ArrowRight className="w-4 h-4" />
@@ -463,10 +411,7 @@ export default function AdminForumPage() {
 
       {/* Modal Konfirmasi Hapus */}
       {confirmDelete && (
-        <div
-          data-testid="modal-delete"
-          className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
-        >
+        <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-sm rounded-2xl bg-white border-2 border-gray-100 shadow-2xl">
             <div className="px-5 py-4 border-b-2 border-gray-100 flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-red-100 text-red-600 grid place-items-center">
@@ -485,14 +430,12 @@ export default function AdminForumPage() {
 
             <div className="px-5 py-4 flex items-center justify-end gap-3 border-t-2 border-gray-100">
               <button
-                data-testid="modal-delete-cancel"
                 onClick={() => setConfirmDelete(null)}
                 className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold transition-all"
               >
                 Batal
               </button>
               <button
-                data-testid="modal-delete-confirm"
                 onClick={() => handleDeleteThread(confirmDelete.id)}
                 className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold shadow-md hover:from-red-600 hover:to-rose-700 hover:shadow-lg transition-all"
               >
