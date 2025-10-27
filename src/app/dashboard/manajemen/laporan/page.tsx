@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { FileText, Search, Calendar, RotateCcw, X, ClipboardList, CheckCircle, XCircle, Eye } from "lucide-react";
+import { FileText, Search, Calendar, X, ClipboardList, CheckCircle, XCircle, Eye, Percent } from "lucide-react";
 import { api } from "@/lib/api";
 
 /* ============ Types ============ */
@@ -85,25 +85,19 @@ const LIST_PATH = "/manajemen/quiz/submissions";
 const DETAIL_PATH = "/manajemen/quiz/submissions";
 
 /* ============ Modal Review Jawaban ============ */
-function ReviewModal({
-  open,
-  onClose,
-  data,
-}: {
-  open: boolean;
-  onClose: () => void;
-  data?: SubmissionDetail | null;
-}) {
+function ReviewModal({ open, onClose, data }: { open: boolean; onClose: () => void; data?: SubmissionDetail | null; }) {
   if (!open) return null;
 
   const d = data ?? {};
   const review = d.review || [];
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative w-full max-w-4xl mx-4 rounded-2xl bg-white border-2 border-gray-100 shadow-2xl">
-        <div className="max-h-[85vh] overflow-y-auto">
+      {/* overflow-hidden mencegah isi "kotak" keluar dari radius */}
+      <div className="relative w-full max-w-4xl rounded-2xl bg-white border-2 border-gray-100 shadow-2xl overflow-hidden">
+        {/* gunakan svh agar nyaman di iOS Safari, plus padding agar tidak nempel */}
+        <div className="max-h-[85svh] overflow-y-auto">
           {/* Header */}
           <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b bg-white">
             <div className="flex items-center gap-2">
@@ -264,10 +258,10 @@ function HistoryModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center">
+     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full max-w-3xl mx-4 rounded-2xl bg-white border-2 border-gray-100 shadow-2xl">
-        <div className="max-h-[80vh] overflow-y-auto">
+      <div className="relative w-full max-w-3xl rounded-2xl bg-white border-2 border-gray-100 shadow-2xl overflow-hidden">
+        <div className="max-h-[80svh] sm:max-h-[85svh] overflow-y-auto">
           {/* Header */}
           <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b bg-white">
             <div className="flex items-center gap-2">
@@ -304,24 +298,28 @@ function HistoryModal({
                 {history.map((item, idx) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all"
+                    className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all overflow-hidden"
                   >
                     <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center">
                       <span className="text-sm font-bold text-emerald-700">{idx + 1}</span>
                     </div>
+
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 truncate">{item.bankName}</p>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-600">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
+
+                      {/* flex-wrap + gap seragam bikin rapi di mobile */}
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600">
+                        <span className="inline-flex items-center gap-1">
+                          <span className="opacity-60">•</span>
                           {formatIDTime(item.date)}
                         </span>
-                        <span>•</span>
-                        <span>
+                        <span className="inline-flex items-center gap-1 text-gray-600">
+                          <span className="opacity-60">•</span>
                           Skor: {item.total_score}/{item.max_score}
                         </span>
                       </div>
                     </div>
+
                     <div className="flex items-center gap-3">
                       <span
                         className={`px-3 py-1.5 rounded-full text-xs font-bold ${

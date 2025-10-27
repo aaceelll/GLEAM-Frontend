@@ -135,14 +135,12 @@ export function InteractiveMap({ users, onUserClick }: InteractiveMapProps) {
         `;
 
         marker.bindPopup(popupContent, {
-  maxWidth: 260,
-  keepInView: true,
-  autoPan: true,
-  autoPanPadding: L.point(40, 40),   // ruang kiri/kanan/atas/bawah
-  offset: L.point(0, -8),
-});
+          maxWidth: 260,
+          keepInView: false,     
+          autoPan: false,      
+          offset: L.point(0, -8),
+        });
 
-        
         marker.on("popupopen", () => {
           const btn = document.querySelector(".user-detail-btn");
           if (btn) {
