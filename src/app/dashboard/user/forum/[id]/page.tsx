@@ -293,7 +293,7 @@ export default function ThreadDetailPage() {
     <div className="min-h-screen bg-white pt-16 sm:pt-0">
       <div className="max-w-5xl mx-auto space-y-6">
         
-        {/* Header dengan back button dan refresh */}
+        {/* Header dengan back button */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <Link
             href="/dashboard/user/forum"
@@ -302,16 +302,6 @@ export default function ThreadDetailPage() {
             <ArrowLeft className="w-4 h-4" />
             <span>Kembali</span>
           </Link>
-
-          <Button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            variant="outline"
-            className="border-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50 shadow-sm"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
         </div>
 
         {/* Main Thread Card */}
@@ -349,7 +339,7 @@ export default function ThreadDetailPage() {
             </div>
 
             {/* Title */}
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight break-words break-all md:break-words">
               {thread.title}
             </h1>
 
@@ -375,7 +365,7 @@ export default function ThreadDetailPage() {
 
             {/* Content */}
             <div className="bg-gray-50 p-6 rounded-2xl border-2 border-gray-200">
-              <p className="text-gray-800 leading-relaxed whitespace-pre-wrap text-base">
+              <p className="text-gray-800 leading-relaxed whitespace-pre-wrap text-base break-words break-all md:break-words">
                 {thread.content}
               </p>
             </div>
@@ -421,7 +411,7 @@ export default function ThreadDetailPage() {
                 return (
                   <div
                     key={reply.id}
-                    className={`rounded-2xl p-5 border-2 shadow-md transition-all hover:shadow-lg ${
+                    className={`rounded-2xl p-5 border-2 shadow-md transition-all hover:shadow-lg max-w-full ${
                       isNakes
                         ? "bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200"
                         : isAdmin
@@ -469,8 +459,8 @@ export default function ThreadDetailPage() {
                         <p className="text-xs text-gray-500">{fmtRel(reply.created_at)}</p>
                       </div>
                     </div>
-                    <div className="bg-white p-4 rounded-xl border border-emerald-200 shadow-sm">
-                      <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+                    <div className="bg-white p-4 rounded-xl border border-emerald-200 shadow-sm max-w-full">
+                      <p className="text-gray-800 whitespace-pre-wrap leading-relaxed break-words break-all md:break-words overflow-x-hidden">
                         {reply.content}
                       </p>
                     </div>
