@@ -297,7 +297,12 @@ export default function DiabetesMelitusPage() {
           : [];
 
         if (!alive) return;
-        setKonten(mappedKonten);
+        const sortedKonten = mappedKonten.slice().sort((a, b) => {
+        const ta = new Date(a.created_at ?? a.updated_at ?? 0).getTime();
+        const tb = new Date(b.created_at ?? b.updated_at ?? 0).getTime();
+        return ta - tb; // ASC: terbaru di paling bawah
+      });
+      setKonten(sortedKonten);
         setTes(mappedTes);
       } catch (e: any) {
         if (!alive) return;

@@ -116,18 +116,27 @@ export default function MateriPage() {
   }, []);
 
   async function fetchKonten() {
-    setLoading(true);
-    try {
-      // ⬇️ kirim slug saat memuat daftar
-      const res = await api.get("/admin/materi/konten", { params: { slug: MATERI_SLUG } });
-      setKontenList(res.data?.data || []);
-    } catch (error) {
-      console.error("Gagal memuat konten:", error);
-      setKontenList([]);
-    } finally {
-      setLoading(false);
-    }
+  setLoading(true);
+  try {
+    const res = await api.get("/admin/materi/konten", { params: { slug: MATERI_SLUG } });
+
+    const list: Konten[] = Array.isArray(res.data?.data) ? res.data.data : [];
+
+    // 👉 sort ASC by created_at (terlama duluan, terbaru di bawah)
+    const sorted = list.slice().sort((a, b) => {
+      const ta = new Date(a.created_at ?? a.updated_at ?? 0).getTime();
+      const tb = new Date(b.created_at ?? b.updated_at ?? 0).getTime();
+      return ta - tb; // ASC
+    });
+
+    setKontenList(sorted);
+  } catch (error) {
+    console.error("Gagal memuat konten:", error);
+    setKontenList([]);
+  } finally {
+    setLoading(false);
   }
+}
 
   function openAddModal() {
     setEditMode(false);
@@ -168,8 +177,9 @@ export default function MateriPage() {
       } else {
         fd.append("video_id", "");
       }
-      if (formData.file_pdf) fd.append("file_pdf", formData.file_pdf);
-
+      if (formData.file_pdf) {
+        fd.append("file_pdf", formData.file_pdf); // opsional
+      }
       if (editMode && editId) {
         fd.append("_method", "PATCH");
         await api.post(`/admin/materi/konten/${editId}`, fd, {
@@ -178,12 +188,12 @@ export default function MateriPage() {
         });
         setMsg({ type: "success", text: "Konten berhasil diperbarui!" });
       } else {
-        if (!formData.file_pdf) {
-          setMsg({ type: "error", text: "File PDF wajib diunggah." });
-          setSubmitting(false);
-          return;
-        }
-        await api.post("/admin/materi/konten", fd, {
+        // if (!formData.file_pdf) {
+        //   setMsg({ type: "error", text: "File PDF wajib diunggah." });
+        //   setSubmitting(false);
+        //   return;
+        // }
+         await api.post("/admin/materi/konten", fd, {
           headers: { "Content-Type": "multipart/form-data" },
           withCredentials: true,
         });
@@ -490,7 +500,7 @@ export default function MateriPage() {
 
               <div className="space-y-2">
                 <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
-                  File PDF {!editMode && <span className="text-red-500">*</span>}
+                  File PDF <span className="text-gray-400 font-normal">(opsional)</span>
                 </label>
                 <input
                   type="file"
