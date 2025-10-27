@@ -226,22 +226,35 @@ export default function MateriPage() {
 
   const greenGrad = "from-emerald-500 to-teal-500";
 
-  return (
-    <div className="min-h-screen bg-white p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+          return (
+    <div className="min-h-screen bg-white px-6 md:px-10 py-9">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
-                <FileText className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold text-gray-900">Materi Edukasi</h1>
-                <p className="text-gray-600 mt-0.5">Kelola konten materi Diabetes Melitus</p>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {/* ICON CHIP – versi responsif */}
+            <div className="relative isolate shrink-0">
+              <span
+                aria-hidden
+                className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"
+              />
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
+                <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
+
+             {/* Judul + subjudul */}
+            <div>
+              <h1 className="text-[22px] leading-[1.15] sm:text-3xl md:text-4xl font-bold text-gray-800">
+                Materi Edukasi<br className="hidden sm:block" />
+              </h1>
+              <p className="text-gray-600 mt-1 sm:mt-0.5">
+                Kelola konten materi Diabetes Melitus
+              </p>
+            </div>
           </div>
+        </div>
+
           <button
             onClick={openAddModal}
             className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
@@ -249,8 +262,7 @@ export default function MateriPage() {
             <Plus className="h-5 w-5" />
             Tambah Konten
           </button>
-        </header>
-
+      
         {/* Notification */}
         {msg && (
           <div
@@ -315,7 +327,7 @@ export default function MateriPage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500 to-teal-500 opacity-5 rounded-bl-full" />
 
-                    <div className="relative flex items-start gap-5">
+                    <div className="relative flex flex-col md:flex-row items-start gap-5">
                       <div className="flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
                         {index + 1}
                       </div>
@@ -392,17 +404,17 @@ export default function MateriPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex md:flex-col flex-row items-center gap-2 flex-shrink-0 w-full md:w-auto">
                         <button
                           onClick={() => openEditModal(konten)}
-                          className="p-3 rounded-xl text-amber-600 bg-amber-50 hover:bg-gradient-to-br hover:from-amber-500 hover:to-orange-500 hover:text-white transition-all shadow-sm hover:shadow-lg hover:scale-110"
+                          className="flex-1 md:flex-none p-3 rounded-xl text-amber-600 bg-amber-50 hover:bg-gradient-to-br hover:from-amber-500 hover:to-orange-500 hover:text-white transition-all shadow-sm hover:shadow-lg hover:scale-110"
                           title="Edit"
                         >
                           <Pencil className="h-5 w-5" />
                         </button>
                         <button
                           onClick={() => setConfirmDelete({ id: konten.id, title: konten.judul })}
-                          className="p-3 rounded-xl text-red-600 bg-red-50 hover:bg-gradient-to-br hover:from-red-500 hover:to-pink-500 hover:text-white transition-all shadow-sm hover:shadow-lg hover:scale-110"
+                          className="flex-1 md:flex-none p-3 rounded-xl text-red-600 bg-red-50 hover:bg-gradient-to-br hover:from-red-500 hover:to-pink-500 hover:text-white transition-all shadow-sm hover:shadow-lg hover:scale-110"
                           title="Hapus"
                         >
                           <Trash2 className="h-5 w-5" />

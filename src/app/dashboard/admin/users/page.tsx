@@ -124,22 +124,34 @@ export default function UsersPage() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-white p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+          return (
+    <div className="min-h-screen bg-white px-6 md:px-10 py-9">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
-                <Users className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold text-gray-900">Manajemen Akun dan Peran</h1>
-                <p className="text-gray-600 mt-0.5">Kelola Akun Staff</p>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {/* ICON CHIP – versi responsif */}
+            <div className="relative isolate shrink-0">
+              <span
+                aria-hidden
+                className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"
+              />
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
+
+             {/* Judul + subjudul */}
+            <div>
+              <h1 className="text-[22px] leading-[1.15] sm:text-3xl md:text-4xl font-bold text-gray-800">
+                Manajemen Akun dan Peran<br className="hidden sm:block" />
+              </h1>
+              <p className="text-gray-600 mt-1 sm:mt-0.5">
+                Kelola Akun Staff
+              </p>
+            </div>
           </div>
+        </div>
           <button
             onClick={() => setShowAdd(true)}
             className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
@@ -147,7 +159,7 @@ export default function UsersPage() {
             <UserPlus className="h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
             Tambah Akun
           </button>
-        </header>
+  
 
         {/* Card + Search + Table */}
         <section>

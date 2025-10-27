@@ -422,24 +422,35 @@ export default function AssessmentPage() {
   }
 
   /* ------------------------ UI ------------------------ */
-  return (
-    <div className="min-h-screen bg-white p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+          return (
+    <div className="min-h-screen bg-white px-6 md:px-10 py-9">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
-                <ListChecks className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold text-gray-900">Assessment Manager</h1>
-                <p className="text-gray-600 mt-0.5">
-                  Kelola bank soal & kuisioner skoring di satu halaman
-                </p>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {/* ICON CHIP – versi responsif */}
+            <div className="relative isolate shrink-0">
+              <span
+                aria-hidden
+                className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"
+              />
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
+                <ListChecks className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
+
+             {/* Judul + subjudul */}
+            <div>
+              <h1 className="text-[22px] leading-[1.15] sm:text-3xl md:text-4xl font-bold text-gray-800">
+                Assessment Manager<br className="hidden sm:block" />
+              </h1>
+              <p className="text-gray-600 mt-1 sm:mt-0.5">
+                Kelola bank soal & kuisioner skoring di satu halaman
+              </p>
+            </div>
           </div>
+        </div>
+
           <button
             className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
             onClick={() => setOpenAddBank(true)}
@@ -447,7 +458,7 @@ export default function AssessmentPage() {
             <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
             Tambah Bank Soal
           </button>
-        </header>
+        
 
         {/* Flash message */}
         {msg && (
@@ -674,21 +685,21 @@ export default function AssessmentPage() {
                 {filteredSoal.map((q, idx) => (
                   <div
                     key={q.id}
-                    className="relative overflow-hidden rounded-2xl border-2 border-gray-100 bg-white p-5 hover:border-emerald-300 hover:shadow-lg transition-all"
+                    className="relative overflow-hidden rounded-2xl border-2 border-gray-100 bg-white p-4 sm:p-5 hover:border-emerald-300 hover:shadow-lg transition-all"
                   >
                     {/* Header - nomor + tipe sebagai pill */}
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3">
+                    <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3 sm:gap-4">
+                      <div className="flex items-start gap-3 w-full">
                         <span className="flex-shrink-0 w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 font-bold grid place-items-center shadow-inner">
                           {idx + 1}
                         </span>
-                        <div>
+                        <div className="flex-1 min-w-0 w-full">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="font-semibold text-gray-900 leading-snug">
+                            <h3 className="font-semibold text-gray-900 leading-snug break-words">
                               {q.teks}
                             </h3>
                             <span
-                              className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${
+                              className={`px-2 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap ${
                                 q.tipe === "screening"
                                   ? "bg-violet-50 text-violet-700 border-violet-200"
                                   : "bg-emerald-50 text-emerald-700 border-emerald-200"
@@ -700,18 +711,18 @@ export default function AssessmentPage() {
 
                           {/* opsi sebagai chips */}
                           {q.opsi && q.opsi.length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-2">
+                            <div className="mt-3 flex flex-col gap-2 w-full">
                               {q.opsi.map((opt) => (
                                 <div
                                   key={opt.no}
-                                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-gray-50 border-gray-200"
+                                  className="flex items-start gap-2 px-3 py-2 rounded-xl w-full border bg-gray-50 border-gray-200"
                                 >
-                                  <span className="w-5 h-5 rounded-md bg-gray-200 text-gray-700 text-[10px] font-bold grid place-items-center">
+                                  <span className="w-5 h-5 flex-shrink-0 rounded-md bg-gray-200 text-gray-700 text-[10px] font-bold grid place-items-center">
                                     {opt.no}
                                   </span>
-                                  <span className="text-sm text-gray-700">{opt.teks}</span>
+                                  <span className="text-sm text-gray-700 flex-1 break-words [word-break:break-word]">{opt.teks}</span>
                                   {opt.skor !== undefined && (
-                                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold">
+                                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold whitespace-nowrap flex-shrink-0">
                                       Skor {opt.skor}
                                     </span>
                                   )}
@@ -724,7 +735,7 @@ export default function AssessmentPage() {
 
                       {/* Aksi (hapus) */}
                       <button
-                        className="p-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-red-500 hover:text-white transition-all hover:scale-110 shadow-sm"
+                        className="self-end sm:self-start p-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-red-500 hover:text-white transition-all hover:scale-110 shadow-sm flex-shrink-0"
                         onClick={() => setConfirmDeleteSoal(q.id)}
                         title="Hapus Soal"
                         aria-label="Hapus Soal"

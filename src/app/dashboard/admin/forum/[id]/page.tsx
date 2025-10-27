@@ -150,18 +150,17 @@ export default function AdminForumDetailPage() {
   if (!thread) return null;
 
   return (
-    <div className="min-h-screen bg-white p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-
-        {/* Back link (match user page) + success banner */}
-        <div className="space-y-3">
+    <>
+      <div className="min-h-screen bg-white p-6 pt-6">
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Back Button - Static at top */}
           <Link
             href="/dashboard/admin/forum"
-            className="inline-flex items-center gap-2 text-emerald-700 hover:text-emerald-800"
+            className="inline-flex items-center gap-2 text-emerald-700 hover:text-emerald-800 bg-white px-3 py-2 rounded-xl shadow-md hover:shadow-lg transition-all border-2 border-emerald-100 w-fit mt-4"
           >
             <ArrowLeft className="w-4 h-4" /> Kembali
           </Link>
-
+          {/* Success banner */}
           {successBanner && (
             <div className="
               w-full rounded-2xl border-2 border-emerald-200
@@ -175,7 +174,6 @@ export default function AdminForumDetailPage() {
               <div className="font-semibold">{successBanner}</div>
             </div>
           )}
-        </div>
 
         {/* ======= Header + Konten Thread ======= */}
         <Card className={`${hoverCard} p-0`}>
@@ -183,7 +181,7 @@ export default function AdminForumDetailPage() {
             <div className="flex items-start justify-between gap-6">
               <div className="flex-1 min-w-0 space-y-3">
                 {statusChips}
-                <h1 className="text-[32px] md:text-[40px] leading-tight font-extrabold tracking-tight text-gray-900">
+                <h1 className="text-[32px] md:text-[40px] leading-tight font-extrabold tracking-tight text-gray-900 break-words [word-break:break-word]">
                   {thread.title}
                 </h1>
 
@@ -206,7 +204,7 @@ export default function AdminForumDetailPage() {
             <div className="h-px w-full bg-gradient-to-r from-transparent via-emerald-100 to-transparent my-6" />
 
             <div className="rounded-2xl border-2 border-emerald-100 bg-white/70 p-5">
-              <p className="text-[15px] md:text-base leading-7 text-gray-800 whitespace-pre-wrap">
+              <p className="text-[15px] md:text-base leading-7 text-gray-800 whitespace-pre-wrap break-words [word-break:break-word]">
                 {thread.content}
               </p>
             </div>
@@ -269,7 +267,7 @@ export default function AdminForumDetailPage() {
                             </Button>
                           </div>
 
-                          <div className="mt-3 text-gray-800 whitespace-pre-wrap leading-7">
+                          <div className="mt-3 text-gray-800 whitespace-pre-wrap leading-7 break-words [word-break:break-word]">
                             {reply.content}
                           </div>
                         </div>
@@ -282,6 +280,7 @@ export default function AdminForumDetailPage() {
           )}
         </Card>
       </div>
+    </div>
 
       {/* ===== Modal Konfirmasi Hapus ===== */}
       {confirmOpen !== null && (
@@ -339,6 +338,6 @@ export default function AdminForumDetailPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
