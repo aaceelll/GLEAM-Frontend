@@ -22,6 +22,15 @@ import type {
   User,
 } from "@/types";
 
+const setRoleCookie = (role: string) => {
+  if (typeof window === "undefined") return;
+  document.cookie = `role=${encodeURIComponent(role)}; Path=/; Max-Age=${60*60*24*7}; SameSite=Lax`;
+};
+const clearRoleCookie = () => {
+  if (typeof window === "undefined") return;
+  document.cookie = "role=; Path=/; Max-Age=0; SameSite=Lax";
+};
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -66,12 +75,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  const login = async (data: { login: string; password: string }) => {
+    const login = async (data: { login: string; password: string }) => {
     const res = await authAPI.login(data);
     const { token, user } = res.data as AuthResponse;
 
     setToken(token);
     setTokenCookie(token);
+    setRoleCookie(user.role);   // ⬅️ simpan role ke cookie (dibaca middleware)
     setUser(user);
     return user;
   };
@@ -99,10 +109,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res.data as AuthResponse;
   };
 
-  const logout = () => {
+    const logout = () => {
     authAPI.logout().finally(() => {
       clearToken();
       clearTokenCookie();
+      clearRoleCookie();  // ⬅️ bersihkan role
       setUser(null);
       if (typeof window !== "undefined") window.location.href = "/login";
     });

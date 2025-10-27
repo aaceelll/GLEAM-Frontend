@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 
 interface SidebarProps {
   role: "admin" | "manajemen" | "nakes" | "user";
+  displayName?: string; 
 }
 
 const menuItems = {
@@ -49,7 +50,7 @@ const menuItems = {
   ],
 };
 
-export function Sidebar({ role }: SidebarProps) {
+export function Sidebar({ role, displayName: displayNameProp }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const items = menuItems[role];
@@ -80,7 +81,7 @@ export function Sidebar({ role }: SidebarProps) {
     return () => window.removeEventListener("storage", onStorage);
   }, [user]);
 
-  const displayName = uiUser?.nama || "User";
+  const displayName = displayNameProp ?? uiUser?.nama ?? "User";
   const displayRole = (uiUser?.role as any) || role;
 
   return (
