@@ -259,65 +259,66 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Kanan – preview dashboard */}
-          <div className="relative mt-8 lg:mt-0">
-            <div className="relative z-10 bg-gradient-to-br from-emerald-100/50 to-teal-100/50 rounded-3xl p-4 sm:p-6 md:p-8 backdrop-blur-sm border-2 border-emerald-200/50 shadow-2xl">
-              <div className="aspect-[4/3] sm:aspect-video lg:aspect-square bg-white rounded-2xl shadow-xl p-4 sm:p-5 md:p-6">
-                <div className="h-full flex flex-col space-y-3 sm:space-y-4">
-                  <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-                        <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+           {/* Kanan – preview dashboard */}
+            <div className="relative mt-8 lg:mt-0">
+              <div className="relative z-10 bg-gradient-to-br from-emerald-100/50 to-teal-100/50 rounded-2xl md:rounded-3xl p-4 md:p-8 backdrop-blur-sm border-2 border-emerald-200/50 shadow-2xl">
+                <div className="aspect-square bg-white rounded-xl md:rounded-2xl shadow-xl p-4 md:p-6">
+                  <div className="h-full flex flex-col space-y-3 md:space-y-4">
+                    <div className="flex items-center justify-between pb-3 md:pb-4 border-b border-gray-200">
+                      <div className="flex items-center gap-2 md:gap-3">
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+                          <Activity className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-gray-900 text-xs md:text-sm">Dashboard</div>
+                          <div className="text-[10px] md:text-xs text-gray-500">Monitoring Real-time</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-bold text-gray-900 text-xs sm:text-sm">Dashboard</div>
-                        <div className="text-[10px] sm:text-xs text-gray-500">Monitoring Real-time</div>
+                      <Bell className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" />
+                    </div>
+
+                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg md:rounded-xl p-3 md:p-4 border border-emerald-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] md:text-xs font-semibold text-gray-600">Kadar Glukosa</span>
+                        <span className="text-[10px] md:text-xs text-emerald-600 font-bold">Normal</span>
+                      </div>
+                      <div className="text-2xl md:text-3xl font-bold text-emerald-700 mb-1">
+                        120 <span className="text-base md:text-lg">mg/dL</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[10px] md:text-xs text-gray-500">
+                        <TrendingUp className="w-3 h-3 text-emerald-600" />
+                        <span>+5% dari kemarin</span>
                       </div>
                     </div>
-                    <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
-                  </div>
 
-                  <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-3 sm:p-4 border border-emerald-200">
-                    <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-                      <span className="text-[10px] sm:text-xs font-semibold text-gray-600">Kadar Glukosa</span>
-                      <span className="text-[10px] sm:text-xs text-emerald-600 font-bold">Normal</span>
-                    </div>
-                    <div className="text-2xl sm:text-3xl font-bold text-emerald-700 mb-1">
-                      120 <span className="text-sm sm:text-lg">mg/dL</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-500">
-                      <TrendingUp className="w-3 h-3 text-emerald-600" />
-                      <span>+5% dari kemarin</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 flex-1">
-                    <div className="bg-blue-50 rounded-lg p-2.5 sm:p-3 border border-blue-200">
-                      <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mb-1.5 sm:mb-2" />
-                      <div className="text-[10px] sm:text-xs text-gray-600">Tekanan Darah</div>
-                      <div className="text-xs sm:text-sm font-bold text-blue-700">120/80</div>
-                    </div>
-                    <div className="bg-purple-50 rounded-lg p-2.5 sm:p-3 border border-purple-200">
-                      <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mb-1.5 sm:mb-2" />
-                      <div className="text-[10px] sm:text-xs text-gray-600">Body Mass Index</div>
-                      <div className="text-xs sm:text-sm font-bold text-purple-700">23,4 kkg/m²</div>
-                    </div>
-                    <div className="bg-amber-50 rounded-lg p-2.5 sm:p-3 border border-amber-200">
-                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 mb-1.5 sm:mb-2" />
-                      <div className="text-[10px] sm:text-xs text-gray-600">Checkup Terakhir</div>
-                      <div className="text-[10px] sm:text-xs font-bold text-amber-700">2 hari lalu</div>
-                    </div>
-                    <div className="bg-rose-50 rounded-lg p-2.5 sm:p-3 border border-rose-200">
-                      <Users className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 mb-1.5 sm:mb-2" />
-                      <div className="text-[10px] sm:text-xs text-gray-600">Konsultasi</div>
-                      <div className="text-[10px] sm:text-xs font-bold text-rose-700">5 tersedia</div>
+                    <div className="grid grid-cols-2 gap-2 md:gap-3 flex-1">
+                      <div className="bg-blue-50 rounded-lg p-2 md:p-3 border border-blue-200">
+                        <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-blue-600 mb-1 md:mb-2" />
+                        <div className="text-[10px] md:text-xs text-gray-600">Tekanan Darah</div>
+                        <div className="text-xs md:text-sm font-bold text-blue-700">120/80</div>
+                      </div>
+                      <div className="bg-purple-50 rounded-lg p-2 md:p-3 border border-purple-200">
+                        <Heart className="w-4 h-4 md:w-5 md:h-5 text-purple-600 mb-1 md:mb-2" />
+                        <div className="text-[10px] md:text-xs text-gray-600">Body Mass Index</div>
+                        <div className="text-xs md:text-sm font-bold text-purple-700">23,4 kg/m²</div>
+                      </div>
+                      <div className="bg-amber-50 rounded-lg p-2 md:p-3 border border-amber-200">
+                        <Calendar className="w-4 h-4 md:w-5 md:h-5 text-amber-600 mb-1 md:mb-2" />
+                        <div className="text-[10px] md:text-xs text-gray-600">Checkup Terakhir</div>
+                        <div className="text-[10px] md:text-xs font-bold text-amber-700">2 hari lalu</div>
+                      </div>
+                      <div className="bg-rose-50 rounded-lg p-2 md:p-3 border border-rose-200">
+                        <Users className="w-4 h-4 md:w-5 md:h-5 text-rose-600 mb-1 md:mb-2" />
+                        <div className="text-[10px] md:text-xs text-gray-600">Konsultasi</div>
+                        <div className="text-[10px] md:text-xs font-bold text-rose-700">5 tersedia</div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+              <div className="absolute -top-6 -right-6 w-24 h-24 md:w-32 md:h-32 bg-emerald-400/30 rounded-full blur-3xl" />
+              <div className="absolute -bottom-6 -left-6 w-32 h-32 md:w-40 md:h-40 bg-teal-400/30 rounded-full blur-3xl" />
             </div>
-            <div className="absolute -top-6 -right-6 w-24 h-24 sm:w-32 sm:h-32 bg-emerald-400/30 rounded-full blur-3xl" />
-            <div className="absolute -bottom-6 -left-6 w-28 h-28 sm:w-40 sm:h-40 bg-teal-400/30 rounded-full blur-3xl" />
           </div>
         </div>
       </section>
