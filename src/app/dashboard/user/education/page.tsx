@@ -135,7 +135,7 @@ export default function EducationPage() {
     <div className="min-h-screen bg-white px-6 md:px-10 py-9">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col items-start gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
             {/* ICON CHIP – versi responsif */}
             <div className="relative isolate shrink-0">
