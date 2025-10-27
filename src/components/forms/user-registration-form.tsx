@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, UserPlus, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, UserPlus, CheckCircle2, ShieldAlert } from "lucide-react";
 
 type FormData = {
   nama: string;
@@ -33,6 +33,13 @@ const isApiError = (v: unknown): v is ApiError =>
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
+/* ========= VALIDATORS ========= */
+const isStrongPassword = (v: string) =>
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/.test(v); // min 8, ada lower, upper, special
+
+const isValidPhone = (v: string) => /^08\d{8,11}$/.test(v); // mulai 08, total 10–13 digit
+
+const isGmail = (v: string) => /^[A-Za-z0-9._%+-]+@gmail\.com$/i.test(v); // hanya @gmail.com
 
 export function UserRegistrationForm() {
   const router = useRouter();
@@ -42,8 +49,17 @@ export function UserRegistrationForm() {
   const [showTermsPopup, setShowTermsPopup] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [errors, setErrors] = useState<ErrorMap>({});
-  // NEW: popup sukses bergaya selaras UI
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+
+  // Modal validasi (pengganti alert)
+  const [validation, setValidation] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+  }>({ open: false, title: "", message: "" });
+
+  const showValidation = (message: string, title = "Validasi Gagal") =>
+    setValidation({ open: true, title, message });
 
   const [form, setForm] = useState<FormData>({
     nama: "",
@@ -59,10 +75,11 @@ export function UserRegistrationForm() {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
+  /* ========= SUBMIT (validasi client-side) ========= */
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const requiredFields: (keyof FormData)[] = [
+    const required: (keyof FormData)[] = [
       "nama",
       "email",
       "username",
@@ -71,29 +88,42 @@ export function UserRegistrationForm() {
       "password_confirmation",
     ];
 
-    for (const field of requiredFields) {
-      if (!form[field]) {
-        alert(`Field ${field} wajib diisi`);
+    for (const f of required) {
+      if (!form[f]) {
+        showValidation(`Field ${f} wajib diisi`);
         return;
       }
     }
 
-    if (form.password !== form.password_confirmation) {
-      alert("Password dan konfirmasi password tidak sama");
+    if (!isGmail(form.email)) {
+      showValidation('Email harus menggunakan domain Gmail (contoh: nama@gmail.com).');
       return;
     }
 
-    if (form.password.length < 8) {
-      alert("Password minimal 8 karakter");
+    if (!isValidPhone(form.nomor_telepon)) {
+      showValidation("Nomor telepon harus diawali 08 dan berjumlah 10–13 digit (hanya angka).");
+      return;
+    }
+
+    if (!isStrongPassword(form.password)) {
+      showValidation(
+        "Password minimal 8 karakter dan harus mengandung huruf kecil, huruf besar, dan karakter spesial."
+      );
+      return;
+    }
+
+    if (form.password !== form.password_confirmation) {
+      showValidation("Password dan konfirmasi password tidak sama");
       return;
     }
 
     setShowTermsPopup(true);
   };
 
+  /* ========= PROSES REGISTER (setelah setuju syarat) ========= */
   const handleAcceptTerms = async () => {
     if (!agreedToTerms) {
-      alert("Anda harus menyetujui persyaratan terlebih dahulu");
+      showValidation("Anda harus menyetujui persyaratan terlebih dahulu", "Konfirmasi Diperlukan");
       return;
     }
 
@@ -121,34 +151,27 @@ export function UserRegistrationForm() {
         const d = isApiError(data) ? data : undefined;
         const errorMsg =
           d?.message ||
-          (d?.errors
-            ? Object.values(d.errors).flat().join(", ")
-            : "Registrasi gagal");
+          (d?.errors ? Object.values(d.errors).flat().join(", ") : "Registrasi gagal");
         throw new Error(errorMsg);
       }
 
       const ok = data as ApiSuccess;
       if (ok.token) {
         localStorage.setItem("gleam_token", ok.token);
-        document.cookie = `auth_token=${ok.token}; Path=/; Max-Age=${
-          60 * 60 * 24 * 7
-        }; SameSite=Lax`;
+        document.cookie = `auth_token=${ok.token}; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax`;
       }
 
-      // Ganti alert native -> modal sukses selaras UI
       setShowSuccessPopup(true);
     } catch (err: unknown) {
       console.error("Registration error:", err);
-      const msg =
-        err instanceof Error ? err.message : "Terjadi kesalahan saat registrasi";
-      alert(msg);
+      const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat registrasi";
+      showValidation(msg, "Registrasi Gagal");
     } finally {
       setLoading(false);
       setShowTermsPopup(false);
     }
   };
 
-  // Ketika user menekan tombol OK pada modal sukses
   const proceedAfterSuccess = () => {
     setShowSuccessPopup(false);
     router.push("/dashboard/user/personal-info");
@@ -177,8 +200,7 @@ export function UserRegistrationForm() {
                   Daftar Akun Pasien
                 </h1>
                 <p className="mt-2 text-sm text-gray-600">
-                  Bergabunglah dengan GLEAM untuk monitoring kesehatan diabetes
-                  Anda
+                  Bergabunglah dengan GLEAM untuk monitoring kesehatan diabetes Anda
                 </p>
               </div>
             </div>
@@ -208,8 +230,9 @@ export function UserRegistrationForm() {
                   value={form.email}
                   onChange={(e) => onChange("email", e.target.value)}
                   className="w-full px-4 py-3.5 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                  placeholder="nama@email.com"
+                  placeholder="nama@gmail.com"
                   autoComplete="email"
+                  pattern="^[A-Za-z0-9._%+-]+@gmail\.com$"
                   required
                 />
               </div>
@@ -236,9 +259,14 @@ export function UserRegistrationForm() {
                 <input
                   type="tel"
                   value={form.nomor_telepon}
-                  onChange={(e) => onChange("nomor_telepon", e.target.value)}
+                  onChange={(e) =>
+                    onChange("nomor_telepon", e.target.value.replace(/\D/g, ""))
+                  }
                   className="w-full px-4 py-3.5 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                  placeholder="08123456789"
+                  placeholder="Contoh: 0812345678"
+                  inputMode="numeric"
+                  pattern="^08\d{8,11}$"
+                  maxLength={13}
                   autoComplete="tel"
                   required
                 />
@@ -287,7 +315,9 @@ export function UserRegistrationForm() {
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-emerald-600 transition-colors"
-                    aria-label={showConfirmPassword ? "Sembunyikan konfirmasi password" : "Tampilkan konfirmasi password"}
+                    aria-label={
+                      showConfirmPassword ? "Sembunyikan konfirmasi password" : "Tampilkan konfirmasi password"
+                    }
                   >
                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -360,10 +390,7 @@ export function UserRegistrationForm() {
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
                   className="mt-1 w-4 h-4 text-emerald-600 border-emerald-300 rounded focus:ring-emerald-500"
                 />
-                <label
-                  htmlFor="terms"
-                  className="text-sm font-medium leading-relaxed cursor-pointer text-gray-700"
-                >
+                <label htmlFor="terms" className="text-sm font-medium leading-relaxed cursor-pointer text-gray-700">
                   Saya menyetujui persyaratan di atas dan bersedia berpartisipasi dalam penelitian ini
                 </label>
               </div>
@@ -388,11 +415,10 @@ export function UserRegistrationForm() {
         </div>
       )}
 
-      {/* Success Popup (ganti alert native) */}
+      {/* Success Popup */}
       {showSuccessPopup && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-emerald-100">
-            {/* Header gradient */}
             <div className="relative px-6 pt-6 pb-4 bg-gradient-to-br from-emerald-50 to-white border-b border-emerald-100">
               <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-emerald-400/20 blur-2xl" />
               <div className="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-teal-400/20 blur-2xl" />
@@ -404,18 +430,51 @@ export function UserRegistrationForm() {
               </div>
             </div>
 
-            {/* Body */}
             <div className="px-6 py-5 text-sm text-gray-700">
               <p className="leading-relaxed">
                 Akunmu berhasil dibuat. Silakan lengkapi <span className="font-semibold text-emerald-700">informasi pribadi</span> terlebih dahulu untuk pengalaman yang optimal.
               </p>
             </div>
 
-            {/* Footer */}
             <div className="px-6 py-4 bg-gray-50 border-t border-emerald-100 flex justify-end">
               <button
                 onClick={proceedAfterSuccess}
                 className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                autoFocus
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Validation Popup (ganti semua alert) */}
+      {validation.open && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-rose-100">
+            {/* Header */}
+            <div className="relative px-6 pt-6 pb-4 bg-gradient-to-br from-rose-50 to-white border-b border-rose-100">
+              <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-rose-400/20 blur-2xl" />
+              <div className="absolute -left-8 -bottom-8 h-24 w-24 rounded-full bg-amber-400/20 blur-2xl" />
+              <div className="relative flex items-center gap-3">
+                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 flex items-center justify-center shadow-md ring-4 ring-white/60">
+                  <ShieldAlert className="h-7 w-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-rose-700">{validation.title}</h3>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 text-sm text-gray-700">
+              <p className="leading-relaxed">{validation.message}</p>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-rose-100 flex justify-end">
+              <button
+                onClick={() => setValidation({ open: false, title: "", message: "" })}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
                 autoFocus
               >
                 OK

@@ -8,6 +8,9 @@ import { useRouter } from "next/navigation";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
+// ✅ Password kuat: minimal 8, ada huruf kecil, huruf besar, dan karakter spesial
+const isStrongPassword = (v: string) =>
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/.test(v);
 
 export function ForgotPasswordForm() {
   const router = useRouter();
@@ -45,12 +48,17 @@ export function ForgotPasswordForm() {
       setError("Semua field wajib diisi");
       return;
     }
-    if (formData.password !== formData.password_confirmation) {
-      setError("Password baru dan konfirmasi password tidak sama");
+
+    // ✅ Ganti validasi panjang jadi validasi password kuat
+    if (!isStrongPassword(formData.password)) {
+      setError(
+        "Password baru minimal 8 karakter dan harus mengandung huruf kecil, huruf besar, dan karakter spesial."
+      );
       return;
     }
-    if (formData.password.length < 6) {
-      setError("Password baru minimal 6 karakter");
+
+    if (formData.password !== formData.password_confirmation) {
+      setError("Password baru dan konfirmasi password tidak sama");
       return;
     }
 
@@ -198,7 +206,7 @@ export function ForgotPasswordForm() {
 
             <div className="relative z-10 space-y-6">
               <Link
-                href="/login/user"
+                href="/login"
                 className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-800 transition-colors group"
               >
                 <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
@@ -281,7 +289,7 @@ export function ForgotPasswordForm() {
                       value={formData.password}
                       onChange={(e) => handleChange("password", e.target.value)}
                       className="w-full px-4 py-3.5 pr-12 border-2 rounded-xl text-sm focus:outline-none focus:ring-4 transition-all duration-200 bg-white/90 backdrop-blur-sm border-emerald-200 focus:border-emerald-500 focus:ring-emerald-100"
-                      placeholder="Minimal 6 karakter"
+                      placeholder="Minimal 8 karakter"
                       disabled={loading || success}
                     />
                     <button
@@ -338,7 +346,7 @@ export function ForgotPasswordForm() {
                 <p className="text-sm text-gray-600">
                   Ingat password?{" "}
                   <Link
-                    href="/login/user"
+                    href="/login"
                     className="relative z-20 font-semibold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors cursor-pointer"
                   >
                     Masuk Sekarang
