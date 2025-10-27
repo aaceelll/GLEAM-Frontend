@@ -96,7 +96,7 @@ export default function LokasiPersebaran() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 px-6 md:px-10 py-8">
+      <div className="min-h-screen bg-white px-6 md:px-10 py-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-center h-96">
             <div className="text-center">
@@ -110,27 +110,33 @@ export default function LokasiPersebaran() {
   }
 
   return (
-    <div className="min-h-screen bg-white px-6 md:px-10 py-8">
+    <div className="min-h-screen bg-white px-6 md:px-10 py-9">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <header className="mb-6 animate-fade-in">
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                <MapPin className="h-8 w-8 text-white animate-pulse" />
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {/* ICON CHIP – versi responsif */}
+            <div className="relative isolate shrink-0">
+              <span
+                aria-hidden
+                className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"
+              />
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
+                <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
-            <div className="flex-1">
-              <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent tracking-tight">
-                Lokasi Persebaran
+
+             {/* Judul + subjudul */}
+            <div>
+              <h1 className="text-[22px] leading-[1.15] sm:text-3xl md:text-4xl font-bold text-gray-800">
+                Lokasi Persebaran<br className="hidden sm:block" />
               </h1>
-              <p className="text-base md:text-lg text-gray-600 font-medium">
+              <p className="text-gray-600 mt-1 sm:mt-0.5">
                 Distribusi kasus Diabetes Melitus di Banyumanik
               </p>
             </div>
           </div>
-        </header>
+        </div>
 
         {/* Stats Overview Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -140,7 +146,7 @@ export default function LokasiPersebaran() {
         </div>
 
         {/* Map Card */}
-        <Card className="group relative overflow-hidden border-0 shadow-2xl rounded-3xl backdrop-blur-xl bg-white/80 hover:shadow-emerald-200/50 transition-all duration-700 hover:scale-[1.01]">
+        <Card className="group relative overflow-visible border-0 shadow-2xl rounded-3xl backdrop-blur-xl bg-white/80 hover:shadow-emerald-200/50 transition-all duration-700 hover:scale-[1.01]">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
           <CardHeader className="relative flex items-center justify-between gap-4 border-b border-emerald-100 bg-gradient-to-r from-white/80 to-emerald-50/50 py-5 px-6 backdrop-blur-sm">
             <div className="flex items-center gap-4">
@@ -159,8 +165,11 @@ export default function LokasiPersebaran() {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="w-full h-[500px] rounded-2xl overflow-hidden border-2 border-emerald-100">
-              <InteractiveMap users={users} onUserClick={handleUserClick} />
+            <div className="w-full h-[500px] rounded-2xl border-2 border-emerald-100 overflow-visible">
+              {/* inner wrapper yang ngerounded tile/overlay aja */}
+              <div className="h-full w-full rounded-2xl overflow-hidden">
+                <InteractiveMap users={users} onUserClick={handleUserClick} />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -238,7 +247,7 @@ function RWSection({ kelurahan, rwData, onRWClick, gradient }: RWSectionProps) {
       </CardHeader>
 
       <CardContent className="p-6 space-y-4 relative">
-        <div className="grid grid-cols-1 gap-3 max-h-[600px] overflow-y-auto pr-2 py-1 custom-scrollbar">
+        <div className="grid grid-cols-1 gap-3 max-h-[60vh] sm:max-h-[600px] overflow-y-auto pr-0 sm:pr-2 py-1 custom-scrollbar">
           {rwData.map((rw, idx) => (
             <RWCard
               key={rw.rw}

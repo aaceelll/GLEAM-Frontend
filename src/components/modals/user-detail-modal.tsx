@@ -38,69 +38,65 @@ export function UserDetailModal({ isOpen, onClose, user }: UserDetailModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent
+          className="w-[92vw] max-w-[560px] sm:max-w-md max-h-[90vh] overflow-y-auto rounded-2xl"
+        >
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-2">
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
             Detail Pengguna
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-3 py-4">
-          <DetailItem 
+
+        {/* body scrollable */}
+        <div className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-3 overflow-y-auto">
+          <DetailItem
             icon={<User className="h-5 w-5 text-white" />}
             label="Nama Lengkap"
             value={user.nama}
             bgColor="from-emerald-500 to-teal-600"
           />
-
-          <DetailItem 
+          <DetailItem
             icon={<Mail className="h-5 w-5 text-white" />}
             label="Email"
             value={user.email}
             bgColor="from-blue-500 to-cyan-600"
           />
-
-          <DetailItem 
+          <DetailItem
             icon={<Phone className="h-5 w-5 text-white" />}
             label="Nomor Telepon"
             value={user.nomor_telepon}
             bgColor="from-purple-500 to-pink-600"
           />
-
-          <DetailItem 
+          <DetailItem
             icon={<MapPin className="h-5 w-5 text-white" />}
             label="Wilayah"
             value={`${user.kelurahan} - ${user.rw}`}
             bgColor="from-orange-500 to-red-600"
           />
-
-          <DetailItem 
+          <DetailItem
             icon={<Home className="h-5 w-5 text-white" />}
             label="Alamat"
-            value={user.address || user.alamat || '-'}
+            value={user.address || user.alamat || "-"}
             bgColor="from-green-500 to-emerald-600"
           />
-
           {user.tanggal_lahir && (
-            <DetailItem 
+            <DetailItem
               icon={<Calendar className="h-5 w-5 text-white" />}
               label="Tanggal Lahir"
               value={formatDate(user.tanggal_lahir)}
               bgColor="from-indigo-500 to-purple-600"
             />
           )}
-
           {user.jenis_kelamin && (
-            <DetailItem 
+            <DetailItem
               icon={<User className="h-5 w-5 text-white" />}
               label="Jenis Kelamin"
               value={user.jenis_kelamin}
               bgColor="from-pink-500 to-rose-600"
             />
           )}
-
           {user.pekerjaan && (
-            <DetailItem 
+            <DetailItem
               icon={<Briefcase className="h-5 w-5 text-white" />}
               label="Pekerjaan"
               value={user.pekerjaan}

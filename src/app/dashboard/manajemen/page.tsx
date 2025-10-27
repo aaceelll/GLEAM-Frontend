@@ -9,7 +9,8 @@ import {
   CheckCircle2,
   Loader2,
   BarChart3,
-  Heart
+  Heart,
+  Home
 } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -80,7 +81,7 @@ export default function DashboardManajemen() {
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-all duration-500">
-                <BarChart3 className="h-8 w-8 text-white" />
+                <Home className="h-8 w-8 text-white" />
               </div>
             </div>
             <div className="flex-1">

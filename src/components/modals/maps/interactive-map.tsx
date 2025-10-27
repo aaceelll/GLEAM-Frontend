@@ -134,8 +134,15 @@ export function InteractiveMap({ users, onUserClick }: InteractiveMapProps) {
           </div>
         `;
 
-        marker.bindPopup(popupContent);
+        marker.bindPopup(popupContent, {
+  maxWidth: 260,
+  keepInView: true,
+  autoPan: true,
+  autoPanPadding: L.point(40, 40),   // ruang kiri/kanan/atas/bawah
+  offset: L.point(0, -8),
+});
 
+        
         marker.on("popupopen", () => {
           const btn = document.querySelector(".user-detail-btn");
           if (btn) {
@@ -164,10 +171,10 @@ export function InteractiveMap({ users, onUserClick }: InteractiveMapProps) {
   }, []);
 
   return (
-    <div 
-      id="interactive-map" 
-      className="w-full h-full rounded-2xl overflow-hidden shadow-lg"
-      style={{ minHeight: "500px", zIndex: 0 }}
+    <div
+      id="interactive-map"
+      className="w-full h-full rounded-2xl shadow-lg"
+      style={{ minHeight: "500px", zIndex: 1, overflow: "visible" }}
     />
   );
 }

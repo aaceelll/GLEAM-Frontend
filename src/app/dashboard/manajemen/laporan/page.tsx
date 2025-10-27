@@ -466,31 +466,33 @@ export default function LaporanKeseluruhan() {
   );
 
   return (
-    <div className="min-h-screen bg-white px-6 md:px-10 py-8">
+    <div className="min-h-screen bg-white px-6 md:px-10 py-9">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <header className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-xl">
-            <FileText className="h-7 w-7 text-white" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Laporan Keseluruhan</h1>
-            <p className="text-gray-600 mt-0.5">Riwayat Pre Test & Post Test</p>
-          </div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {/* ICON CHIP – versi responsif */}
+            <div className="relative isolate shrink-0">
+              <span
+                aria-hidden
+                className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"
+              />
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
+                <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              </div>
+            </div>
 
-          {/* Refresh */}
-          <button
-            onClick={() => fetchList()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold
-                       border-2 border-gray-100 text-gray-600 bg-white
-                       transition-all duration-300
-                       hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50
-                       hover:text-emerald-700 hover:shadow-md hover:scale-[1.02]"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Refresh
-          </button>
-        </header>
+             {/* Judul + subjudul */}
+            <div>
+              <h1 className="text-[22px] leading-[1.15] sm:text-3xl md:text-4xl font-bold text-gray-800">
+                Laporan Keseluruhan<br className="hidden sm:block" />
+              </h1>
+              <p className="text-gray-600 mt-1 sm:mt-0.5">
+                Riwayat Pre Test & Post Test
+              </p>
+            </div>
+          </div>
+        </div>
 
         {errorMsg && (
           <div className="rounded-xl border-2 border-amber-200 bg-amber-50 text-amber-800 px-4 py-3">
@@ -550,33 +552,23 @@ export default function LaporanKeseluruhan() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                {/* atur lebar kolom aksi biar stabil */}
+            <div className="overflow-x-auto rounded-2xl border border-gray-100">
+              <table className="w-full min-w-[640px] border-collapse text-sm md:text-base table-fixed">
                 <colgroup>
-                  <col />
-                  <col />
-                  <col />
-                  <col />
-                  <col style={{ width: "140px" }} />
+                  {/* Untuk layar besar (≥ md) */}
+                  <col className="md:w-[18%] w-[22%]" />   {/* No */}
+                  <col className="md:w-[18%] w-[22%]" />  {/* Nama */}
+                  <col className="md:w-[18%] w-[22%]" />  {/* Tanggal */}
+                  <col className="md:w-[18%] w-[22%]" />  {/* Skor */}
+                  <col className="md:w-[18%] w-[22%]" />  {/* Aksi */}
                 </colgroup>
                 <thead>
                   <tr className="bg-gray-50">
-                    <th className="pl-6 py-4 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide border-b-2 border-gray-100">
-                      No
-                    </th>
-                    <th className="py-4 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide border-b-2 border-gray-100">
-                      Nama
-                    </th>
-                    <th className="py-4 text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide border-b-2 border-gray-100">
-                      Tanggal Terbaru
-                    </th>
-                    <th className="py-4 text-center text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide border-b-2 border-gray-100">
-                      Skor
-                    </th>
-                    <th className="pr-6 py-4 text-right text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide border-b-2 border-gray-100">
-                      Aksi
-                    </th>
+                    <th className="pl-12 py-3 text-left font-semibold text-gray-700 border-b">No</th>
+                    <th className="py-3 text-left font-semibold text-gray-700 border-b">Nama</th>
+                    <th className="py-3 text-left font-semibold text-gray-700 border-b">Tanggal Terbaru</th>
+                    <th className="py-3 text-center font-semibold text-gray-700 border-b">Skor</th>
+                    <th className="pr-15 py-3 text-right font-semibold text-gray-700 border-b">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -601,7 +593,7 @@ export default function LaporanKeseluruhan() {
                         key={row.userId}
                         className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-emerald-50/50 hover:to-teal-50/50 transition-colors"
                       >
-                        <td className="pl-6 py-4 text-sm text-gray-600">{idx + 1}</td>
+                        <td className="pl-12 py-4 text-sm text-gray-600">{idx + 1}</td>
                         <td className="py-4 text-sm font-medium text-gray-900">
                           {row.name}
                           {row.count > 1 && (
@@ -629,7 +621,7 @@ export default function LaporanKeseluruhan() {
                             {row.latestScore}%
                           </span>
                         </td>
-                        <td className="pr-6 py-4 text-right">
+                        <td className="pr-11 py-4 text-right">
                           <button
                             onClick={() => handleOpenHistory(row.userId, row.name)}
                             className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors whitespace-nowrap"
@@ -646,7 +638,6 @@ export default function LaporanKeseluruhan() {
             </div>
           </CardContent>
         </Card>
-      </div>
 
       {/* Modal Riwayat User */}
       <HistoryModal
@@ -664,6 +655,7 @@ export default function LaporanKeseluruhan() {
         onClose={() => setReviewOpen(false)} 
         data={reviewData} 
       />
+    </div>
     </div>
   );
 }

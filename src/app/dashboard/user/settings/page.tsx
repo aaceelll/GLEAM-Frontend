@@ -251,12 +251,12 @@ return (
               text-xs sm:text-sm md:text-base py-2 sm:py-2.5
               ${
                 activeTab === "profile"
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow"
-                  : "text-slate-600 hover:bg-slate-50"
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.03]"
+                  : "text-gray-600 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:text-emerald-700 hover:shadow-md"
               }`}
           >
             <User className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span>Profil</span>
+            <span>Profil Saya</span>
           </button>
 
           <button
@@ -266,8 +266,8 @@ return (
               text-xs sm:text-sm md:text-base py-2 sm:py-2.5
               ${
                 activeTab === "location"
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow"
-                  : "text-slate-600 hover:bg-slate-50"
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.03]"
+                  : "text-gray-600 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:text-emerald-700 hover:shadow-md"
               }`}
           >
             <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -281,8 +281,8 @@ return (
               text-xs sm:text-sm md:text-base py-2 sm:py-2.5
               ${
                 activeTab === "security"
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow"
-                  : "text-slate-600 hover:bg-slate-50"
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.03]"
+                  : "text-gray-600 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:text-emerald-700 hover:shadow-md"
               }`}
           >
             <Lock className="h-4 w-4 sm:h-5 sm:w-5" />

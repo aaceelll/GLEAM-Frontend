@@ -390,7 +390,7 @@ export default function DiabetesMelitusPage() {
                 className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"
               />
               <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
-                <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
 
