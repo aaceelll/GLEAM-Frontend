@@ -3,47 +3,40 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { FileText, Search, Calendar, X, Activity, RotateCcw } from "lucide-react";
+import { FileText, Search, Calendar, X, Activity, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 import { api } from "@/lib/api";
+import ScreeningLineChart from "@/components/ScreeningLineChart";
 
 /* ============ Types ============ */
 type Row = {
   id: string | number;
   userId?: string | number;
   name: string;
-  date: string;             // ISO / string dari backend
-  riskPct?: number;         // 0-100 (angka, untuk logika warna)
-  riskText?: string;        // teks mentah dari backend, untuk ditampilkan apa adanya
+  date: string;
+  riskPct?: number;
+  riskText?: string;
 };
 
 type ScreeningDetail = {
   id?: string | number;
   created_at?: string;
   updated_at?: string;
-
-  // tampilan header
   riskPct?: number;
   riskText?: string;
   riskLabel?: string;
-
-  // data pasien
   nama?: string;
   name?: string;
   usia?: string | number;
   jenis_kelamin?: string;
   gender?: string;
-
   bmi?: string | number;
   tekanan_darah?: string;
   sistolik?: number | string;
   diastolik?: number | string;
-
   riwayat_merokok?: string;
   smoker_status?: string;
-
   riwayat_jantung?: string;
   heart_history?: string;
-
   klasifikasi_hipertensi?: string;
   gula_darah?: string;
   blood_sugar?: string | number;
@@ -52,23 +45,20 @@ type ScreeningDetail = {
 /* ============ Helpers ============ */
 const TZ = "Asia/Jakarta";
 
-/** Format waktu ke lokal Indonesia + Asia/Jakarta secara konsisten */
 function formatIDTime(input?: string) {
   if (!input) return "-";
   let s = String(input).trim();
-
   const hasOffset = /[+-]\d{2}:\d{2}$/.test(s);
   const hasZ = /Z$/.test(s);
   const isoish = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(s);
-
-  // normalize ke ISO valid. Jika backend tidak sertakan offset, treat as UTC.
+  
   if (isoish && !hasOffset && !hasZ) {
     s = s.replace(" ", "T") + "Z";
   }
-
+  
   const d = new Date(s);
   if (isNaN(d.getTime())) return "-";
-
+  
   return new Intl.DateTimeFormat("id-ID", {
     timeZone: TZ,
     weekday: "long",
@@ -91,11 +81,13 @@ function first<T = any>(obj: any, keys: string[], fallback?: any): T | any {
   }
   return fallback;
 }
+
 function toNumber(x: any): number | undefined {
   if (x === undefined || x === null) return undefined;
   const n = Number(String(x).replace("%", "").trim());
   return Number.isFinite(n) ? n : undefined;
 }
+
 function coerceArray(root: any): any[] {
   if (!root) return [];
   if (Array.isArray(root)) return root;
@@ -106,73 +98,44 @@ function coerceArray(root: any): any[] {
   return [];
 }
 
-/** ambil teks persentase mentah (mis. "30.51%") tanpa modifikasi */
 function pickRiskText(x: any): string | undefined {
   const raw =
-    first(x, ["risk_text", "riskText"]) ??
-    first(x, ["diabetes_probability", "riskPctStr", "percentage_text", "score_text"]);
-  if (raw != null) return String(raw);
-  const num =
-    toNumber(first(x, ["riskPct", "risk_percentage", "risk_percent"])) ??
-    toNumber(first(x, ["percentage", "score", "diabetes_probability"]));
-  if (typeof num === "number") {
-    // tampilkan sampai 2 desimal TANPA memaksa pembulatan jika integer
-    const s = Number.isInteger(num) ? `${num}` : num.toFixed(2);
-    return `${s}%`;
-  }
-  return undefined;
+    first(x, ["riskText", "diabetes_result", "result", "diabetes_probability"]) ??
+    first(x, ["percentage", "score"]);
+  if (!raw) return undefined;
+  const s = String(raw).trim();
+  if (!s) return undefined;
+  if (s.includes("%")) return s;
+  const n = toNumber(s);
+  return typeof n === "number" ? `${n.toFixed(2)}%` : s;
 }
 
-/** ✅ Klasifikasi sesuai KMK No. HK.01.07/MENKES/4334/2021 */
-function classifyHT_Kemenkes(s: number, d: number): string {
-  const sistol = Number(s);
-  const diastol = Number(d);
-  if (!Number.isFinite(sistol) || !Number.isFinite(diastol) || sistol <= 0 || diastol <= 0) {
-    return "";
-  }
-
-  if (sistol < 120 && diastol < 80) {
-    return "Optimal";
-  } else if ((sistol >= 120 && sistol <= 129) || (diastol >= 80 && diastol <= 84)) {
-    return "Normal";
-  } else if ((sistol >= 130 && sistol <= 139) || (diastol >= 85 && diastol <= 89)) {
-    return "Normal Tinggi (Pra Hipertensi)";
-  } else if (sistol >= 180 || diastol >= 110) {
-    return "Hipertensi Derajat 3";
-  } else if ((sistol >= 160 && sistol <= 179) || (diastol >= 100 && diastol <= 109)) {
-    return "Hipertensi Derajat 2";
-  } else if (sistol >= 140 && diastol < 90) {
-    // khusus HST: syarat "dan", cek sebelum Derajat 1
-    return "Hipertensi Sistolik Terisolasi";
-  } else if ((sistol >= 140 && sistol <= 159) || (diastol >= 90 && diastol <= 99)) {
-    return "Hipertensi Derajat 1";
-  }
-  return "Tidak dapat diklasifikasikan";
+function classifyHT_Kemenkes(sys: number, dia: number): string {
+  if (!sys || !dia) return "-";
+  if (sys < 120 && dia < 80) return "Normal";
+  if (sys <= 129 && dia < 80) return "Meningkat";
+  if ((sys >= 130 && sys <= 139) || (dia >= 80 && dia <= 89)) return "Hipertensi Stage 1";
+  if (sys >= 140 || dia >= 90) return "Hipertensi Stage 2";
+  if (sys >= 180 || dia >= 120) return "Hipertensi Krisis";
+  return "Tidak Terklasifikasi";
 }
 
-
-/** Pemetaan baris list */
+/* ============ Mapping ============ */
 function mapRow(x: any): Row {
-  const id =
-    x.id ?? x.screening_id ?? x.result_id ?? x._id ?? crypto.randomUUID();
+  const id = first(x, ["id", "screening_id", "result_id", "_id"]) ?? crypto.randomUUID();
   const name =
     first(x, ["user.nama", "user.name"]) ??
     first(x, ["nama", "name", "patient_name"], "Tanpa Nama");
-  // urutan tanggal yang benar (jangan default ke now)
-  const date =
-    first(x, ["screened_at", "created_at", "date", "submitted_at"]) ?? "";
+  const date = first(x, ["screened_at", "created_at", "date", "submitted_at"]) ?? "";
   const riskNum =
     toNumber(first(x, ["riskPct", "risk_percentage", "risk_percent"])) ??
     toNumber(first(x, ["percentage", "score", "diabetes_probability"])) ??
     undefined;
   const riskText = pickRiskText(x);
-
   const userId = first(x, ["userId", "user_id", "user.id"]);
-
   return { id, name, date, riskPct: riskNum, riskText, userId };
 }
 
-/** Pemetaan detail untuk modal */
 function mapDetail(root: any): ScreeningDetail {
   const x = root?.data ?? root ?? {};
   const riskPct =
@@ -189,19 +152,16 @@ function mapDetail(root: any): ScreeningDetail {
         : "Risiko Sedang"
       : "Status Risiko");
 
-  // tekanan darah
   const sys = first(x, ["sistolik", "systolic", "systolic_bp", "blood_pressure_systolic"]);
   const dia = first(x, ["diastolik", "diastolic", "diastolic_bp", "blood_pressure_diastolic"]);
   const tekanan =
     first(x, ["tekanan_darah"]) ??
     (sys || dia ? `${sys ?? "-"} / ${dia ?? "-"}` : undefined);
 
-  // gula darah
   const gula =
     first(x, ["gula_darah"]) ??
     (x.blood_glucose_level || x.blood_sugar ? `${x.blood_glucose_level ?? x.blood_sugar} mg/dL` : undefined);
 
-  // klasifikasi HT: prioritas dari backend, lalu hitung fallback
   const klasHT =
     first(x, ["bp_classification", "klasifikasi_hipertensi", "htn_class"]) ??
     classifyHT_Kemenkes(toNumber(sys) ?? 0, toNumber(dia) ?? 0);
@@ -210,49 +170,177 @@ function mapDetail(root: any): ScreeningDetail {
     id: first(x, ["id", "screening_id", "result_id"]),
     created_at: first(x, ["created_at", "screened_at"]),
     updated_at: first(x, ["updated_at"]),
-
     riskPct,
     riskText,
     riskLabel,
-
     nama:
       first(x, ["user.nama"]) ??
       first(x, ["nama", "name", "patient_name", "user.name"]),
     usia: first(x, ["usia", "age"]),
     jenis_kelamin: first(x, ["jenis_kelamin", "gender"]),
     gender: first(x, ["gender"]),
-
     bmi: first(x, ["bmi"]),
     tekanan_darah: tekanan,
     sistolik: sys,
     diastolik: dia,
-
     riwayat_merokok: first(x, ["riwayat_merokok", "smoking_history", "smoker_status"]),
     smoker_status: first(x, ["smoker_status"]),
-
     riwayat_jantung: first(x, ["riwayat_jantung", "heart_disease", "heart_history"]),
     heart_history: first(x, ["heart_history"]),
-
     klasifikasi_hipertensi: klasHT,
     gula_darah: gula,
     blood_sugar: first(x, ["blood_glucose_level", "blood_sugar"]),
   };
 }
 
-/* ====== Endpoint list ====== */
 const LIST_PATH = "/nakes/diabetes-screenings";
 
-/* ============ Modal gabungan (Detail + Riwayat) ============ */
+/* ============ Helper Component untuk Data Card ============ */
+function DataCard({ label, value, icon }: { label: string; value: any; icon: string }) {
+  return (
+    <div className="rounded-xl border-2 border-gray-100 bg-gradient-to-br from-white to-gray-50 p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-start gap-3">
+        <span className="text-2xl">{icon}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{label}</p>
+          <p className="text-base font-bold text-gray-900 truncate">{value || "-"}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DataCardNoIcon({ label, value }: { label: string; value: any }) {
+  return (
+    <div className="rounded-xl border-2 border-gray-100 bg-gradient-to-br from-white to-gray-50 p-4 hover:shadow-md transition-shadow">
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{label}</p>
+        <p className="text-base font-bold text-gray-900 truncate">{value || "-"}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ============ Modal Popup untuk Riwayat yang Diklik ============ */
+function HistoryDetailPopup({
+  open,
+  onClose,
+  detail,
+  loading,
+}: {
+  open: boolean;
+  onClose: () => void;
+  detail: ScreeningDetail | null;
+  loading: boolean;
+}) {
+  if (!open) return null;
+
+  const d = detail ?? {};
+  const pctNum = d.riskPct ?? 0;
+  const pctText = d.riskText ?? (Number.isFinite(pctNum) ? `${pctNum}%` : "-");
+
+  const labelByPct = Number.isFinite(pctNum)
+    ? (pctNum >= 48 ? "Risiko Tinggi" : (pctNum <= 40 ? "Risiko Rendah" : "Risiko Sedang"))
+    : (d.riskLabel ?? "Status Risiko");
+
+  const tone =
+    pctNum >= 48
+      ? "border-red-200 bg-red-50 text-red-900"
+      : pctNum <= 40
+      ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+      : "border-amber-200 bg-amber-50 text-amber-900";
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-slideUp max-h-[90vh] flex flex-col">
+        
+        {/* Header tanpa gradient, solid emerald */}
+        <div className="relative px-6 py-5 bg-emerald-600 overflow-hidden">
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Detail Screening</h2>
+                <p className="text-sm text-white/90">{d.nama || "Pasien"}</p>
+              </div>
+            </div>
+            
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all flex items-center justify-center group"
+            >
+              <X className="w-5 h-5 text-white group-hover:rotate-90 transition-transform" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content dengan scroll */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600 font-medium">Memuat detail screening...</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Status Risiko Badge - persentase lebih kecil */}
+              <div className={`rounded-2xl border-2 p-4 ${tone} shadow-lg`}>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold opacity-70 mb-1">STATUS RISIKO DIABETES</p>
+                    <p className="text-xl font-bold">{labelByPct}</p>
+                    <p className="text-lg font-semibold mt-1">{pctText}</p>
+                    <p className="text-xs opacity-75 mt-1">
+                      Tanggal: {d.created_at ? formatIDTime(d.created_at) : "-"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid Data Screening - tanpa icon */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <DataCardNoIcon label="Nama Pasien" value={d.nama} />
+                <DataCardNoIcon label="Usia" value={d.usia ? `${d.usia} tahun` : "-"} />
+                <DataCardNoIcon label="Jenis Kelamin" value={d.jenis_kelamin || d.gender} />
+                <DataCardNoIcon label="BMI" value={d.bmi} />
+                <DataCardNoIcon label="Tekanan Darah" value={d.tekanan_darah} />
+                <DataCardNoIcon label="Klasifikasi HT" value={d.klasifikasi_hipertensi} />
+                <DataCardNoIcon label="Gula Darah" value={d.gula_darah} />
+                <DataCardNoIcon label="Riwayat Merokok" value={d.riwayat_merokok || d.smoker_status} />
+                <DataCardNoIcon label="Riwayat Jantung" value={d.riwayat_jantung || d.heart_history} />
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold shadow-lg hover:shadow-xl transition-all"
+          >
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============ Modal Gabungan (Detail + Riwayat) ============ */
 function DetailModal({
   open,
   onClose,
   detail,
   history,
+  onHistoryItemClick,
 }: {
   open: boolean;
   onClose: () => void;
   detail?: ScreeningDetail | null;
   history: Row[];
+  onHistoryItemClick: (id: string | number) => void;
 }) {
   const [showHistory, setShowHistory] = useState(false);
   if (!open) return null;
@@ -261,12 +349,10 @@ function DetailModal({
   const pctNum = d.riskPct ?? 0;
   const pctText = d.riskText ?? (Number.isFinite(pctNum) ? `${pctNum}%` : "-");
 
-  const labelByPct =
-  Number.isFinite(pctNum)
+  const labelByPct = Number.isFinite(pctNum)
     ? (pctNum >= 48 ? "Risiko Tinggi" : (pctNum <= 40 ? "Risiko Rendah" : "Risiko Sedang"))
     : (d.riskLabel ?? "Status Risiko");
 
-  // tone konsisten dengan halaman Input
   const tone =
     pctNum >= 48
       ? "border-red-200 bg-red-50 text-red-900"
@@ -274,15 +360,13 @@ function DetailModal({
       ? "border-emerald-200 bg-emerald-50 text-emerald-900"
       : "border-amber-200 bg-amber-50 text-amber-900";
 
-      
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center">
+    <div className="fixed inset-0 z-[50] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full max-w-5xl mx-4 rounded-2xl bg-white border-2 border-gray-100 shadow-2xl">
-        {/* lock tinggi modal supaya tidak “membengkak”, konten di-scroll */}
-        <div className="max-h-[85vh] overflow-y-auto">
-          {/* header */}
-          <div className="flex items-center justify-between gap-3 px-6 py-4 border-b">
+      <div className="relative w-full max-w-5xl mx-4 rounded-2xl bg-white border-2 border-gray-100 shadow-2xl overflow-hidden">
+        <div className="max-h-[85vh] flex flex-col">
+          {/* Header - Sticky */}
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b bg-white shadow-sm">
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 grid place-items-center">
                 <Activity className="w-5 h-5 text-white" />
@@ -292,15 +376,41 @@ function DetailModal({
             <button
               aria-label="Tutup"
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <X className="w-4 h-4 text-gray-600" />
             </button>
           </div>
 
-          {/* body */}
-          <div className="p-6 space-y-6">
-            {/* status risiko */}
+          {/* Body - Scrollable */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* GRAFIK RIWAYAT SCREENING */}
+            {history.length > 0 && (
+              <div className="mb-6">
+                <ScreeningLineChart 
+                  data={history.map(h => ({
+                    id: h.id,
+                    created_at: h.date,
+                    diabetes_probability: h.riskText || `${h.riskPct ?? 0}%`,
+                    patient_name: h.name,
+                    age: 0,
+                    gender: "",
+                    systolic_bp: 0,
+                    diastolic_bp: 0,
+                    heart_disease: "",
+                    smoking_history: "",
+                    bmi: 0,
+                    blood_glucose_level: 0,
+                    diabetes_result: "",
+                    bp_classification: "",
+                    bp_recommendation: "",
+                  }))} 
+                  height={280}
+                />
+              </div>
+            )}
+
+            {/* Status Risiko */}
             <div className={`rounded-xl border px-4 py-3 ${tone}`}>
               <p className="font-semibold">
                 {labelByPct} <span className="opacity-90">({pctText})</span>
@@ -308,12 +418,10 @@ function DetailModal({
               <p className="text-sm opacity-70">Berdasarkan screening terbaru</p>
             </div>
 
-            {/* grid data */}
+            {/* Grid Data */}
             <div className="rounded-2xl border-2 border-gray-100 bg-white">
               <div className="px-5 py-4 border-b">
-                <p className="text-sm font-semibold text-gray-700">
-                  Data Screening Terbaru
-                </p>
+                <p className="text-sm font-semibold text-gray-700">Data Screening Terbaru</p>
               </div>
               <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
@@ -325,55 +433,40 @@ function DetailModal({
                     label: "Tekanan Darah",
                     value:
                       d.tekanan_darah ??
-                      (d.sistolik || d.diastolik
-                        ? `${d.sistolik ?? "-"} / ${d.diastolik ?? "-"}`
-                        : "-"),
+                      (d.sistolik || d.diastolik ? `${d.sistolik ?? "-"} / ${d.diastolik ?? "-"}` : "-"),
+                  },
+                  { label: "Klasifikasi HT", value: d.klasifikasi_hipertensi ?? "-" },
+                  { label: "Gula Darah", value: d.gula_darah ?? (d.blood_sugar ? `${d.blood_sugar} mg/dL` : "-") },
+                  {
+                    label: "Riwayat Merokok",
+                    value: d.riwayat_merokok ?? d.smoker_status ?? "-",
                   },
                   {
-                    label: "Klasifikasi Hipertensi",
-                    value: d.klasifikasi_hipertensi ?? "-",
+                    label: "Riwayat Jantung",
+                    value: d.riwayat_jantung ?? d.heart_history ?? "-",
                   },
-                  { label: "Riwayat Merokok", value: d.riwayat_merokok ?? d.smoker_status ?? "-" },
-                  { label: "Riwayat Jantung", value: d.riwayat_jantung ?? "-" },
-                  { label: "Gula Darah", value: d.gula_darah ?? d.blood_sugar ?? "-" },
-                ].map((it, i) => (
-                  <div
-                    key={i}
-                    className="rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-3"
-                  >
-                    <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">
-                      {it.label}
-                    </p>
-                    <p className="mt-1 font-semibold text-gray-900">
-                      {it.value}
-                    </p>
+                ].map((item, idx) => (
+                  <div key={idx} className="rounded-lg border border-gray-200 p-3 bg-gray-50">
+                    <p className="text-xs text-gray-500 mb-1">{item.label}</p>
+                    <p className="font-semibold text-gray-900">{item.value}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Riwayat (collapsible) */}
+            {/* Riwayat Screening */}
             <div className="rounded-2xl border-2 border-gray-100 bg-white">
               <div className="px-5 py-4 border-b flex items-center justify-between">
-                <p className="text-sm font-semibold text-gray-700">
-                  Riwayat Screening
-                </p>
+                <p className="text-sm font-semibold text-gray-700">Riwayat Screening</p>
                 <button
-                  type="button"
-                  onClick={() => setShowHistory((v) => !v)}
-                  className="px-4 py-2 rounded-xl font-semibold
-                             border-2 border-gray-100 text-gray-600 bg-white
-                             transition-all duration-300
-                             hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50
-                             hover:text-emerald-700 hover:shadow-md hover:scale-[1.02]"
-                  aria-expanded={showHistory}
-                  aria-controls="riwayat-panel"
+                  onClick={() => setShowHistory(!showHistory)}
+                  className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-800"
                 >
+                  {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   {showHistory ? "Sembunyikan" : "Tampilkan"}
                 </button>
               </div>
 
-              {/* wrapper supaya tinggi card TETAP, list-nya yang scroll */}
               <div
                 id="riwayat-panel"
                 className={`transition-[max-height] duration-200 ease-in-out overflow-hidden ${
@@ -382,24 +475,21 @@ function DetailModal({
               >
                 <div className="p-4 max-h-[45vh] overflow-y-auto">
                   {history.length === 0 ? (
-                    <p className="text-center text-gray-500 py-10">
-                      Belum ada riwayat.
-                    </p>
+                    <p className="text-center text-gray-500 py-10">Belum ada riwayat.</p>
                   ) : (
                     <ul className="divide-y divide-gray-100">
                       {history.map((r, i) => (
                         <li
                           key={`${r.id}-${i}`}
-                          className="flex items-center justify-between py-3"
+                          onClick={() => onHistoryItemClick(r.id)}
+                          className="flex items-center justify-between py-3 cursor-pointer hover:bg-emerald-50 rounded-lg px-2 transition-colors"
                         >
                           <div className="flex items-center gap-3">
                             <span className="w-7 h-7 rounded-lg bg-gray-100 text-gray-700 grid place-items-center font-semibold">
                               {i + 1}
                             </span>
                             <div className="text-sm">
-                              <p className="font-semibold text-gray-900">
-                                {formatIDTime(r.date)}
-                              </p>
+                              <p className="font-semibold text-gray-900">{formatIDTime(r.date)}</p>
                               <p className="text-xs text-gray-500">{r.name}</p>
                             </div>
                           </div>
@@ -410,7 +500,6 @@ function DetailModal({
                   )}
                 </div>
               </div>
-              {/* end riwayat */}
             </div>
           </div>
         </div>
@@ -419,18 +508,23 @@ function DetailModal({
   );
 }
 
-/* ============ Page ============ */
+/* ============ Page Component ============ */
 export default function LaporanKeseluruhan() {
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // modal gabungan
+  // Modal gabungan
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<ScreeningDetail | null>(null);
   const [historyItems, setHistoryItems] = useState<Row[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  // Modal secondary untuk history item yang diklik
+  const [selectedHistoryDetail, setSelectedHistoryDetail] = useState<ScreeningDetail | null>(null);
+  const [showHistoryDetailPopup, setShowHistoryDetailPopup] = useState(false);
+  const [loadingHistoryDetail, setLoadingHistoryDetail] = useState(false);
 
   async function fetchList() {
     setLoading(true);
@@ -440,10 +534,9 @@ export default function LaporanKeseluruhan() {
       const arr = coerceArray(res?.data ?? res);
       const mapped: Row[] = arr.map(mapRow);
 
-      // gabung per user: ambil entri terbaru tiap user
       const byUser = new Map<string | number, Row>();
       for (const r of mapped) {
-        const key = r.userId ?? r.name; // fallback ke nama kalau userId kosong
+        const key = r.userId ?? r.name;
         const prev = byUser.get(key as any);
         if (!prev) {
           byUser.set(key as any, r);
@@ -474,14 +567,12 @@ export default function LaporanKeseluruhan() {
     setHistoryItems([]);
     setDetailLoading(true);
     try {
-      // 1) ambil seluruh riwayat user
       const { data } = await api.get(`/nakes/users/${userId}/diabetes-screenings`);
       const items: Row[] = coerceArray(data)
         .map(mapRow)
         .sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
       setHistoryItems(items);
 
-      // 2) ambil detail screening TERBARU
       if (items[0]) {
         const det = await api.get(`/nakes/diabetes-screenings/${items[0].id}`);
         setDetail(mapDetail(det.data));
@@ -493,6 +584,27 @@ export default function LaporanKeseluruhan() {
       setDetail({ nama: fallbackName, riskLabel: "Detail tidak ditemukan", riskPct: 0, riskText: "0%" });
     } finally {
       setDetailLoading(false);
+    }
+  }
+
+  async function fetchSpecificScreeningDetail(screeningId: string | number) {
+    setLoadingHistoryDetail(true);
+    setShowHistoryDetailPopup(true);
+    setSelectedHistoryDetail(null);
+    
+    try {
+      const { data } = await api.get(`/nakes/diabetes-screenings/${screeningId}`);
+      setSelectedHistoryDetail(mapDetail(data));
+    } catch (e) {
+      console.error(e);
+      setSelectedHistoryDetail({ 
+        nama: "Error", 
+        riskLabel: "Gagal memuat detail", 
+        riskPct: 0, 
+        riskText: "0%" 
+      });
+    } finally {
+      setLoadingHistoryDetail(false);
     }
   }
 
@@ -515,7 +627,6 @@ export default function LaporanKeseluruhan() {
             <p className="text-gray-600 mt-0.5">Riwayat Screening Pasien</p>
           </div>
 
-          {/* tombol refresh */}
           <button
             onClick={fetchList}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold
@@ -538,9 +649,7 @@ export default function LaporanKeseluruhan() {
         {/* Table Card */}
         <Card className="rounded-3xl border-2 border-gray-100 shadow-2xl">
           <CardContent className="p-0">
-            {/* Toolbar */}
             <div className="p-5 md:p-6 border-b-2 border-gray-100 flex flex-col md:flex-row gap-4 md:items-center">
-              {/* Search left */}
               <div className="relative flex-1 max-w-xl">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
@@ -551,7 +660,6 @@ export default function LaporanKeseluruhan() {
                 />
               </div>
 
-              {/* Total Screening (jumlah user unik yang tampil) */}
               <div className="md:ml-auto">
                 <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-gray-100 bg-white/80 backdrop-blur shadow-sm">
                   <span className="inline-flex w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -565,7 +673,6 @@ export default function LaporanKeseluruhan() {
               </div>
             </div>
 
-            {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
@@ -637,16 +744,56 @@ export default function LaporanKeseluruhan() {
         </Card>
       </div>
 
-      {/* Modal gabungan */}
-      <DetailModal open={open} onClose={() => setOpen(false)} detail={detail} history={historyItems} />
+      {/* Modal Gabungan */}
+      <DetailModal 
+        open={open} 
+        onClose={() => setOpen(false)} 
+        detail={detail} 
+        history={historyItems}
+        onHistoryItemClick={fetchSpecificScreeningDetail}
+      />
+
+      {/* Modal Popup untuk Riwayat yang Diklik */}
+      <HistoryDetailPopup
+        open={showHistoryDetailPopup}
+        onClose={() => setShowHistoryDetailPopup(false)}
+        detail={selectedHistoryDetail}
+        loading={loadingHistoryDetail}
+      />
+
+      {/* CSS Animations */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.2s ease-out;
+        }
+
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }
 
-/* ============ Small UI ============ */
+/* ============ Small UI Components ============ */
 function RiskChip({ value, text }: { value?: number; text?: string }) {
   const pct = value ?? 0;
-  // tema warna konsisten input page
   const theme =
     pct >= 48
       ? "from-red-600 to-rose-600"
