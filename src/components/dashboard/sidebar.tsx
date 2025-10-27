@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import {
   Home, FileText, ClipboardList, MessageSquare, Users, Settings,
   BarChart3, MapPin, Activity, User as UserIcon, History, BookOpen, LogOut,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Menu, X 
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -56,6 +56,12 @@ export function Sidebar({ role }: SidebarProps) {
 
   const [uiUser, setUiUser] = useState<{ nama?: string; role?: string } | null>(null);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Tutup otomatis saat navigasi pindah halaman
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const pick = () => {
@@ -78,26 +84,61 @@ export function Sidebar({ role }: SidebarProps) {
   const displayRole = (uiUser?.role as any) || role;
 
   return (
-    <aside className="h-full bg-white border-r border-gray-200 shadow-sm overflow-y-auto">
+  <>
+    {/* Tombol buka sidebar (hanya di HP) */}
+    <button
+      onClick={() => setMobileOpen(true)}
+      className="lg:hidden fixed top-4 left-4 z-40 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200 bg-white/90 shadow-md"
+      aria-label="Buka menu"
+    >
+      <Menu className="h-5 w-5 text-emerald-700" />
+    </button>
+
+    {/* Overlay hitam transparan di belakang sidebar */}
+    <div
+      onClick={() => setMobileOpen(false)}
+      className={cn(
+        "lg:hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px] transition-opacity",
+        mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      )}
+    />
+
+    {/* Sidebar utama */}
+    <aside
+      className={cn(
+        "fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300",
+        mobileOpen ? "translate-x-0" : "-translate-x-full",
+        "lg:static lg:translate-x-0 lg:w-auto",
+        "h-full bg-white border-r border-gray-200 shadow-sm overflow-y-auto"
+      )}
+    >
+
       {/* Brand (besar + divider) */}
       <div className="px-6 pt-6 pb-4">
-        <div className="flex items-center gap-3">
-          <img
-            src="/images/gleam-logo.png"
-            alt="GLEAM"
-            className="w-14 h-14 md:w-14 md:h-20 rounded-xl object-contain"
-          />
-          <div>
-            <h1 className="text-4xl md:text-3xl font-bold tracking-tight text-gray-900 leading-none">
-              GLEAM
-            </h1>
-            <p className="text-[13px] md:text-xs text-gray-500 leading-tight">
-              Glucose, Learning, Education,<br /> and Monitoring
-            </p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img src="/images/gleam-logo.png" alt="GLEAM" className="w-14 h-14 md:w-14 md:h-20 rounded-xl object-contain" />
+            <div>
+              <h1 className="text-4xl md:text-3xl font-bold tracking-tight text-gray-900 leading-none">GLEAM</h1>
+              <p className="text-[13px] md:text-xs text-gray-500 leading-tight">
+                Glucose, Learning, Education,<br /> and Monitoring
+              </p>
+            </div>
           </div>
+
+          {/* Tombol close (hanya mobile) */}
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200"
+            aria-label="Tutup menu"
+          >
+            <X className="h-5 w-5 text-gray-700" />
+          </button>
         </div>
+
+        {/* divider di bawah brand */}
         <div className="mt-5 border-t border-gray-200" />
-      </div>
+      </div>   
 
       {/* Navigation (UI & hover tetap) */}
       <nav className="px-4 py-3">
@@ -188,5 +229,6 @@ export function Sidebar({ role }: SidebarProps) {
         )}
       </div>
     </aside>
+      </>
   );
 }
