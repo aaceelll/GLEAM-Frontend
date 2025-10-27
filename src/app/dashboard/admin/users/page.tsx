@@ -191,42 +191,39 @@ export default function UsersPage() {
                   placeholder="Cari nama, username, atau email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
+                  className="pl-9 rounded-xl border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
                 />
               </div>
             </div>
 
             {/* Table */}
-            <div className="px-3 pb-4">
-              <div className="overflow-x-auto">
+            <div className="overflow-x-auto">
+              <div className="px-6">
                 <table className="w-full">
-                  <thead>
-                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
-                      <th className="text-left p-4 text-sm font-semibold text-gray-700">Nama</th>
-                      <th className="text-left p-4 text-sm font-semibold text-gray-700">Username</th>
-                      <th className="text-left p-4 text-sm font-semibold text-gray-700">Email</th>
-                      <th className="text-left p-4 text-sm font-semibold text-gray-700">Nomor Telepon</th>
-                      <th className="text-left p-4 text-sm font-semibold text-gray-700">Role</th>
-                      <th className="text-center p-4 text-sm font-semibold text-gray-700">Aksi</th>
+                  <thead className="bg-gradient-to-r from-emerald-50 to-teal-50">
+                    <tr className="border-b-2 border-gray-200">
+                      <th className="text-left p-4 font-bold text-gray-700">Nama</th>
+                      <th className="text-left p-4 font-bold text-gray-700">Username</th>
+                      <th className="text-left p-4 font-bold text-gray-700">Email</th>
+                      <th className="text-left p-4 font-bold text-gray-700">No. HP</th>
+                      <th className="text-left p-4 font-bold text-gray-700">Role</th>
+                      <th className="text-center p-4 font-bold text-gray-700">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td className="p-8 text-center text-gray-500" colSpan={6}>
-                          <div className="flex flex-col items-center justify-center gap-3">
-                            <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
-                            <p className="text-sm font-medium">Memuat data...</p>
-                          </div>
+                        <td colSpan={6} className="text-center p-8">
+                          <div className="inline-block w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
                         </td>
                       </tr>
                     ) : currentRows.length === 0 ? (
                       <tr>
-                        <td className="p-8 text-center text-gray-500" colSpan={6}>
+                        <td colSpan={6} className="text-center p-8">
                           {searchQuery ? (
                             <div className="py-8">
-                              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
-                                <Search className="h-8 w-8 text-gray-400" />
+                              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-200 mb-4">
+                                <Search className="h-8 w-8 text-amber-600" />
                               </div>
                               <p className="text-gray-700 font-bold">Tidak ada hasil pencarian</p>
                               <p className="text-sm text-gray-500 mt-1">Coba kata kunci lain</p>
@@ -297,11 +294,11 @@ export default function UsersPage() {
               </div>
             </div>
 
-            {/* Pagination */}
+            {/* Pagination - UPDATED FOR RESPONSIVE */}
             {totalPages > 1 && (
-              <div className="px-6 pb-4">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-gray-50 to-slate-50 border-2 border-gray-100 rounded-2xl p-4">
-                  <p className="text-sm text-gray-600">
+              <div className="px-3 sm:px-6 pb-4">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 bg-gradient-to-r from-gray-50 to-slate-50 border-2 border-gray-100 rounded-2xl p-3 sm:p-4">
+                  <p className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
                     Menampilkan{" "}
                     <span className="font-medium text-gray-900">
                       {startIndex + 1}-{Math.min(endIndex, filteredRows.length)}
@@ -312,13 +309,13 @@ export default function UsersPage() {
                     </span>{" "}
                     user
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="border-gray-300 hover:bg-emerald-50 hover:border-emerald-300 disabled:opacity-50 rounded-xl"
+                      className="border-gray-300 hover:bg-emerald-50 hover:border-emerald-300 disabled:opacity-50 rounded-xl text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9"
                     >
                       Sebelumnya
                     </Button>
@@ -336,8 +333,8 @@ export default function UsersPage() {
                           onClick={() => setCurrentPage(page)}
                           className={
                             currentPage === page
-                              ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl shadow-md"
-                              : "border-gray-300 hover:bg-emerald-50 hover:border-emerald-300 rounded-xl"
+                              ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl shadow-md text-xs sm:text-sm min-w-[2rem] sm:min-w-[2.5rem] h-8 sm:h-9 px-2 sm:px-3"
+                              : "border-gray-300 hover:bg-emerald-50 hover:border-emerald-300 rounded-xl text-xs sm:text-sm min-w-[2rem] sm:min-w-[2.5rem] h-8 sm:h-9 px-2 sm:px-3"
                           }
                         >
                           {page}
@@ -349,7 +346,7 @@ export default function UsersPage() {
                       size="sm"
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
-                      className="border-gray-300 hover:bg-emerald-50 hover:border-emerald-300 disabled:opacity-50 rounded-xl"
+                      className="border-gray-300 hover:bg-emerald-50 hover:border-emerald-300 disabled:opacity-50 rounded-xl text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9"
                     >
                       Selanjutnya
                     </Button>
@@ -402,7 +399,7 @@ export default function UsersPage() {
           <div className="px-6 py-4 border-b border-gray-100">
             <AlertDialogDescription className="text-gray-600">
               Apakah Anda yakin ingin menghapus akun{" "}
-              <b className="text-gray-900">“{toDelete?.nama}”</b>? Tindakan ini tidak dapat
+              <b className="text-gray-900">"{toDelete?.nama}"</b>? Tindakan ini tidak dapat
               dibatalkan.
             </AlertDialogDescription>
           </div>
