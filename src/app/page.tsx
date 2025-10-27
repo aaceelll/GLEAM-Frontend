@@ -1,29 +1,74 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import React, { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { ChevronDown } from "lucide-react";
+import { GleamLogo } from "@/components/gleam-logo";
 import {
-  Sparkles,
-  Brain,
-  Users,
-  TrendingUp,
-  BookOpen,
-  Target,
-  Award,
-  Zap,
-  Shield,
-  Heart,
   Activity,
-  Bell,
+  BookOpen,
+  Heart,
+  MessageSquare,
+  FileText,
+  Clock,
+  CheckCircle2,
+  TrendingUp,
+  Users,
+  Shield,
   BarChart3,
   Calendar,
-  ChevronDown,
+  Bell,
+  Sparkles,
+  ArrowRight,
+  Zap,
+  Target,
+  Award,
+  Smartphone,
+  Brain,
+  HeartPulse,
 } from "lucide-react";
-import Link from "next/link";
-import { GleamLogo } from "@/components/gleam-logo";
 
-// Dropdown menu component
-function AuthDropdown({
+/* ===== Lightweight UI helpers (agar file mandiri) ===== */
+type ButtonVariant = "default" | "ghost" | "outline";
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: ButtonVariant;
+  className?: string;
+};
+const Button: React.FC<ButtonProps> = ({ children, variant = "default", className = "", ...props }) => {
+  const base = "inline-flex items-center justify-center font-semibold transition-all cursor-pointer border-0";
+  const variantCls =
+    variant === "ghost"
+      ? "bg-transparent"
+      : variant === "outline"
+      ? "bg-white"
+      : "bg-gradient-to-r from-emerald-600 to-teal-600 text-white";
+  return (
+    <button className={`${base} ${variantCls} ${className}`} {...props}>
+      {children}
+    </button>
+  );
+};
+
+const Card: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
+  <div className={`bg-white rounded-3xl ${className}`}>{children}</div>
+);
+const CardHeader: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
+  <div className={`p-4 md:p-6 ${className}`}>{children}</div>
+);
+const CardTitle: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
+  <h3 className={className}>{children}</h3>
+);
+const CardContent: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
+  <div className={`px-4 pb-4 md:px-6 md:pb-6 ${className}`}>{children}</div>
+);
+const CardDescription: React.FC<React.PropsWithChildren<{ className?: string }>> = ({
+  children,
+  className = "",
+}) => <p className={className}>{children}</p>;
+
+/* ================== Page ================== */
+
+function DropdownButton({
   label,
   items,
 }: {
@@ -31,16 +76,36 @@ function AuthDropdown({
   items: { label: string; href: string }[];
 }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // close on click outside / esc
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
   return (
-    <div className="relative">
+    <div className="relative" ref={ref}>
       <button
-        onClick={() => setOpen(!open)}
-        className={`group relative px-3 py-2 md:px-5 md:py-2.5 text-sm md:text-base font-bold rounded-xl transition-all duration-300 hover:-translate-y-0.5 ${label === "Daftar"
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`group relative inline-flex h-9 px-3 sm:h-10 sm:px-4 md:h-11 md:px-6 items-center rounded-2xl font-semibold text-sm md:text-base overflow-hidden transition-all
+    ${label === "Daftar"
       ? "text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl"
       : "border-2 border-emerald-200 text-emerald-700 bg-emerald-50/50 backdrop-blur-sm hover:border-emerald-400 hover:bg-emerald-100 hover:shadow-lg hover:-translate-y-0.5"
     }`}
       >
-        <span className="relative z-10 flex items-center gap-2">
+        <span className="relative z-10 flex items-center gap-1.5 md:gap-2">
           {label}
           <ChevronDown className="w-3 h-3 md:w-4 md:h-4 opacity-80" />
         </span>
@@ -79,13 +144,14 @@ export default function HomePage() {
   return (
     <>
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 -right-40 w-[500px] h-[500px] bg-emerald-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob" />
-        <div className="absolute top-0 right-20 w-[500px] h-[500px] bg-teal-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob animation-delay-2000" />
-        <div className="absolute -bottom-40 right-1/4 w-[500px] h-[500px] bg-green-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob animation-delay-4000" />
+        <div className="absolute top-0 -right-40 w-[300px] h-[300px] md:w-[400px] md:h-[400px] lg:w-[500px] lg:h-[500px] bg-emerald-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob" />
+        <div className="absolute top-0 right-20 w-[300px] h-[300px] md:w-[400px] md:h-[400px] lg:w-[500px] lg:h-[500px] bg-teal-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob animation-delay-2000" />
+        <div className="absolute -bottom-40 right-1/4 w-[300px] h-[300px] md:w-[400px] md:h-[400px] lg:w-[500px] lg:h-[500px] bg-green-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob animation-delay-4000" />
       </div>
 
-      {/* Header */}
+      {/* Header – gradient kiri & kanan, pakai GleamLogo */}
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-emerald-100/50 backdrop-blur-xl">
+        {/* Overlay gradient yang menyatu dengan halaman */}
         <div
           className="absolute inset-0 -z-10 opacity-90"
           style={{
@@ -96,22 +162,22 @@ export default function HomePage() {
         />
         <div className="container mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between py-4 md:py-5">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
+            {/* Kiri: Logo */}
+            <div className="flex items-center gap-2 md:gap-3">
               <GleamLogo size="md" />
               <div className="hidden sm:block leading-tight" />
             </div>
 
-            {/* Auth buttons */}
+            {/* Kanan: Auth dropdowns */}
             <div className="flex items-center gap-2 md:gap-3">
-              <AuthDropdown
+              <DropdownButton
                 label="Masuk"
                 items={[
                   { label: "Masuk sebagai User", href: "/login/user" },
                   { label: "Masuk sebagai Staff", href: "/login/staff" },
                 ]}
               />
-              <AuthDropdown
+              <DropdownButton
                 label="Daftar"
                 items={[
                   { label: "Daftar sebagai User", href: "/register/user" },
@@ -123,13 +189,13 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative z-10 pt-24 md:pt-32 pb-16 md:pb-24 px-4 sm:px-6">
+      {/* Hero section */}
+      <section className="relative z-10 pt-24 md:pt-32 pb-12 md:pb-20 px-4 sm:px-6">
         <div className="container mx-auto max-w-screen-xl">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Kiri – teks */}
+            {/* Kiri – content */}
             <div className="space-y-6 md:space-y-8">
-              <div className="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-xs md:text-sm font-bold border border-emerald-200">
+              <div className="inline-block px-3 py-1.5 md:px-4 md:py-2 bg-emerald-100 text-emerald-700 rounded-full text-xs md:text-sm font-bold border border-emerald-200">
                 ✨ Platform Monitoring Kesehatan #1 di Indonesia
               </div>
 
@@ -147,28 +213,29 @@ export default function HomePage() {
 
               <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
                 <Link href="/register/user">
-                  <Button className="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-6 md:px-8 py-5 md:py-6 text-base md:text-lg font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5">
+                  <Button className="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-6 md:px-8 py-4 md:py-6 text-base md:text-lg font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5">
+                    <Zap className="w-4 h-4 md:w-5 md:h-5 mr-2" />
                     Mulai Sekarang Gratis
                   </Button>
                 </Link>
                 <Link href="#features">
-                  <Button variant="outline" className="w-full sm:w-auto border-2 border-emerald-200 text-emerald-700 px-6 md:px-8 py-5 md:py-6 text-base md:text-lg font-bold rounded-2xl hover:bg-emerald-50 hover:border-emerald-400 transition-all">
+                  <Button variant="outline" className="w-full sm:w-auto border-2 border-emerald-200 text-emerald-700 px-6 md:px-8 py-4 md:py-6 text-base md:text-lg font-bold rounded-2xl hover:bg-emerald-50 hover:border-emerald-400 transition-all">
                     Pelajari Lebih Lanjut
                   </Button>
                 </Link>
               </div>
 
-              <div className="flex flex-wrap items-center gap-4 md:gap-6 pt-4">
-                <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-emerald-200 hover:border-emerald-300 transition-all">
-                  <Award className="w-4 h-4 text-emerald-600" />
+              <div className="flex flex-wrap items-center gap-3 md:gap-6 pt-4">
+                <div className="flex items-center gap-2 px-3 py-1.5 md:py-2 bg-white rounded-xl border border-emerald-200 hover:border-emerald-300 transition-all">
+                  <Award className="w-3 h-3 md:w-4 md:h-4 text-emerald-600" />
                   <span className="text-xs md:text-sm font-semibold text-emerald-700">Sertifikat Resmi</span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-blue-200 hover:border-blue-300 transition-all">
-                  <Shield className="w-4 h-4 text-blue-600" />
+                <div className="flex items-center gap-2 px-3 py-1.5 md:py-2 bg-white rounded-xl border border-blue-200 hover:border-blue-300 transition-all">
+                  <Shield className="w-3 h-3 md:w-4 md:h-4 text-blue-600" />
                   <span className="text-xs md:text-sm font-semibold text-blue-700">Data Aman & Terenkripsi</span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-green-200 hover:border-green-300 transition-all">
-                  <Users className="w-4 h-4 text-green-600" />
+                <div className="flex items-center gap-2 px-3 py-1.5 md:py-2 bg-white rounded-xl border border-green-200 hover:border-green-300 transition-all">
+                  <Users className="w-3 h-3 md:w-4 md:h-4 text-green-600" />
                   <span className="text-xs md:text-sm font-semibold text-green-700">Konsultasi Gratis</span>
                 </div>
               </div>
@@ -242,131 +309,190 @@ export default function HomePage() {
       <section id="features" className="relative z-10 py-12 md:py-20 lg:py-32 bg-gradient-to-b from-white to-emerald-50/30">
         <div className="container mx-auto px-4 sm:px-6 max-w-screen-xl">
           <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
-            <div className="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-xs md:text-sm font-bold mb-4 border border-emerald-200">
+            <div className="inline-block px-3 py-1.5 md:px-4 md:py-2 bg-emerald-100 text-emerald-700 rounded-full text-xs md:text-sm font-bold mb-4 border border-emerald-200">
               ✨ Fitur Unggulan
             </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 mb-4 md:mb-6">
-              Semua yang Anda Butuhkan dalam <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">Satu Platform</span>
-            </h2>
-            <p className="text-base md:text-lg lg:text-xl text-gray-600 leading-relaxed">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 md:mb-4">
+              Semua yang Anda Butuhkan dalam{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
+                Satu Platform
+              </span>
+            </h3>
+            <p className="text-base md:text-lg text-gray-600 leading-relaxed">
               Akses lengkap ke tools monitoring, pembelajaran, dan dukungan kesehatan diabetes
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
-            {/* Feature Cards */}
-            <div className="group bg-white p-6 md:p-8 rounded-2xl md:rounded-3xl border-2 border-emerald-100 shadow-lg hover:shadow-2xl hover:-translate-y-2 hover:border-emerald-300 transition-all">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                <Activity className="w-6 h-6 md:w-8 md:h-8 text-white" />
+            {/* Feature Card 1 */}
+            <div className="group bg-white rounded-xl md:rounded-2xl p-6 md:p-8 border-2 border-emerald-100 hover:border-emerald-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                <Activity className="w-6 h-6 md:w-7 md:h-7 text-white" />
               </div>
-              <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-2 md:mb-3">Monitoring Real-time</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">Monitoring Real-time</h3>
               <p className="text-sm md:text-base text-gray-600 leading-relaxed">
-                Pantau kadar glukosa dan vital signs Anda secara langsung dengan visualisasi yang mudah dipahami
+                Pantau kadar glukosa dan tanda vital secara langsung dengan dashboard yang mudah dipahami
               </p>
             </div>
 
-            <div className="group bg-white p-6 md:p-8 rounded-2xl md:rounded-3xl border-2 border-teal-100 shadow-lg hover:shadow-2xl hover:-translate-y-2 hover:border-teal-300 transition-all">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                <Brain className="w-6 h-6 md:w-8 md:h-8 text-white" />
+            {/* Feature Card 2 */}
+            <div className="group bg-white rounded-xl md:rounded-2xl p-6 md:p-8 border-2 border-teal-100 hover:border-teal-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                <BookOpen className="w-6 h-6 md:w-7 md:h-7 text-white" />
               </div>
-              <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-2 md:mb-3">Pembelajaran Interaktif</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">Edukasi Interaktif</h3>
               <p className="text-sm md:text-base text-gray-600 leading-relaxed">
-                Materi edukasi lengkap tentang diabetes dengan metode pembelajaran yang menyenangkan
+                Akses materi pembelajaran lengkap tentang diabetes dengan video, artikel, dan kuis interaktif
               </p>
             </div>
 
-            <div className="group bg-white p-6 md:p-8 rounded-2xl md:rounded-3xl border-2 border-emerald-100 shadow-lg hover:shadow-2xl hover:-translate-y-2 hover:border-emerald-300 transition-all">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                <Users className="w-6 h-6 md:w-8 md:h-8 text-white" />
+            {/* Feature Card 3 */}
+            <div className="group bg-white rounded-xl md:rounded-2xl p-6 md:p-8 border-2 border-blue-100 hover:border-blue-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                <Target className="w-6 h-6 md:w-7 md:h-7 text-white" />
               </div>
-              <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-2 md:mb-3">Konsultasi Expert</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">Screening Risiko</h3>
               <p className="text-sm md:text-base text-gray-600 leading-relaxed">
-                Terhubung langsung dengan tenaga kesehatan profesional untuk konsultasi kesehatan Anda
+                Deteksi dini risiko diabetes dengan cerdas dan analisis AI yang akurat
               </p>
             </div>
 
-            <div className="group bg-white p-6 md:p-8 rounded-2xl md:rounded-3xl border-2 border-teal-100 shadow-lg hover:shadow-2xl hover:-translate-y-2 hover:border-teal-300 transition-all">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                <Target className="w-6 h-6 md:w-8 md:h-8 text-white" />
+            {/* Feature Card 4 */}
+            <div className="group bg-white rounded-xl md:rounded-2xl p-6 md:p-8 border-2 border-purple-100 hover:border-purple-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                <MessageSquare className="w-6 h-6 md:w-7 md:h-7 text-white" />
               </div>
-              <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-2 md:mb-3">Goal Setting</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">Konsultasi Online</h3>
               <p className="text-sm md:text-base text-gray-600 leading-relaxed">
-                Tetapkan dan lacak target kesehatan Anda dengan sistem reminder yang pintar
+                Konsultasi langsung dengan tenaga kesehatan profesional kapan saja, di mana saja
               </p>
             </div>
 
-            <div className="group bg-white p-6 md:p-8 rounded-2xl md:rounded-3xl border-2 border-emerald-100 shadow-lg hover:shadow-2xl hover:-translate-y-2 hover:border-emerald-300 transition-all">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-white" />
+            {/* Feature Card 5 */}
+            <div className="group bg-white rounded-xl md:rounded-2xl p-6 md:p-8 border-2 border-amber-100 hover:border-amber-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                <Brain className="w-6 h-6 md:w-7 md:h-7 text-white" />
               </div>
-              <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-2 md:mb-3">Library Lengkap</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">Rekomendasi Personal</h3>
               <p className="text-sm md:text-base text-gray-600 leading-relaxed">
-                Akses ribuan artikel, video, dan panduan kesehatan diabetes yang terverifikasi
+                Dapatkan rekomendasi personal untuk pola makan, olahraga, dan gaya hidup sehat
               </p>
             </div>
 
-            <div className="group bg-white p-6 md:p-8 rounded-2xl md:rounded-3xl border-2 border-teal-100 shadow-lg hover:shadow-2xl hover:-translate-y-2 hover:border-teal-300 transition-all">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                <Award className="w-6 h-6 md:w-8 md:h-8 text-white" />
+            {/* Feature Card 6 */}
+            <div className="group bg-white rounded-xl md:rounded-2xl p-6 md:p-8 border-2 border-rose-100 hover:border-rose-300 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-rose-500 to-red-600 rounded-xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                <HeartPulse className="w-6 h-6 md:w-7 md:h-7 text-white" />
               </div>
-              <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-2 md:mb-3">Gamifikasi</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">Laporan Kesehatan</h3>
               <p className="text-sm md:text-base text-gray-600 leading-relaxed">
-                Raih pencapaian dan reward menarik saat Anda konsisten menjaga kesehatan
+                Generate laporan kesehatan komprehensif lengkap dengan analisis kesehatan dan riwayat screening Diabetes Melitus Anda
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section id="how-it-works" className="relative z-10 py-12 md:py-20 lg:py-32 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 max-w-screen-xl">
+          <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
+            <div className="inline-block px-3 py-1.5 md:px-4 md:py-2 bg-teal-100 text-teal-700 rounded-full text-xs md:text-sm font-bold mb-4 border border-teal-200">
+              Cara Kerja
+            </div>
+            <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 md:mb-4">
+              Mudah Digunakan dalam 3 Langkah
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-8 max-w-5xl mx-auto relative">
+            {/* Step 1 */}
+            <div className="text-center relative">
+              <div className="relative mb-6">
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mx-auto shadow-2xl">
+                  <span className="text-2xl md:text-3xl font-bold text-white">1</span>
+                </div>
+              </div>
+              <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">Daftar Gratis</h4>
+              <p className="text-sm md:text-base text-gray-600">Buat akun dalam hitungan menit dengan data diri Anda</p>
+            </div>
+
+            {/* Arrow 1 to 2 */}
+            <div className="hidden md:flex items-center justify-center absolute top-10 left-1/3 -translate-x-1/2 z-10">
+              <ArrowRight className="w-8 h-8 text-emerald-400" strokeWidth={2.5} />
+            </div>
+
+            {/* Step 2 */}
+            <div className="text-center relative">
+              <div className="relative mb-6">
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center mx-auto shadow-2xl">
+                  <span className="text-2xl md:text-3xl font-bold text-white">2</span>
+                </div>
+              </div>
+              <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">Input Data Kesehatan</h4>
+              <p className="text-sm md:text-base text-gray-600">Masukkan data kesehatan Anda untuk screening awal</p>
+            </div>
+
+            {/* Arrow 2 to 3 */}
+            <div className="hidden md:flex items-center justify-center absolute top-10 left-2/3 -translate-x-1/2 z-10">
+              <ArrowRight className="w-8 h-8 text-teal-400" strokeWidth={2.5} />
+            </div>
+
+            {/* Step 3 */}
+            <div className="text-center relative">
+              <div className="relative mb-6">
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center mx-auto shadow-2xl">
+                  <span className="text-2xl md:text-3xl font-bold text-white">3</span>
+                </div>
+              </div>
+              <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">Monitoring & Konsultasi</h4>
+              <p className="text-sm md:text-base text-gray-600">Pantau kesehatan dan konsultasi kapan saja</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="relative z-10 py-16 md:py-24 lg:py-32 px-4 sm:px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700" />
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-10 left-10 w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-white/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-10 right-10 w-32 h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 bg-white/10 rounded-full blur-3xl animate-pulse animation-delay-2000" />
-        </div>
+      <section id="cta" className="relative z-10 py-12 md:py-20 lg:py-32">
+        <div className="container mx-auto px-4 sm:px-6 max-w-screen-xl">
+          <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 rounded-2xl md:rounded-3xl p-8 md:p-12 lg:p-20 text-center shadow-2xl">
+            <div className="absolute top-0 left-0 w-48 h-48 md:w-64 md:h-64 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute bottom-0 right-0 w-64 h-64 md:w-96 md:h-96 bg-white/10 rounded-full translate-x-1/3 translate-y-1/3" />
 
-        <div className="container mx-auto relative z-10 max-w-4xl">
-          <div className="text-center space-y-6 md:space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
-              <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-white animate-pulse" />
-              <span className="text-xs md:text-sm font-bold text-white">
-                Gratis Selamanya, Tanpa Biaya Tersembunyi
-              </span>
-            </div>
-
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white leading-tight">
-              Siap Memulai Perjalanan Sehat Anda?
-            </h2>
-            <p className="text-base md:text-lg lg:text-xl text-white/90">
-              Bergabunglah dengan ribuan pengguna lain yang telah merasakan manfaat GLEAM
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center pt-4">
-              <Link href="/register/user">
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto px-6 md:px-8 py-5 md:py-6 rounded-xl md:rounded-2xl font-bold text-base md:text-lg
-                            bg-white text-emerald-700 border border-white/40
-                            shadow-xl hover:shadow-2xl hover:scale-105
-                            hover:bg-emerald-50 transition-all"
-                >
-                  Mulai Gratis Sekarang
-                </Button>
-              </Link>
-              <Link href="#features">
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto px-6 md:px-8 py-5 md:py-6 bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 font-bold text-base md:text-lg rounded-xl md:rounded-2xl border-2 border-white/50 transition-all"
-                >
-                  Pelajari Lebih Lanjut
-                </Button>
-              </Link>
+            <div className="relative z-10 max-w-3xl mx-auto space-y-6 md:space-y-8">
+              <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white">
+                Siap Mengelola Kesehatan Diabetes Anda?
+              </h3>
+              <p className="text-base md:text-lg lg:text-xl text-white/90">
+                Bergabunglah dengan pengguna lain yang telah merasakan manfaat GLEAM
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
+                <Link href="/register/user">
+                  <Button
+                    variant="outline"
+                    className="w-full sm:w-auto px-6 md:px-8 py-5 md:py-6 rounded-xl md:rounded-2xl font-bold text-base md:text-lg
+                                bg-white text-emerald-700 border border-white/40
+                                shadow-xl hover:shadow-2xl hover:scale-105
+                                hover:bg-emerald-50 transition-all"
+                  >
+                    Mulai Gratis Sekarang
+                  </Button>
+                </Link>
+                <Link href="#features">
+                  <Button
+                    variant="outline"
+                    className="w-full sm:w-auto px-6 md:px-8 py-5 md:py-6 bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 font-bold text-base md:text-lg rounded-xl md:rounded-2xl border-2 border-white/50 transition-all"
+                  >
+                    Pelajari Lebih Lanjut
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Footer (optional, tetap dikomentari) */}
 
       <style jsx>{`
         @keyframes blob {
