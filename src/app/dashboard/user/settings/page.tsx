@@ -351,15 +351,15 @@ return (
               </div>
 
               {/* Button Simpan Lokasi */}
-              <div className="flex justify-end pt-4 border-t-2 border-gray-100">
-                <Button
+              <div className="flex justify-center pt-4 border-t-2 border-gray-100">
+                <button
                   onClick={handleSaveLocation}
                   disabled={savingLocation || !kelurahan || !rw}
-                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Save className="h-5 w-5 mr-2" />
+                  <Save className="h-5 w-5" />
                   {savingLocation ? "Menyimpan..." : "Simpan Lokasi"}
-                </Button>
+                </button>
               </div>
             </div>
           </Card>
@@ -413,14 +413,14 @@ return (
                   placeholder="Ulangi password baru"
                 />
 
-                <div className="flex justify-end pt-4">
-                  <Button
+                <div className="flex justify-center pt-4">
+                  <button
                     type="submit"
-                    className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
+                    className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
                   >
-                    <Save className="h-5 w-5 mr-2" />
+                    <Save className="h-5 w-5" />
                     Perbarui Password
-                  </Button>
+                  </button>
                 </div>
               </form>
             </div>
