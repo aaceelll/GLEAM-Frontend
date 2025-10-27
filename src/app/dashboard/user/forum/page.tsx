@@ -162,30 +162,45 @@ export default function ForumPage() {
 
   const currentThreads = activeTab === "public" ? publicThreads : privateThreads;
 
-  return (
-    <div className="min-h-screen bg-white px-6 md:px-10 py-6">
-      {/* Toasts */}
-      <ToastShelf toasts={toasts} dismiss={dismiss} />
-
+return (
+    <div className="min-h-screen bg-white px-6 md:px-10 py-9">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
-              <Users className="h-6 w-6 text-white" />
+            {/* ICON CHIP – versi responsif */}
+            <div className="relative isolate shrink-0">
+              <span
+                aria-hidden
+                className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"
+              />
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              </div>
             </div>
+
+           {/* Judul + subjudul */}
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-black-800">Forum Komunitas</h1>
-              <p className="text-gray-600 mt-0.5">Ruang berbagi & tanya jawab seputar diabetes</p>
+              <h1 className="text-[22px] leading-[1.15] sm:text-3xl md:text-4xl font-bold text-gray-800">
+                Forum Komunitas <br className="hidden sm:block" />
+              </h1>
+              <p className="text-gray-600 mt-1 sm:mt-0.5">
+                Ruang berbagi & tanya jawab seputar diabetes
+              </p>
             </div>
           </div>
-          <Button
-            onClick={() => setShowNewThreadModal(true)}
-            className="bg-emerald-600 hover:bg-emerald-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Buat Pertanyaan
-          </Button>
+
+          {/* Kanan: tombol – tidak gepeng di mobile */}
+          <div className="sm:ml-auto">
+            <Button
+              onClick={() => setShowNewThreadModal(true)}
+              className="w-full sm:w-auto shrink-0 rounded-xl bg-emerald-600 hover:bg-emerald-700
+                        px-5 sm:px-6 py-3 text-sm sm:text-base font-semibold shadow-lg"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Buat Pertanyaan
+            </Button>
+          </div>
         </div>
 
         {/* Card Diskusi — container */}

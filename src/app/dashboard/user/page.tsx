@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Activity, Calendar, Bell } from "lucide-react";
+import { Activity, Calendar, Bell, Home } from "lucide-react";
 import { api } from "@/lib/api";
 
 /* === Kartu gradient (UI sama persis: angka besar + unit kecil) === */
@@ -148,7 +148,7 @@ const now = useNow(1000);
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 grid place-items-center shadow-2xl group-hover:scale-110 transition-all duration-500">
-                <Activity className="h-8 w-8 text-white" />
+                <Home className="h-8 w-8 text-white" />
               </div>
             </div>
             <div className="flex-1">

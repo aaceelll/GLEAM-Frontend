@@ -378,19 +378,28 @@ export default function DiabetesMelitusPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white px-6 md:px-10 py-6">
+    <div className="min-h-screen bg-white px-6 md:px-10 py-9">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
-              <FileText className="h-6 w-6 text-white" />
+            {/* ICON CHIP – versi responsif */}
+            <div className="relative isolate shrink-0">
+              <span
+                aria-hidden
+                className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"
+              />
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
+                <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              </div>
             </div>
+
+             {/* Judul + subjudul */}
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
-                Edukasi & Hasil Screening Diabetes Melitus
+              <h1 className="text-[22px] leading-[1.15] sm:text-3xl md:text-4xl font-bold text-gray-800">
+                Edukasi & Hasil Screening Diabetes Melitus<br className="hidden sm:block" />
               </h1>
-              <p className="text-gray-600 mt-0.5">
+              <p className="text-gray-600 mt-1 sm:mt-0.5">
                 Lihat Hasil Screening Anda dan Pelajari Materi Edukasinya
               </p>
             </div>
@@ -577,7 +586,7 @@ export default function DiabetesMelitusPage() {
                 </div>
               ) : (
                 <div className="overflow-x-auto mt-4">
-                  <table className="w-full">
+                  <table className="min-w-[720px] sm:min-w-0 w-full text-[13px] sm:text-sm">
                     <thead>
                       <tr className="border-b border-gray-200 text-left">
                         <th className="pb-3 text-xs font-semibold text-gray-600 uppercase">
@@ -686,84 +695,88 @@ export default function DiabetesMelitusPage() {
                   const isPost = tipe === "post";
                   const mustLock = isPost && !preDoneMap[baseKey];
 
-                  return (
-                    <div
-                      key={t.id}
-                      className="group relative bg-white border-2 border-gray-100 rounded-2xl p-5 hover:border-transparent hover:shadow-2xl transition-all overflow-hidden"
-                    >
-                      <div
-                        className={`absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-5 transition-opacity`}
-                      />
-                      <div
-                        className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-500 opacity-5 rounded-bl-full`}
-                      />
+                return (
+                  <div
+                    key={t.id}
+                    className="group relative bg-white border-2 border-gray-100 rounded-2xl p-5 hover:border-transparent hover:shadow-2xl transition-all overflow-hidden"
+                  >
+                    {/* dekor hover halus */}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-5 transition-opacity z-0" />
+                    <div className="pointer-events-none absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500 to-teal-500 opacity-5 rounded-bl-full z-0" />
 
-                      <div className="relative flex items-start gap-4">
-                        <div
-                          className={`flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-bold shadow`}
-                        >
-                          <ListChecks className="w-5 h-5" />
-                        </div>
+                    {/* konten responsif */}
+                    <div className="relative z-[1] flex flex-col md:flex-row md:items-start gap-4">
+                      {/* ikon kiri */}
+                      <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 grid place-items-center text-white shadow">
+                        <ListChecks className="w-5 h-5" />
+                      </div>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <h3 className="font-bold text-gray-900 text-lg leading-snug">
-                                {t.nama}
-                              </h3>
-                              <p className="text-xs text-gray-500 mt-0.5">
-                                {t.totalSoal ?? "-"} soal
-                                {t.durasiMenit ? ` • ${t.durasiMenit} menit` : ""}
-                              </p>
-                              {isPost && (
-                                <div className="mt-1">
-                                  {mustLock ? (
-                                    <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
-                                      <LockIcon className="w-3.5 h-3.5" />
-                                      Terkunci: Selesaikan Pre Test dulu
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                      <CheckCircle2 className="w-3.5 h-3.5" />
-                                      Siap dikerjakan
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
+                      {/* teks tengah */}
+                      <div className="flex-1 min-w-0">
+                        {/* judul + meta + chip status */}
+                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] items-start gap-3">
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-gray-900 text-lg leading-snug line-clamp-2 break-words">
+                              {t.nama}
+                            </h3>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {t.totalSoal ?? "-"} soal{t.durasiMenit ? ` • ${t.durasiMenit} menit` : ""}
+                            </p>
 
+                            {/* chip status khusus post */}
+                            {isPost && (
+                              <div className="mt-2">
+                                {mustLock ? (
+                                  <div
+                                    className="inline-flex items-start gap-2 px-3 py-1.5 rounded-xl bg-gray-100 text-gray-700 border border-gray-200 shadow-sm text-[12px] leading-snug max-w-full sm:max-w-[260px] whitespace-normal break-words"
+                                    title="Selesaikan Pre Test terlebih dahulu"
+                                  >
+                                    <LockIcon className="w-3.5 h-3.5 mt-0.5 text-gray-500" />
+                                    <span className="font-medium">Terkunci: Selesaikan Pre Test dulu</span>
+                                  </div>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    Siap dikerjakan
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* tombol kanan: nempel kanan di layar lebar, penuh di mobile */}
+                          <div className="w-full lg:w-auto">
                             <button
                               type="button"
                               onClick={() => !mustLock && mulaiTest(t)}
                               disabled={mustLock}
                               className={[
-                                "inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all shadow",
+                                "w-full lg:w-auto mt-1 lg:mt-0 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all shadow",
                                 mustLock
                                   ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                                   : "text-white bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-700 hover:to-yellow-700 hover:shadow-lg",
                               ].join(" ")}
+                              aria-disabled={mustLock}
                               title={mustLock ? "Selesaikan Pre Test terlebih dahulu" : "Mulai"}
                             >
-                              {mustLock ? (
-                                <LockIcon className="h-4 w-4" />
-                              ) : (
-                                <Play className="h-4 w-4" />
-                              )}
+                              {mustLock ? <LockIcon className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                               {mustLock ? "Terkunci" : "Mulai"}
                             </button>
                           </div>
-
-                          {t.deskripsi && (
-                            <p className="text-sm text-gray-600 mt-2 line-clamp-2 break-words whitespace-pre-wrap [overflow-wrap:anywhere]">
-                              {t.deskripsi}
-                            </p>
-                          )}
                         </div>
+
+                        {/* deskripsi (opsional) */}
+                        {t.deskripsi && (
+                          <p className="text-sm text-gray-600 mt-2 line-clamp-2 break-words whitespace-pre-wrap [overflow-wrap:anywhere]">
+                            {t.deskripsi}
+                          </p>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
+            </div>
             )}
           </div>
         </div>
@@ -807,95 +820,93 @@ export default function DiabetesMelitusPage() {
             ) : (
               <div className="grid gap-6">
                 {konten.map((it, i) => (
-                  <div
-                    key={it.id}
-                    className="group relative bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden"
-                  >
-                    <div
-                      className={`absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
-                    />
-                    <div
-                      className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500 to-teal-500 opacity-5 rounded-bl-full`}
-                    />
+                <div
+                  key={it.id}
+                  className="group relative bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden"
+                >
+                  {/* dekor hover */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500 to-teal-500 opacity-5 rounded-bl-full" />
 
-                    <div className="relative flex items-start gap-5">
-                      <div
-                        className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
-                      >
-                        {i + 1}
+                  {/* layout responsive: kolom di mobile, baris di md+ */}
+                  <div className="relative flex flex-col md:flex-row items-start gap-5">
+                    {/* badge nomor */}
+                    <div className="flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      {i + 1}
+                    </div>
+
+                    {/* konten utama */}
+                    <div className="flex-1 min-w-0 space-y-4">
+                      <h3 className="font-bold text-gray-900 text-2xl group-hover:text-emerald-700 transition-colors">
+                        {it.judul}
+                      </h3>
+
+                      <p className="text-gray-600 text-base leading-relaxed break-words whitespace-pre-wrap [overflow-wrap:anywhere]">
+                        {it.deskripsi}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-3">
+                        {it.file_url && (
+                          <a
+                            href={it.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-700 hover:to-yellow-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
+                          >
+                            <Download className="h-4 w-4" />
+                            Unduh PDF
+                          </a>
+                        )}
+                        {it.video_id && (
+                          <a
+                            href={`https://www.youtube.com/watch?v=${it.video_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-700 hover:to-blue-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
+                          >
+                            <Video className="h-4 w-4" />
+                            Tonton Video
+                          </a>
+                        )}
                       </div>
 
-                      <div className="flex-1 min-w-0 space-y-4">
-                        <h3 className="font-bold text-gray-900 text-2xl group-hover:text-emerald-700 transition-colors">
-                          {it.judul}
-                        </h3>
-
-                        <p className="text-gray-600 text-base leading-relaxed break-words whitespace-pre-wrap [overflow-wrap:anywhere]">
-                          {it.deskripsi}
-                        </p>
-
-                        <div className="flex flex-wrap items-center gap-3">
-                          {it.file_url && (
-                            <a
-                              href={it.file_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-700 hover:to-yellow-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
-                            >
-                              <Download className="h-4 w-4" />
-                              Unduh PDF
-                            </a>
+                      {(it.created_at || it.updated_at) && (
+                        <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
+                          {it.created_at && (
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 text-emerald-600" />
+                              <span className="font-medium">
+                                Dibuat:{" "}
+                                {new Date(it.created_at).toLocaleDateString("id-ID", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </span>
+                            </div>
                           )}
-                          {it.video_id && (
-                            <a
-                              href={`https://www.youtube.com/watch?v=${it.video_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-700 hover:to-blue-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
-                            >
-                              <Video className="h-4 w-4" />
-                              Tonton Video
-                            </a>
-                          )}
-                        </div>
-
-                        {(it.created_at || it.updated_at) && (
-                          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
-                            {it.created_at && (
+                          {it.updated_at && (
+                            <>
+                              <span className="text-gray-300">•</span>
                               <div className="flex items-center gap-1.5">
-                                <Calendar className="h-3.5 w-3.5 text-emerald-600" />
+                                <Clock className="h-3.5 w-3.5 text-emerald-600" />
                                 <span className="font-medium">
-                                  Dibuat:{" "}
-                                  {new Date(it.created_at).toLocaleDateString("id-ID", {
+                                  Diperbarui:{" "}
+                                  {new Date(it.updated_at).toLocaleDateString("id-ID", {
                                     day: "numeric",
                                     month: "short",
                                     year: "numeric",
                                   })}
                                 </span>
                               </div>
-                            )}
-                            {it.updated_at && (
-                              <>
-                                <span className="text-gray-300">•</span>
-                                <div className="flex items-center gap-1.5">
-                                  <Clock className="h-3.5 w-3.5 text-emerald-600" />
-                                  <span className="font-medium">
-                                    Diperbarui:{" "}
-                                    {new Date(it.updated_at).toLocaleDateString("id-ID", {
-                                      day: "numeric",
-                                      month: "short",
-                                      year: "numeric",
-                                    })}
-                                  </span>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
               </div>
             )}
           </div>

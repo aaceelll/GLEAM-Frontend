@@ -227,7 +227,7 @@ export default function ThreadDetailPage() {
   /* ========= UI ========= */
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white pt-16 sm:pt-0">
         <div className="max-w-5xl mx-auto flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto mb-4" />
@@ -290,7 +290,7 @@ export default function ThreadDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white pt-16 sm:pt-0">
       <div className="max-w-5xl mx-auto space-y-6">
         
         {/* Header dengan back button dan refresh */}

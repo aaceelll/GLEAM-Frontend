@@ -189,26 +189,34 @@ export default function SettingsPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-white px-6 md:px-10 py-6">
-      <div className="max-w-5xl mx-auto space-y-8">
-        {/* Header with floating animation */}
-        <header className="mb-6 animate-fade-in">
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                <Settings className="h-8 w-8 text-white animate-pulse" />
+return (
+    <div className="min-h-screen bg-white px-6 md:px-10 py-9">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {/* ICON CHIP – versi responsif */}
+            <div className="relative isolate shrink-0">
+              <span
+                aria-hidden
+                className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"
+              />
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
+                <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
-            <div className="flex-1">
-              <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent tracking-tight">
-                Pengaturan
+
+             {/* Judul + subjudul */}
+            <div>
+              <h1 className="text-[22px] leading-[1.15] sm:text-3xl md:text-4xl font-bold text-gray-800">
+                Pengaturan<br className="hidden sm:block" />
               </h1>
-              <p className="text-base md:text-lg text-gray-600 font-medium">Kelola Profil dan Keamanan Akun Anda</p>
+              <p className="text-gray-600 mt-1 sm:mt-0.5">
+                Kelola Profil dan Keamanan Akun Anda
+              </p>
             </div>
           </div>
-        </header>
+        </div>
 
         {/* Notification */}
         {msg && (
@@ -228,55 +236,57 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Navigation Pills */}
+        {/* Navigation Pills (sejajar, compact, proporsional) */}
         <div
           className="
-            flex flex-nowrap gap-2 sm:gap-3 p-1
-            bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-100 shadow-lg
-            overflow-x-auto sm:overflow-visible
-            [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
-            -mx-2 px-2 sm:mx-0 sm:px-0
-            snap-x snap-mandatory sm:snap-none
+            grid grid-cols-3 gap-2 sm:gap-3
+            bg-white rounded-2xl border-2 border-gray-100 shadow-md
+            p-1 sm:p-2
           "
         >
           <button
             onClick={() => setActiveTab("profile")}
-            className={`flex-none sm:flex-1 inline-flex items-center justify-center gap-2
-              px-4 py-3 sm:px-6 sm:py-6 rounded-xl font-semibold transition-all duration-200
-              text-sm sm:text-base snap-center
-              ${activeTab === "profile"
-                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg sm:scale-105"
-                : "text-slate-600 hover:bg-slate-50"}`
-            }
+            className={`flex items-center justify-center gap-1.5 
+              rounded-xl font-semibold transition-all duration-200
+              text-xs sm:text-sm md:text-base py-2 sm:py-2.5
+              ${
+                activeTab === "profile"
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow"
+                  : "text-slate-600 hover:bg-slate-50"
+              }`}
           >
             <User className="h-4 w-4 sm:h-5 sm:w-5" />
-            Profil Saya
+            <span>Profil</span>
           </button>
+
           <button
             onClick={() => setActiveTab("location")}
-            className={`flex-none sm:flex-1 inline-flex items-center justify-center gap-2
-              px-4 py-3 sm:px-6 sm:py-6 rounded-xl font-semibold transition-all duration-200
-              text-sm sm:text-base snap-center
-              ${activeTab === "location"
-                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg sm:scale-105"
-                : "text-slate-600 hover:bg-slate-50"}`
-            }
+            className={`flex items-center justify-center gap-1.5 
+              rounded-xl font-semibold transition-all duration-200
+              text-xs sm:text-sm md:text-base py-2 sm:py-2.5
+              ${
+                activeTab === "location"
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow"
+                  : "text-slate-600 hover:bg-slate-50"
+              }`}
           >
             <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
-            Lokasi
+            <span>Lokasi</span>
           </button>
+
           <button
             onClick={() => setActiveTab("security")}
-            className={`flex-none sm:flex-1 inline-flex items-center justify-center gap-2
-              px-4 py-3 sm:px-6 sm:py-6 rounded-xl font-semibold transition-all duration-200
-              text-sm sm:text-base snap-center
-              ${activeTab === "security"
-                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg sm:scale-105"
-                : "text-slate-600 hover:bg-slate-50"}`
-            }
+            className={`flex items-center justify-center gap-1.5 
+              rounded-xl font-semibold transition-all duration-200
+              text-xs sm:text-sm md:text-base py-2 sm:py-2.5
+              ${
+                activeTab === "security"
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow"
+                  : "text-slate-600 hover:bg-slate-50"
+              }`}
           >
             <Lock className="h-4 w-4 sm:h-5 sm:w-5" />
-            Keamanan
+            <span>Keamanan</span>
           </button>
         </div>
 
