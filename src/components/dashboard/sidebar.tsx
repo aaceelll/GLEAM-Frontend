@@ -105,13 +105,21 @@ export function Sidebar({ role }: SidebarProps) {
 
     {/* Sidebar utama */}
     <aside
-      className={cn(
-        "fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300",
-        mobileOpen ? "translate-x-0" : "-translate-x-full",
-        "lg:static lg:translate-x-0 lg:w-auto",
-        "h-full bg-white border-r border-gray-200 shadow-sm overflow-y-auto"
-      )}
-    >
+  className={cn(
+    // selalu fixed, jadi tidak ikut scroll
+    "fixed inset-y-0 left-0 z-50 w-72 transition-transform duration-300",
+
+    // mobile: jadi drawer (slide in/out)
+    mobileOpen ? "translate-x-0" : "-translate-x-full",
+
+    // desktop: selalu terlihat (no slide)
+    "lg:translate-x-0",
+
+    // styling
+    "bg-white border-r border-gray-200 shadow-sm overflow-y-auto"
+  )}
+>
+
 
       {/* Brand (besar + divider) */}
       <div className="px-6 pt-6 pb-4">

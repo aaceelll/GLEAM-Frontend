@@ -57,13 +57,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Sidebar role={sidebarRole} />
       </aside>
 
-      {/* Spacer hanya untuk desktop agar konten tidak ketimpa */}
-      <div className="hidden lg:block w-72 flex-shrink-0" />
-
       {/* ===== Main Content Area ===== */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto bg-white">
-          <div className="p-6 md:p-8">{children}</div>
+          <div className="p-6 md:p-8">{children}</div>  
         </main>
       </div>
     </div>

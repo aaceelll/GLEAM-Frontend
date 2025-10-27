@@ -229,38 +229,53 @@ export default function SettingsPage() {
         )}
 
         {/* Navigation Pills */}
-        <div className="flex gap-3 p-0 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-100 shadow-lg">
+        <div
+          className="
+            flex flex-nowrap gap-2 sm:gap-3 p-1
+            bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-100 shadow-lg
+            overflow-x-auto sm:overflow-visible
+            [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+            -mx-2 px-2 sm:mx-0 sm:px-0
+            snap-x snap-mandatory sm:snap-none
+          "
+        >
           <button
             onClick={() => setActiveTab("profile")}
-            className={`flex-1 flex items-center justify-center gap-2 px-6 py-6 rounded-xl font-semibold transition-all duration-200 ${
-              activeTab === "profile"
-                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg scale-105"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
+            className={`flex-none sm:flex-1 inline-flex items-center justify-center gap-2
+              px-4 py-3 sm:px-6 sm:py-6 rounded-xl font-semibold transition-all duration-200
+              text-sm sm:text-base snap-center
+              ${activeTab === "profile"
+                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg sm:scale-105"
+                : "text-slate-600 hover:bg-slate-50"}`
+            }
           >
-            <User className="h-5 w-5" />
+            <User className="h-4 w-4 sm:h-5 sm:w-5" />
             Profil Saya
           </button>
           <button
             onClick={() => setActiveTab("location")}
-            className={`flex-1 flex items-center justify-center gap-2 px-6 py-6 rounded-xl font-semibold transition-all duration-200 ${
-              activeTab === "location"
-                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg scale-105"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
+            className={`flex-none sm:flex-1 inline-flex items-center justify-center gap-2
+              px-4 py-3 sm:px-6 sm:py-6 rounded-xl font-semibold transition-all duration-200
+              text-sm sm:text-base snap-center
+              ${activeTab === "location"
+                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg sm:scale-105"
+                : "text-slate-600 hover:bg-slate-50"}`
+            }
           >
-            <MapPin className="h-5 w-5" />
+            <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
             Lokasi
           </button>
           <button
             onClick={() => setActiveTab("security")}
-            className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold transition-all duration-200 ${
-              activeTab === "security"
-                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg scale-105"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
+            className={`flex-none sm:flex-1 inline-flex items-center justify-center gap-2
+              px-4 py-3 sm:px-6 sm:py-6 rounded-xl font-semibold transition-all duration-200
+              text-sm sm:text-base snap-center
+              ${activeTab === "security"
+                ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg sm:scale-105"
+                : "text-slate-600 hover:bg-slate-50"}`
+            }
           >
-            <Lock className="h-5 w-5" />
+            <Lock className="h-4 w-4 sm:h-5 sm:w-5" />
             Keamanan
           </button>
         </div>
