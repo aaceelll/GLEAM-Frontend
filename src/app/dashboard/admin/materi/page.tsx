@@ -172,10 +172,9 @@ export default function MateriPage() {
       fd.append("slug", MATERI_SLUG);
       fd.append("judul", formData.judul);
       fd.append("deskripsi", formData.deskripsi);
-      if (!formData.tanpa_video && formData.video_id.trim()) {
+      // opsional: kirim hanya jika ada
+      if (formData.video_id.trim()) {
         fd.append("video_id", formData.video_id.trim());
-      } else {
-        fd.append("video_id", "");
       }
       if (formData.file_pdf) {
         fd.append("file_pdf", formData.file_pdf); // opsional
@@ -462,10 +461,9 @@ export default function MateriPage() {
 
               <div className="space-y-2">
                 <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
-                  Video ID YouTube {!formData.tanpa_video && <span className="text-red-500">*</span>}
+                  Video ID YouTube <span className="text-gray-400 font-normal">(opsional)</span>
                 </label>
                 <input
-                  disabled={formData.tanpa_video}
                   value={formData.video_id}
                   onChange={(e) => setFormData({ ...formData, video_id: e.target.value })}
                   placeholder="Contoh: y55Wupx2ZDU"
@@ -479,23 +477,6 @@ export default function MateriPage() {
                     Masukkan hanya: <span className="font-mono bg-white px-2 py-0.5 rounded">y55Wupx2ZDU</span>
                   </p>
                 </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl border-2 border-gray-200">
-                <input
-                  type="checkbox"
-                  id="tanpa_video"
-                  checked={formData.tanpa_video}
-                  onChange={(e) =>
-                    setFormData({ ...formData, tanpa_video: e.target.checked, video_id: "" })
-                  }
-                  className="w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 mt-0.5 cursor-pointer"
-                />
-                <label htmlFor="tanpa_video" className="text-sm text-gray-700 cursor-pointer flex-1">
-                  <strong>Konten tanpa video YouTube</strong>
-                  <br />
-                  <span className="text-gray-500 text-xs">Video ID akan diabaikan jika dicentang</span>
-                </label>
               </div>
 
               <div className="space-y-2">
