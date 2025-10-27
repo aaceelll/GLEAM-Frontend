@@ -222,15 +222,15 @@ export default function NakesDashboard() {
           </div>
         </header>
 
-        {/* Info strip (emerald) */}
-        <div className="mt-4 p-4 bg-emerald-50 border-2 border-emerald-100 rounded-xl">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500 grid place-items-center">
-              <Shield className="w-5 h-5 text-white" />
+        {/* Info strip (emerald) - UPDATED FOR RESPONSIVE */}
+        <div className="mt-4 p-3 md:p-4 bg-emerald-50 border-2 border-emerald-100 rounded-xl">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-emerald-500 grid place-items-center flex-shrink-0">
+              <Shield className="w-4 h-4 md:w-5 md:h-5 text-white" />
             </div>
-            <div>
-              <p className="font-semibold text-emerald-900">Hak Akses</p>
-              <p className="text-sm text-emerald-700">
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-emerald-900 text-sm md:text-base">Hak Akses</p>
+              <p className="text-xs md:text-sm text-emerald-700">
                 Anda memiliki akses untuk mengelola screening dan melihat ringkasan pasien.
               </p>
             </div>

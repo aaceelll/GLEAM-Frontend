@@ -382,6 +382,8 @@ function DetailModal({
             </button>
           </div>
 
+    
+
           {/* Body - Scrollable */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {/* GRAFIK RIWAYAT SCREENING */}
@@ -614,17 +616,33 @@ export default function LaporanKeseluruhan() {
     [q, rows]
   );
 
-  return (
-    <div className="min-h-screen bg-white px-6 md:px-10 py-8">
+           return (
+    <div className="min-h-screen bg-white px-6 md:px-10 py-9">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <header className="flex items-center gap-4">
-          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${greenGrad} flex items-center justify-center shadow-xl`}>
-            <FileText className="h-7 w-7 text-white" />
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {/* ICON CHIP – versi responsif */}
+            <div className="relative isolate shrink-0">
+              <span
+                aria-hidden
+                className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"
+              />
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
+                <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              </div>
+            </div>
+
+             {/* Judul + subjudul */}
+            <div>
+              <h1 className="text-[22px] leading-[1.15] sm:text-3xl md:text-4xl font-bold text-gray-800">
+                Laporan Keseluruhan<br className="hidden sm:block" />
+              </h1>
+              <p className="text-gray-600 mt-1 sm:mt-0.5">
+                Riwayat Screening Pasien
+              </p>
+            </div>
           </div>
-          <div className="flex-1">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Laporan Keseluruhan</h1>
-            <p className="text-gray-600 mt-0.5">Riwayat Screening Pasien</p>
           </div>
 
           <button
@@ -638,7 +656,7 @@ export default function LaporanKeseluruhan() {
             <RotateCcw className="w-4 h-4" />
             Refresh
           </button>
-        </header>
+        
 
         {errorMsg && (
           <div className="rounded-xl border-2 border-amber-200 bg-amber-50 text-amber-800 px-4 py-3">
@@ -673,16 +691,20 @@ export default function LaporanKeseluruhan() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <table className="w-full border-collapse min-w-[640px]">
                 <thead>
                   <tr className="bg-gray-50">
                     {["No", "Nama", "Tanggal Terbaru", "Risiko", "Aksi"].map((h, i) => (
                       <th
                         key={h}
                         className={[
-                          "text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide py-4 border-b-2 border-gray-100",
-                          i === 0 ? "pl-6" : i === 4 ? "pr-6 text-right" : "",
+                          "text-left text-xs md:text-sm font-semibold text-gray-700 uppercase tracking-wide py-4 border-b-2 border-gray-100 whitespace-nowrap",
+                          i === 0 ? "pl-4 sm:pl-6 w-16" : "",
+                          i === 4 ? "pr-4 sm:pr-6 text-right" : "",
+                          i === 1 ? "min-w-[120px]" : "",
+                          i === 2 ? "min-w-[200px]" : "",
+                          i === 3 ? "min-w-[100px]" : "",
                         ].join(" ")}
                       >
                         {h}
@@ -709,26 +731,26 @@ export default function LaporanKeseluruhan() {
                         key={`${r.userId ?? r.id}`}
                         className="border-b border-gray-50 hover:bg-emerald-50/50 transition-colors"
                       >
-                        <td className="pl-6 py-4 font-semibold text-gray-900">{i + 1}</td>
-                        <td className="py-4 font-semibold text-gray-900">{r.name}</td>
-                        <td className="py-4 text-sm text-gray-600">
+                        <td className="pl-4 sm:pl-6 py-4 font-semibold text-gray-900 text-sm sm:text-base">{i + 1}</td>
+                        <td className="py-4 font-semibold text-gray-900 text-sm sm:text-base whitespace-nowrap">{r.name}</td>
+                        <td className="py-4 text-xs sm:text-sm text-gray-600">
                           <span className="inline-flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {formatIDTime(r.date)}
+                            <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span className="whitespace-nowrap">{formatIDTime(r.date)}</span>
                           </span>
                         </td>
                         <td className="py-4">
                           <RiskChip value={r.riskPct} text={r.riskText} />
                         </td>
-                        <td className="py-4 pr-6">
+                        <td className="py-4 pr-4 sm:pr-6">
                           <div className="flex items-center justify-end">
                             <button
                               onClick={() => openDetail(r.userId, r.name)}
-                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold
+                              className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-semibold text-xs sm:text-sm
                                          border-2 border-gray-100 text-gray-600 bg-white
                                          transition-all duration-300
                                          hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50
-                                         hover:text-emerald-700 hover:shadow-md hover:scale-[1.02]"
+                                         hover:text-emerald-700 hover:shadow-md hover:scale-[1.02] whitespace-nowrap"
                             >
                               Detail
                             </button>

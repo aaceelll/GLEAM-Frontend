@@ -152,30 +152,34 @@ export default function NakesPrivateQuestionsPage() {
 
   const greenGrad = "from-emerald-600 to-teal-600";
 
-  return (
-    <div className="min-h-screen bg-white px-6 md:px-10 py-6">
-      {/* Confirm Modal */}
-      <ConfirmModal
-        open={confirmId !== null}
-        title="Ambil & Jawab Pertanyaan?"
-        description="Pertanyaan akan ditugaskan ke Anda sehingga bisa segera dijawab."
-        onConfirm={() => assignNow(confirmId as number)}
-        onClose={() => setConfirmId(null)}
-        confirmText="Ambil Sekarang"
-        cancelText="Batal"
-      />
-
+        return (
+    <div className="min-h-screen bg-white px-6 md:px-10 py-9">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${greenGrad} flex items-center justify-center shadow-lg`}>
-            <Stethoscope className="w-6 h-6 text-white" />
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {/* ICON CHIP – versi responsif */}
+            <div className="relative isolate shrink-0">
+              <span
+                aria-hidden
+                className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"
+              />
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
+                <Stethoscope className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              </div>
+            </div>
+
+             {/* Judul + subjudul */}
+            <div>
+              <h1 className="text-[22px] leading-[1.15] sm:text-3xl md:text-4xl font-bold text-gray-800">
+                Pertanyaan Private dari Pasien<br className="hidden sm:block" />
+              </h1>
+              <p className="text-gray-600 mt-1 sm:mt-0.5">
+                Jawab Pertanyaan Private Pasien Anda di Sini
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Pertanyaan Private dari Pasien</h1>
-            <p className="text-gray-600 mt-0.5">Jawab Pertanyaan Private Pasien Anda di Sini</p>
           </div>
-        </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -188,36 +192,41 @@ export default function NakesPrivateQuestionsPage() {
               key={i}
               className="group relative overflow-hidden rounded-2xl border-2 border-emerald-100 bg-white p-6 transition-all duration-300 hover:border-emerald-300 hover:shadow-xl"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center text-white">{s.icon}</div>
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/80 to-teal-50/80 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative flex items-center justify-between">
                 <div>
-                  <p className="text-3xl font-bold text-gray-900">{s.n}</p>
-                  <p className="text-sm text-gray-600">{s.label}</p>
+                  <p className="text-sm text-gray-600 font-medium">{s.label}</p>
+                  <p className={`text-4xl font-bold mt-2 bg-gradient-to-r ${greenGrad} bg-clip-text text-transparent`}>
+                    {s.n}
+                  </p>
+                </div>
+                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${greenGrad} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform`}>
+                  {s.icon}
                 </div>
               </div>
             </Card>
           ))}
         </div>
 
-        {/* Tabs + List */}
-        <Card className="rounded-3xl border-2 border-gray-100 shadow-xl">
-          <div className="px-6 pt-6">
-            {/* Navigation Pills */}
-            <div className="flex gap-3 p-1 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-100 shadow-lg mb-6">
+        {/* Main content */}
+        <Card className="rounded-3xl border-2 border-gray-100 overflow-hidden shadow-xl">
+          <div className="px-6 py-6">
+            {/* Tab Navigation - DIPERBAIKI: tetap horizontal tapi lebih rapi */}
+            <div className="flex gap-2 sm:gap-3">
               <button
                 onClick={() => setTab("pending")}
-                className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold transition-all duration-300
+                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl font-semibold text-sm sm:text-base transition-all duration-300 flex-1 min-w-0
                   ${
                     tab === "pending"
-                      ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.03]"
+                      ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.02]"
                       : "text-gray-600 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:text-emerald-700 hover:shadow-md"
                   }`}
               >
-                <Clock className="h-5 w-5" />
-                Pertanyaan Baru
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="hidden sm:inline truncate">Pertanyaan Baru</span>
+                <span className="sm:hidden truncate">Baru</span>
                 <span
-                  className={`ml-2 inline-flex items-center justify-center h-6 min-w-6 px-2 rounded-full text-xs font-bold ${
+                  className={`inline-flex items-center justify-center h-5 sm:h-6 min-w-[20px] sm:min-w-6 px-1.5 sm:px-2 rounded-full text-xs font-bold flex-shrink-0 ${
                     tab === "pending" ? "bg-white/25 text-white" : "bg-gray-200 text-gray-700"
                   }`}
                 >
@@ -227,17 +236,18 @@ export default function NakesPrivateQuestionsPage() {
 
               <button
                 onClick={() => setTab("my-questions")}
-                className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold transition-all duration-300
+                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl font-semibold text-sm sm:text-base transition-all duration-300 flex-1 min-w-0
                   ${
                     tab === "my-questions"
-                      ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.03]"
+                      ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.02]"
                       : "text-gray-600 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:text-emerald-700 hover:shadow-md"
                   }`}
               >
-                <MessageSquare className="h-5 w-5" />
-                Pertanyaan Saya
+                <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="hidden sm:inline truncate">Pertanyaan Saya</span>
+                <span className="sm:hidden truncate">Saya</span>
                 <span
-                  className={`ml-2 inline-flex items-center justify-center h-6 min-w-6 px-2 rounded-full text-xs font-bold ${
+                  className={`inline-flex items-center justify-center h-5 sm:h-6 min-w-[20px] sm:min-w-6 px-1.5 sm:px-2 rounded-full text-xs font-bold flex-shrink-0 ${
                     tab === "my-questions" ? "bg-white/25 text-white" : "bg-gray-200 text-gray-700"
                   }`}
                 >
@@ -285,7 +295,7 @@ export default function NakesPrivateQuestionsPage() {
         </div>
 
         {/* title & excerpt */}
-        <h3 className="font-bold text-gray-900 text-lg">{q.title}</h3>
+        <h3 className="font-bold text-gray-900 text-base sm:text-lg line-clamp-1">{q.title}</h3>
         <p className="text-sm text-gray-600 line-clamp-2 mt-1">{q.content}</p>
 
         {/* bottom row: info ⟷ button (SEJAJAR) */}
@@ -365,7 +375,7 @@ export default function NakesPrivateQuestionsPage() {
                                 </Badge>
                               </div>
 
-                              <h3 className="font-bold text-gray-900 text-lg group-hover:text-emerald-700 transition-colors">
+                              <h3 className="font-bold text-gray-900 text-base sm:text-lg group-hover:text-emerald-700 transition-colors line-clamp-1">
                                 {q.title}
                               </h3>
                               <p className="text-sm text-gray-600 line-clamp-2 mt-1">{q.content}</p>

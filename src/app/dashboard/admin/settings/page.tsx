@@ -31,6 +31,7 @@ export default function PengaturanPage() {
   const [show, setShow] = useState({ old: false, new: false, confirm: false })
 
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
+
   const { setUser } = useAuth()
 
   useEffect(() => {
@@ -74,9 +75,12 @@ export default function PengaturanPage() {
     } catch (err) {
       const resData = (err as any)?.response?.data
       const errors = (resData?.errors as Record<string, string[] | string> | undefined) ?? undefined
+
       const first = errors ? Object.values(errors)[0] : undefined
       const firstMsg = Array.isArray(first) ? first[0] : first
+
       const text = (firstMsg as string) || resData?.message || "Gagal menyimpan profil."
+
       setMsg({ type: "error", text })
     }
   }
@@ -84,8 +88,14 @@ export default function PengaturanPage() {
   async function handleSavePassword(e: FormEvent) {
     e.preventDefault()
     setMsg(null)
-    if (!oldPass || !newPass || !confirmPass) return setMsg({ type: "error", text: "Semua field password wajib diisi." })
-    if (newPass !== confirmPass) return setMsg({ type: "error", text: "Konfirmasi password tidak cocok." })
+    if (!oldPass || !newPass || !confirmPass) {
+      setMsg({ type: "error", text: "Semua field password wajib diisi." })
+      return
+    }
+    if (newPass !== confirmPass) {
+      setMsg({ type: "error", text: "Konfirmasi password tidak cocok." })
+      return
+    }
 
     try {
       await api.patch("/profile/password", {
@@ -94,19 +104,24 @@ export default function PengaturanPage() {
         new_password_confirmation: confirmPass,
       })
       setMsg({ type: "success", text: "Password berhasil diperbarui." })
-      setOldPass(""); setNewPass(""); setConfirmPass("")
+      setOldPass("")
+      setNewPass("")
+      setConfirmPass("")
       setTimeout(() => setMsg(null), 3000)
     } catch (err) {
       const resData = (err as any)?.response?.data
       const errors = (resData?.errors as Record<string, string[] | string> | undefined) ?? undefined
+
       const first = errors ? Object.values(errors)[0] : undefined
       const firstMsg = Array.isArray(first) ? first[0] : first
+
       const text = (firstMsg as string) || resData?.message || "Gagal memperbarui password."
+
       setMsg({ type: "error", text })
     }
   }
 
-return (
+         return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-9">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
@@ -129,11 +144,11 @@ return (
                 Pengaturan Akun<br className="hidden sm:block" />
               </h1>
               <p className="text-gray-600 mt-1 sm:mt-0.5">
-                Kelola profil dan keamanan akun Anda
+                Kelola Profil dan Keamanan Akun Anda
               </p>
             </div>
           </div>
-        </div>
+          </div>
 
         {/* Notification */}
         {msg && (
@@ -226,7 +241,7 @@ return (
                   placeholder="+62 812 3456 7890"
                 />
 
-                <div className="flex justify-end pt-2 md:col-span-2">
+                <div className="flex justify-center pt-2 md:col-span-2">
                   <button
                     type="submit"
                     className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
@@ -283,14 +298,14 @@ return (
                   placeholder="Ulangi password baru"
                 />
 
-                <div className="flex justify-end pt-4">
-                  <Button
+                <div className="flex justify-center pt-4">
+                  <button
                     type="submit"
-                    className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
+                    className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
                   >
-                    <Save className="h-5 w-5 mr-2" />
+                    <Save className="h-5 w-5" />
                     Perbarui Password
-                  </Button>
+                  </button>
                 </div>
               </form>
             </div>

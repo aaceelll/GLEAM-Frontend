@@ -466,7 +466,7 @@ export default function NakesQuestionDetailPage() {
                 </div>
                 <div>
                   <h2 className="text-sm font-semibold text-emerald-700">
-                    {question.category.name}
+                    Private
                   </h2>
                   <p className="text-xs text-gray-500">Pertanyaan Private</p>
                 </div>
@@ -474,7 +474,7 @@ export default function NakesQuestionDetailPage() {
               {getStatusBadge()}
             </div>
 
-            <h1 className="text-3xl font-bold text-gray-900 mb-6 leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 leading-tight break-words">
               {question.title}
             </h1>
 
@@ -493,7 +493,7 @@ export default function NakesQuestionDetailPage() {
 
             {/* Content */}
             <div className="bg-gray-50 p-6 rounded-2xl border-2 border-gray-200 mb-6">
-              <p className="text-gray-800 leading-relaxed whitespace-pre-wrap text-lg">
+              <p className="text-gray-800 leading-relaxed whitespace-pre-wrap text-base sm:text-lg break-words">
                 {question.content}
               </p>
             </div>
@@ -535,7 +535,7 @@ export default function NakesQuestionDetailPage() {
                         </div>
                       </div>
                       <div className="bg-white p-5 rounded-xl border border-emerald-200 shadow-sm">
-                        <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+                        <p className="text-gray-800 whitespace-pre-wrap leading-relaxed break-words">
                           {reply.content}
                         </p>
                       </div>
