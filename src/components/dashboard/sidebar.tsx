@@ -50,6 +50,7 @@ const menuItems = {
   ],
 };
 
+// 🔥 Helper function untuk baca cookie
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
   const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
@@ -65,12 +66,15 @@ export function Sidebar({ role, displayName: displayNameProp }: SidebarProps) {
   const [accountOpen, setAccountOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Tutup otomatis saat navigasi pindah halaman
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
+  // 🔥 UPDATED: Baca dari cookie dulu, baru fallback ke localStorage
   useEffect(() => {
     const pick = () => {
+      // 1. Coba baca dari cookie dulu
       const cookieName = getCookie("user_nama");
       const cookieRole = getCookie("role");
 
@@ -79,11 +83,13 @@ export function Sidebar({ role, displayName: displayNameProp }: SidebarProps) {
         return;
       }
 
+      // 2. Fallback ke context user
       if (user) {
         setUiUser({ nama: user.nama, role: (user as any).role });
         return;
       }
 
+      // 3. Fallback terakhir ke localStorage
       try {
         const raw = localStorage.getItem("user_data");
         if (raw) {
@@ -107,6 +113,7 @@ export function Sidebar({ role, displayName: displayNameProp }: SidebarProps) {
 
   return (
   <>
+    {/* Tombol buka sidebar (hanya di HP) */}
     <button
       onClick={() => setMobileOpen(true)}
       className="lg:hidden fixed top-4 left-4 z-40 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200 bg-white/90 shadow-md"
@@ -115,6 +122,7 @@ export function Sidebar({ role, displayName: displayNameProp }: SidebarProps) {
       <Menu className="h-5 w-5 text-emerald-700" />
     </button>
 
+    {/* Overlay hitam transparan di belakang sidebar */}
     <div
       onClick={() => setMobileOpen(false)}
       className={cn(
@@ -123,46 +131,62 @@ export function Sidebar({ role, displayName: displayNameProp }: SidebarProps) {
       )}
     />
 
+    {/* Sidebar utama */}
     <aside
       className={cn(
+        // selalu fixed, jadi tidak ikut scroll
         "fixed inset-y-0 left-0 z-50 w-72 transition-transform duration-300",
-        mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-        "bg-white border-r-2 border-gray-100 shadow-2xl flex flex-col"
+
+        // mobile: jadi drawer (slide in/out)
+        mobileOpen ? "translate-x-0" : "-translate-x-full",
+
+        // desktop: selalu terlihat (no slide)
+        "lg:translate-x-0",
+
+        // styling
+        "bg-white border-r border-gray-200 shadow-sm overflow-y-auto"
       )}
     >
-      <div className="px-6 py-6 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
-        <div className="flex items-center justify-between">
+      {/* Brand (besar + divider) */}
+      <div className="px-6 pt-6 pb-4">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
-              <span className="text-white font-black text-xl">G</span>
-            </div>
+            <img src="/images/gleam-logo.png" alt="GLEAM" className="w-14 h-14 md:w-14 md:h-20 rounded-xl object-contain" />
             <div>
-              <h1 className="text-xl font-black text-gray-900 tracking-tight">GLEAM</h1>
-              <p className="text-xs text-emerald-700 font-medium">Health Monitor</p>
+              <h1 className="text-4xl md:text-3xl font-bold tracking-tight text-gray-900 leading-none">GLEAM</h1>
+              <p className="text-[13px] md:text-xs text-gray-500 leading-tight">
+                Glucose, Learning, Education,<br /> and Monitoring
+              </p>
             </div>
           </div>
+
+          {/* Tombol close (hanya mobile) */}
           <button
             onClick={() => setMobileOpen(false)}
-            className="lg:hidden inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-gray-100"
+            className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200"
             aria-label="Tutup menu"
           >
-            <X className="h-5 w-5 text-gray-600" />
+            <X className="h-5 w-5 text-gray-700" />
           </button>
         </div>
-      </div>
 
-      <nav className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="space-y-2">
+        {/* divider di bawah brand */}
+        <div className="mt-5 border-t border-gray-200" />
+      </div>   
+
+      {/* Navigation (UI & hover tetap) */}
+      <nav className="px-4 py-3">
+        <div className="space-y-1.5">
           {items.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            const isActive = pathname === item.href;
             return (
               <Button
                 key={item.href}
-                variant="ghost"
                 asChild
+                variant="ghost"
                 className={cn(
-                  "w-full justify-start relative transition-all duration-300 rounded-xl h-12",
+                  "w-full justify-start gap-3 h-12 rounded-xl transition-all duration-200 group relative overflow-hidden",
                   isActive
                     ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg hover:shadow-xl hover:from-emerald-600 hover:to-teal-600"
                     : "text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 hover:translate-x-1"
@@ -182,11 +206,14 @@ export function Sidebar({ role, displayName: displayNameProp }: SidebarProps) {
         </div>
       </nav>
 
+      {/* Divider sebelum akun */}
       <div className="px-6">
         <div className="my-3 border-t border-gray-200" />
       </div>
 
+      {/* Account dropdown */}
       <div className="px-6 pb-6">
+        {/* Header kartu akun */}
         <button
           onClick={() => setAccountOpen((v) => !v)}
           className={cn(
@@ -206,22 +233,32 @@ export function Sidebar({ role, displayName: displayNameProp }: SidebarProps) {
             </div>
           </div>
           {accountOpen ? (
-            <ChevronUp className="h-4 w-4 text-gray-400" />
+            <ChevronUp className="h-5 w-5 text-emerald-600" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-gray-400" />
+            <ChevronDown className="h-5 w-5 text-emerald-600" />
           )}
         </button>
 
+        {/* Panel dropdown */}
         {accountOpen && (
-          <div className="mt-2 space-y-1 animate-fade-in">
-            <Button
-              variant="ghost"
+          <div
+            className={[
+              "mt-2 rounded-2xl bg-white p-4",
+              "border-2 border-gray-200",
+              "shadow-[0_12px_30px_-12px_rgba(0,0,0,0.15)]",
+              "transition-all hover:border-red-500 hover:ring-2 hover:ring-red-200",
+              "hover:shadow-[0_18px_40px_-12px_rgba(244,63,94,0.20)]"
+            ].join(" ")}
+          >
+            <button
               onClick={logout}
-              className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl h-11"
+              className="w-full flex items-center gap-3 font-semibold text-red-600"
             >
-              <LogOut className="h-4 w-4" />
-              <span className="font-medium">Keluar</span>
-            </Button>
+              <span className="inline-flex w-8 h-8 items-center justify-center rounded-lg bg-red-100/70">
+                <LogOut className="h-5 w-5" />
+              </span>
+              <span>Keluar</span>
+            </button>
           </div>
         )}
       </div>
