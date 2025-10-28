@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -51,22 +49,25 @@ const Button: React.FC<ButtonProps> = ({ children, variant = "default", classNam
   );
 };
 
-const Card: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
-  <div className={`bg-white rounded-3xl ${className}`}>{children}</div>
-);
-const CardHeader: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
-  <div className={`p-6 ${className}`}>{children}</div>
-);
-const CardTitle: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
-  <h3 className={className}>{children}</h3>
-);
-const CardContent: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
-  <div className={`px-6 pb-6 ${className}`}>{children}</div>
-);
-const CardDescription: React.FC<React.PropsWithChildren<{ className?: string }>> = ({
-  children,
-  className = "",
-}) => <p className={className}>{children}</p>;
+    const Card: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
+      <div className={`bg-white rounded-3xl ${className}`}>{children}</div>
+    );
+
+    const CardHeader: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
+      <div className={`p-6 ${className}`}>{children}</div>
+    );
+
+    const CardTitle: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
+      <h3 className={className}>{children}</h3>
+    );
+
+    const CardContent: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
+      <div className={`px-6 pb-6 ${className}`}>{children}</div>
+    );
+
+    const CardDescription: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
+      <p className={className}>{children}</p>
+    );
 
 /* ================== Page ================== */
 
@@ -145,15 +146,23 @@ function DropdownButton({
 export default function HomePage() {
   return (
     <>
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 -right-40 w-[500px] h-[500px] bg-emerald-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob" />
-        <div className="absolute top-0 right-20 w-[500px] h-[500px] bg-teal-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob animation-delay-2000" />
-        <div className="absolute -bottom-40 right-1/4 w-[500px] h-[500px] bg-green-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob animation-delay-4000" />
-      </div>
+      {/* Gradient hijau full-page */}
+      <div className="min-h-screen w-full bg-gradient-to-b from-emerald-50 via-green-50 to-teal-50 relative">
+        {/* ADD: wrap all content above bg */}
+          <div className="relative z-10"></div>
 
-      {/* Header – gradient kiri & kanan, pakai GleamLogo */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-emerald-100/50 backdrop-blur-xl">
-        {/* Overlay gradient yang menyatu dengan halaman */}
+        {/* efek blob */}
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-0 -right-40 w-[500px] h-[500px] bg-emerald-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob" />
+          <div className="absolute top-0 right-20 w-[500px] h-[500px] bg-teal-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob animation-delay-2000" />
+          <div className="absolute -bottom-40 right-1/4 w-[500px] h-[500px] bg-green-300 rounded-full mix-blend-multiply blur-3xl opacity-20 animate-blob animation-delay-4000" />
+        </div>
+
+       {/* semua konten utama */}
+        <div className="relative z-10">
+       {/* Header */}
+        <header className="fixed top-0 left-0 right-0 z-50 border-b border-emerald-100/50 backdrop-blur-xl">
+       {/* Overlay gradient */}
         <div
           className="absolute inset-0 -z-10 opacity-90"
           style={{
@@ -199,7 +208,7 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative z-10 container mx-auto px-4 sm:px-6 pt-32 pb-20 md:pt-40 md:pb-32">
+       <section className="relative z-10 container mx-auto px-4 sm:px-6 pt-32 pb-20 md:pt-40 md:pb-32">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Kiri */}
           <div className="space-y-8">
@@ -245,7 +254,7 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Trust Indicators - Pengganti Stats */}
+            {/* Indicators */}
             <div className="flex flex-wrap items-center gap-4 pt-6">
               <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50/80 rounded-full border border-emerald-200 hover:border-emerald-300 transition-all">
                 <Shield className="w-4 h-4 text-emerald-600" />
@@ -326,7 +335,10 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="relative z-10 py-20 md:py-32 bg-gradient-to-b from-white to-emerald-50/30">
+      <section
+            id="features"
+            className="relative z-10 py-20 md:py-32 bg-transparent"
+          >
         <div className="container mx-auto px-4 sm:px-6 max-w-screen-xl">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <div className="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-bold mb-4 border border-emerald-200">
@@ -414,7 +426,10 @@ export default function HomePage() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="relative z-10 py-20 md:py-32 bg-white">
+      <section
+            id="how-it-works"
+            className="relative z-10 py-20 md:py-32 bg-transparent"
+          >
         <div className="container mx-auto px-4 sm:px-6 max-w-screen-xl">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <div className="inline-block px-4 py-2 bg-teal-100 text-teal-700 rounded-full text-sm font-bold mb-4 border border-teal-200">
@@ -473,7 +488,10 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section id="cta" className="relative z-10 py-20 md:py-32">
+      <section
+            id="cta"
+            className="relative z-10 py-20 md:py-32 bg-transparent"
+          >
         <div className="container mx-auto px-4 sm:px-6 max-w-screen-xl">
           <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 rounded-3xl p-12 md:p-20 text-center shadow-2xl">
             <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2" />
@@ -514,7 +532,7 @@ export default function HomePage() {
 
       {/* Footer (optional, tetap dikomentari) */}
 
-      <style jsx>{`
+            <style jsx>{`
         @keyframes blob {
           0% { transform: translate(0px, 0px) scale(1); }
           33% { transform: translate(30px, -50px) scale(1.1); }
@@ -525,6 +543,8 @@ export default function HomePage() {
         .animation-delay-2000 { animation-delay: 2s; }
         .animation-delay-4000 { animation-delay: 4s; }
       `}</style>
+      </div> 
+    </div>   
     </>
   );
 }

@@ -645,19 +645,6 @@ export default function LaporanKeseluruhan() {
           </div>
           </div>
 
-          <button
-            onClick={fetchList}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold
-                       border-2 border-gray-100 text-gray-600 bg-white
-                       transition-all duration-300
-                       hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50
-                       hover:text-emerald-700 hover:shadow-md hover:scale-[1.02]"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Refresh
-          </button>
-        
-
         {errorMsg && (
           <div className="rounded-xl border-2 border-amber-200 bg-amber-50 text-amber-800 px-4 py-3">
             {errorMsg}
