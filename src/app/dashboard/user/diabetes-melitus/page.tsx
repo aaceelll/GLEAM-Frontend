@@ -412,7 +412,7 @@ export default function DiabetesMelitusPage() {
         )}
 
         {/* =================== HASIL SCREENING =================== */}
-        <div className="bg-white rounded-3xl border-2 border-gray-100 shadow-xl">
+        <div className="bg-white rounded-3xl border-2 border-gray-100 shadow-xl overflow-hidden">
           <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
@@ -653,8 +653,8 @@ export default function DiabetesMelitusPage() {
         </div>
 
         {/* =================== KUISONER / TES =================== */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl">
-          <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl overflow-hidden">
+           <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-t-3xl">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -782,8 +782,8 @@ export default function DiabetesMelitusPage() {
         </div>
 
         {/* =================== DAFTAR KONTEN =================== */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl">
-          <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl overflow-hidden">
+              <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-t-3xl">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
