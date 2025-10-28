@@ -249,7 +249,7 @@ export default function ScreeningLineChart({
           </span>
           <span className="inline-flex items-center gap-2 text-xs text-gray-600">
             <span className="w-3 h-1.5 rounded-full bg-yellow-500" />
-            Batas Sedang (41-47%)
+            Batas Rendah (40%)
           </span>
           <span className="inline-flex items-center gap-2 text-xs text-gray-600">
             <span className="w-3 h-1.5 rounded-full bg-red-500" />
