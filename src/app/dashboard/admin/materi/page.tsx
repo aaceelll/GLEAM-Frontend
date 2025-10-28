@@ -43,10 +43,25 @@ function getFilenameFromCD(cd?: string) {
   }
 }
 
+function isCrossOrigin(url: string) {
+  try {
+    const u = new URL(url, window.location.href);
+    return u.origin !== window.location.origin;
+  } catch {
+    return true;
+  }
+}
+
 async function downloadPdfWithAuth(konten: { file_url?: string | null; judul: string }) {
   const raw = konten.file_url ?? "";
   const url = toAbsolute(raw);
   if (!url) throw new Error("URL file kosong");
+
+  // kalau cross-origin → langsung buka tab baru (hindari error CORS)
+  if (typeof window !== "undefined" && isCrossOrigin(url)) {
+    window.open(url, "_blank", "noopener,noreferrer");
+    return;
+  }
 
   try {
     const token = getToken();
@@ -56,11 +71,8 @@ async function downloadPdfWithAuth(konten: { file_url?: string | null; judul: st
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
 
-    const blob = new Blob([res.data], {
-      type: res.headers["content-type"] || "application/pdf",
-    });
+    const blob = new Blob([res.data], { type: res.headers["content-type"] || "application/pdf" });
     const href = URL.createObjectURL(blob);
-
     const cd = res.headers["content-disposition"];
     const fromHeader = getFilenameFromCD(cd);
     const fallback = (konten.judul || "materi").replace(/[^\w\-]+/g, "_") + ".pdf";
@@ -74,6 +86,7 @@ async function downloadPdfWithAuth(konten: { file_url?: string | null; judul: st
     a.remove();
     URL.revokeObjectURL(href);
   } catch {
+    // same-origin tapi gagal → tetap buka tab
     window.open(url, "_blank", "noopener,noreferrer");
   }
 }
