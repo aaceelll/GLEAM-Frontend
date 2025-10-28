@@ -15,6 +15,10 @@ type Row = {
   date: string;
   riskPct?: number;
   riskText?: string;
+  systolic_bp?: string | number;
+  diastolic_bp?: string | number;
+  bmi?: string | number;
+  blood_glucose_level?: string | number;
 };
 
 type ScreeningDetail = {
@@ -108,6 +112,15 @@ function pickRiskText(x: any): string | undefined {
   return typeof n === "number" ? `${n.toFixed(2)}%` : s;
 }
 
+/* ⬇️ baru: untuk memastikan nilai ke number 0–100 */
+function parsePctFromMaybeText(x: any): number | undefined {
+  if (x == null) return undefined;
+  if (typeof x === "number" && Number.isFinite(x)) return x;
+  const s = String(x).trim();
+  const n = Number(s.replace("%", "").trim());
+  return Number.isFinite(n) ? n : undefined;
+}
+
 /** ✅ KMK No. HK.01.07/MENKES/4334/2021 — dipakai seragam di semua UI */
 function classifyHT_Kemenkes(sysRaw: any, diaRaw: any): string {
   const s = toNumber(sysRaw);
@@ -125,7 +138,6 @@ function classifyHT_Kemenkes(sysRaw: any, diaRaw: any): string {
   } else if ((s >= 160 && s <= 179) || (d >= 100 && d <= 109)) {
     return "Hipertensi Derajat 2";
   } else if (s >= 140 && d < 90) {
-    // khusus HST: syaratnya "dan" (sistolik >= 140 **dan** diastolik < 90)
     return "Hipertensi Sistolik Terisolasi";
   } else if ((s >= 140 && s <= 159) || (d >= 90 && d <= 99)) {
     return "Hipertensi Derajat 1";
@@ -141,17 +153,44 @@ function mapRow(x: any): Row {
     first(x, ["user.nama", "user.name"]) ??
     first(x, ["nama", "name", "patient_name"], "Tanpa Nama");
   const date = first(x, ["screened_at", "created_at", "date", "submitted_at"]) ?? "";
+
   const riskNum =
     toNumber(first(x, ["riskPct", "risk_percentage", "risk_percent"])) ??
     toNumber(first(x, ["percentage", "score", "diabetes_probability"])) ??
     undefined;
+
   const riskText = pickRiskText(x);
   const userId = first(x, ["userId", "user_id", "user.id"]);
-  return { id, name, date, riskPct: riskNum, riskText, userId };
+
+  // ⬇️ vital signs
+  const systolic =
+    first(x, ["systolic_bp", "blood_pressure_systolic", "sistolik", "systolic"]);
+  const diastolic =
+    first(x, ["diastolic_bp", "blood_pressure_diastolic", "diastolik", "diastolic"]);
+  const bmi = first(x, ["bmi", "body_mass_index", "user.bmi"]);
+  const glucose =
+    first(x, ["blood_glucose_level", "blood_sugar", "gula_darah", "glucose"]);
+
+  return {
+    id,
+    name,
+    date,
+    riskPct: riskNum,
+    riskText,
+    userId,
+    systolic_bp: systolic,
+    diastolic_bp: diastolic,
+    bmi,
+    blood_glucose_level: glucose,
+  };
 }
 
 function mapDetail(root: any): ScreeningDetail {
   const x = root?.data ?? root ?? {};
+  
+  // 🔍 DEBUG: Log semua data mentah
+  console.log("🔍 DEBUG mapDetail - Full raw data:", JSON.stringify(x, null, 2));
+  console.log("🔍 DEBUG - All keys in data:", Object.keys(x));
 
   const riskPct =
     toNumber(first(x, ["riskPct", "risk_percentage", "risk_percent"])) ??
@@ -172,10 +211,11 @@ function mapDetail(root: any): ScreeningDetail {
   const diaRaw0 = first(x, ["diastolik", "diastolic", "diastolic_bp", "blood_pressure_diastolic"]);
   const tekananStr = first(x, ["tekanan_darah"]) as string | undefined;
 
+  console.log("🔍 DEBUG - Blood Pressure raw:", { sysRaw0, diaRaw0, tekananStr });
+
   let sys = toNumber(sysRaw0);
   let dia = toNumber(diaRaw0);
 
-  // Parse bila hanya ada "120 / 80"
   if ((sys == null || dia == null) && typeof tekananStr === "string") {
     const m = tekananStr.match(/(\d+)\s*[/\-]\s*(\d+)/);
     if (m) {
@@ -187,21 +227,37 @@ function mapDetail(root: any): ScreeningDetail {
   const tekanan =
     tekananStr ?? (sys != null || dia != null ? `${sys ?? "-"} / ${dia ?? "-"}` : undefined);
 
-  // ✅ Klasifikasi KMK dihitung dari angka; fallback ke field BE bila perlu
   const klasFromBp = classifyHT_Kemenkes(sys, dia);
   const klasHT =
     klasFromBp !== "-"
       ? klasFromBp
       : first(x, ["bp_classification", "klasifikasi_hipertensi", "htn_class"]) ?? "-";
 
-  // Gula darah siap tampil
-  const gula =
-    first(x, ["gula_darah"]) ??
-    (x.blood_glucose_level || x.blood_sugar
-      ? `${x.blood_glucose_level ?? x.blood_sugar} mg/dL`
-      : undefined);
+  const bmiVal = first(x, ["bmi", "body_mass_index", "user.bmi"]);
+  console.log("🔍 DEBUG - BMI:", { 
+    direct_bmi: x.bmi, 
+    body_mass_index: x.body_mass_index,
+    user_bmi: x.user?.bmi,
+    final_bmiVal: bmiVal 
+  });
 
-  return {
+  const bloodSugarRaw = first(x, ["blood_glucose_level", "blood_sugar", "gula_darah", "glucose"]);
+  const gula = bloodSugarRaw 
+    ? (typeof bloodSugarRaw === 'string' && bloodSugarRaw.includes('mg/dL'))
+      ? bloodSugarRaw
+      : `${bloodSugarRaw} mg/dL`
+    : undefined;
+  
+  console.log("🔍 DEBUG - Blood Sugar:", { 
+    blood_glucose_level: x.blood_glucose_level,
+    blood_sugar: x.blood_sugar,
+    gula_darah: x.gula_darah,
+    glucose: x.glucose,
+    bloodSugarRaw,
+    final_gula: gula 
+  });
+
+  const finalResult = {
     id: first(x, ["id", "screening_id", "result_id"]),
     created_at: first(x, ["created_at", "screened_at"]),
     updated_at: first(x, ["updated_at"]),
@@ -213,7 +269,7 @@ function mapDetail(root: any): ScreeningDetail {
     usia: first(x, ["usia", "age"]),
     jenis_kelamin: first(x, ["jenis_kelamin", "gender"]),
     gender: first(x, ["gender"]),
-    bmi: first(x, ["bmi"]),
+    bmi: bmiVal,
 
     tekanan_darah: tekanan,
     sistolik: sys ?? sysRaw0,
@@ -227,18 +283,40 @@ function mapDetail(root: any): ScreeningDetail {
     klasifikasi_hipertensi: klasHT,
 
     gula_darah: gula,
-    blood_sugar: first(x, ["blood_glucose_level", "blood_sugar"]),
+    blood_sugar: bloodSugarRaw,
   };
+
+  console.log("✅ DEBUG - Final mapped result:", finalResult);
+  return finalResult;
 }
 
 const LIST_PATH = "/nakes/diabetes-screenings";
+
+/* ============ ⬇️ baru: enrich riwayat dengan detail ============ */
+async function enrichHistoryWithDetail(items: Row[]): Promise<Row[]> {
+  const enriched = await Promise.all(items.map(async (r) => {
+    try {
+      const { data } = await api.get(`/nakes/diabetes-screenings/${r.id}`);
+      const det = mapDetail(data);
+      return {
+        ...r,
+        systolic_bp: det.sistolik ?? r.systolic_bp,
+        diastolic_bp: det.diastolik ?? r.diastolic_bp,
+        bmi: det.bmi ?? r.bmi,
+        blood_glucose_level: det.blood_sugar ?? det.gula_darah ?? r.blood_glucose_level,
+      };
+    } catch {
+      return r;
+    }
+  }));
+  return enriched;
+}
 
 /* ============ Small UI Components ============ */
 function RiskChip({ value, text }: { value?: number; text?: string }) {
   const pct = value ?? 0;
   const label =
     text ?? (Number.isFinite(pct) ? (Number.isInteger(pct) ? `${pct}%` : `${pct.toFixed(2)}%`) : "-");
-  // rendah <= 40 → hijau, sedang (40–48) → oranye, tinggi >= 48 → merah
   const theme =
     pct >= 48 ? "from-red-600 to-rose-600"
     : pct <= 40 ? "from-emerald-600 to-teal-600"
@@ -295,7 +373,6 @@ function HistoryDetailPopup({
       ? "border-emerald-200 bg-emerald-50 text-emerald-900"
       : "border-amber-200 bg-amber-50 text-amber-900";
 
-  // ✅ Hitung ulang HT KMK untuk panel detail riwayat
   const sysN = toNumber(d.sistolik);
   const diaN = toNumber(d.diastolik);
   const klasUI = classifyHT_Kemenkes(sysN, diaN);
@@ -407,7 +484,6 @@ function DetailModal({
       ? "border-emerald-200 bg-emerald-50 text-emerald-900"
       : "border-amber-200 bg-amber-50 text-amber-900";
 
-  // ✅ Konsisten: hitung ulang klasifikasi KMK untuk panel detail terbaru
   const sysN = toNumber(d.sistolik);
   const diaN = toNumber(d.diastolik);
   const klasUI = classifyHT_Kemenkes(sysN, diaN);
@@ -442,23 +518,31 @@ function DetailModal({
             {history.length > 0 && (
               <div className="mb-6">
                 <ScreeningLineChart
-                  data={history.map((h) => ({
-                    id: h.id,
-                    created_at: h.date,
-                    diabetes_probability: h.riskText || `${h.riskPct ?? 0}%`,
-                    patient_name: h.name,
-                    age: 0,
-                    gender: "",
-                    systolic_bp: 0,
-                    diastolic_bp: 0,
-                    heart_disease: "",
-                    smoking_history: "",
-                    bmi: 0,
-                    blood_glucose_level: 0,
-                    diabetes_result: "",
-                    bp_classification: "",
-                    bp_recommendation: "",
-                  }))}
+                  data={history.map((h) => {
+                    const pct =
+                      parsePctFromMaybeText(h.riskPct) ??
+                      parsePctFromMaybeText(h.riskText) ?? 0;
+
+                    return {
+                      id: h.id,
+                      created_at: h.date,
+                      diabetes_probability: pct, // number 0–100
+                      patient_name: h.name,
+
+                      // tooltip fields (jangan undefined)
+                      age: "" as string | number,
+                      gender: "",
+                      systolic_bp: (h.systolic_bp ?? "-") as string | number,
+                      diastolic_bp: (h.diastolic_bp ?? "-") as string | number,
+                      heart_disease: "",
+                      smoking_history: "",
+                      bmi: (h.bmi ?? "-") as string | number,
+                      blood_glucose_level: (h.blood_glucose_level ?? "-") as string | number,
+                      diabetes_result: "",
+                      bp_classification: "",
+                      bp_recommendation: "",
+                    };
+                  })}
                   height={280}
                 />
               </div>
@@ -614,10 +698,13 @@ export default function LaporanKeseluruhan() {
       const items: Row[] = coerceArray(data)
         .map(mapRow)
         .sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
-      setHistoryItems(items);
 
-      if (items[0]) {
-        const det = await api.get(`/nakes/diabetes-screenings/${items[0].id}`);
+      /* ⬇️ penting: enrich riwayat supaya ada BP/BMI/Gula */
+      const enriched = await enrichHistoryWithDetail(items);
+      setHistoryItems(enriched);
+
+      if (enriched[0]) {
+        const det = await api.get(`/nakes/diabetes-screenings/${enriched[0].id}`);
         setDetail(mapDetail(det.data));
       } else {
         setDetail({ nama: fallbackName, riskLabel: "Detail tidak ditemukan", riskPct: 0, riskText: "0%" });
