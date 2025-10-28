@@ -428,16 +428,6 @@ export default function NakesQuestionDetailPage() {
               <ArrowLeft className="w-4 h-4" />
               <span className="font-semibold">Kembali</span>
             </Link>
-
-            <Button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              variant="outline"
-              className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
           </div>
 
           {/* Info assignment */}

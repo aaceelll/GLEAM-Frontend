@@ -148,28 +148,28 @@ export default function NakesDashboard() {
         value: loading ? "..." : fmt(summary?.screening_hari_ini),
         subtitle: "Update rutin",
         icon: <Activity className="h-6 w-6 text-white" />,
-        gradient: "from-cyan-500 to-blue-600",
+        gradient: "from-teal-500 to-cyan-600",
       },
       {
         title: "Laporan Bulan Ini",
         value: loading ? "..." : fmt(summary?.laporan_bulan_ini),
         subtitle: "Periode berjalan",
         icon: <FileText className="h-6 w-6 text-white" />,
-        gradient: "from-teal-500 to-green-600",
+        gradient: "from-cyan-500 to-green-600",
       },
     ],
     [summary, loading]
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50/30">
+    <div className="min-h-screen bg-white px-6 md:px-10 py-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <header className="mb-6 animate-fade-in">
+        <header className="mb-2">
           <div className="flex items-center gap-4">
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-all duration-500">
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 grid place-items-center shadow-2xl group-hover:scale-110 transition-all duration-500">
                 <Home className="h-8 w-8 text-white" />
               </div>
             </div>
@@ -177,7 +177,7 @@ export default function NakesDashboard() {
               <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent tracking-tight">
                 Dashboard Nakes
               </h1>
-              <p className="text-base md:text-lg text-gray-600 font-medium mt-1">
+              <p className="text-base md:text-lg text-gray-600 font-medium">
                 Ringkasan pelayanan & pemantauan lapangan
               </p>
             </div>
@@ -185,10 +185,10 @@ export default function NakesDashboard() {
         </header>
 
         {/* Info Akses */}
-        <div className="p-4 bg-emerald-50 border-2 border-emerald-100 rounded-xl animate-fade-in">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500 grid place-items-center flex-shrink-0">
-              <Activity className="w-5 h-5 text-white" />
+        <div className="mt-4 p-3 md:p-4 bg-emerald-50 border-2 border-emerald-100 rounded-xl">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-emerald-500 grid place-items-center flex-shrink-0">
+              <Activity className="w-4 h-4 md:w-5 md:h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-emerald-900 text-sm md:text-base">Hak Akses</p>
