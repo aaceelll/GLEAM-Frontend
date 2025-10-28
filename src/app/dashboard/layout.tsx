@@ -26,24 +26,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [role, setRole] = useState<Role | null>(null);
   const [userName, setUserName] = useState<string>("");
 
-  // ===== Auth + routing guard
   useEffect(() => {
-    // 1) Ambil role dari cookie (paling stabil), fallback ke localStorage
     const cookieRole = getCookie("role") as Role | null;
     let r: Role | null = cookieRole ?? null;
+
+    const cookieName = getCookie("user_nama");
+    let displayName = cookieName || "";
 
     const raw = localStorage.getItem("user_data");
     if (raw) {
       try {
         const parsed = JSON.parse(raw);
-        setUserName(parsed?.nama || parsed?.name || "");
+        if (!displayName) {
+          displayName = parsed?.nama || parsed?.name || "";
+        }
         if (!r && parsed?.role) r = parsed.role as Role;
       } catch {
-        // jangan default ke "user" — biarkan null agar kita redirect ke /login
+        // ignore
       }
     }
 
-    // 2) Jika masih tidak tahu role → anggap tidak valid, ke /login
+    setUserName(displayName || "User");
+
     if (!r) {
       router.replace("/login");
       return;
@@ -51,8 +55,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     setRole(r);
 
-    // 3) Enforce prefix sesuai role
-    const seg = pathname.split("/")[2]; // /dashboard/<seg>/...
+    const seg = pathname.split("/")[2];
     const mySeg = mapRoleToSegment(r);
     const myHome = `/dashboard/${mySeg}`;
 
@@ -66,12 +69,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       return;
     }
 
-    // 4) Sinkron kalau user_data berubah di tab lain / setelah me()
     const onStorage = (e: StorageEvent) => {
       if (e.key === "user_data" && e.newValue) {
         try {
           const p = JSON.parse(e.newValue);
-          setUserName(p?.nama || p?.name || "");
+          const newName = p?.nama || p?.name || "";
+          setUserName(newName || "User");
           if (p?.role && p.role !== r) {
             const nextSeg = mapRoleToSegment(p.role);
             setRole(p.role as Role);
@@ -90,12 +93,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="relative min-h-screen bg-gray-50 lg:flex">
-      {/* ===== Sidebar (Fixed Left) ===== */}
       <aside className="w-72 flex-shrink-0 shadow-2xl">
         <Sidebar role={sidebarRole} displayName={userName || undefined} />
       </aside>
 
-      {/* ===== Main Content Area ===== */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto bg-white">
           <div className="p-6 md:p-8">{children}</div>  

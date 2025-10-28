@@ -24,11 +24,34 @@ import type {
 
 const setRoleCookie = (role: string) => {
   if (typeof window === "undefined") return;
-  document.cookie = `role=${encodeURIComponent(role)}; Path=/; Max-Age=${60*60*24*7}; SameSite=Lax`;
+  const cookie = `role=${encodeURIComponent(role)}; Path=/; Max-Age=${60*60*24*7}; SameSite=Lax`;
+  document.cookie = cookie;
+  console.log("✅ Cookie role SET:", role);
 };
+
 const clearRoleCookie = () => {
   if (typeof window === "undefined") return;
   document.cookie = "role=; Path=/; Max-Age=0; SameSite=Lax";
+  console.log("🗑️ Cookie role CLEARED");
+};
+
+const setUserNameCookie = (nama: string) => {
+  if (typeof window === "undefined") return;
+  const cookie = `user_nama=${encodeURIComponent(nama)}; Path=/; Max-Age=${60*60*24*7}; SameSite=Lax`;
+  document.cookie = cookie;
+  console.log("✅ Cookie user_nama SET:", nama);
+};
+
+const clearUserNameCookie = () => {
+  if (typeof window === "undefined") return;
+  document.cookie = "user_nama=; Path=/; Max-Age=0; SameSite=Lax";
+  console.log("🗑️ Cookie user_nama CLEARED");
+};
+
+const getCookie = (name: string): string | null => {
+  if (typeof document === "undefined") return null;
+  const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return m ? decodeURIComponent(m[1]) : null;
 };
 
 interface AuthContextType {
@@ -50,8 +73,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setUser = (u: User | null) => {
     setUserState(u);
     if (typeof window !== "undefined") {
-      if (u) localStorage.setItem("user_data", JSON.stringify(u));
-      else localStorage.removeItem("user_data");
+      if (u) {
+        localStorage.setItem("user_data", JSON.stringify(u));
+        setUserNameCookie(u.nama || u.username || "User");
+        setRoleCookie(u.role);
+        console.log("👤 User data saved:", { nama: u.nama, role: u.role });
+      } else {
+        localStorage.removeItem("user_data");
+        clearUserNameCookie();
+        clearRoleCookie();
+      }
     }
   };
 
@@ -64,10 +95,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const res = await authAPI.me();
-        setUser(res.data as User);
-      } catch {
+        console.log("🔄 API /me response:", res.data);
+        
+        // Backend mengembalikan { success: true, user: {...} }
+        const userData = (res.data as any).user || res.data;
+        console.log("🔄 Extracted user data:", userData);
+        
+        setUser(userData as User);
+      } catch (err) {
+        console.error("❌ Error fetching user:", err);
         clearToken();
         clearTokenCookie();
+        clearRoleCookie();
+        clearUserNameCookie();
         setUser(null);
       } finally {
         setLoading(false);
@@ -75,14 +115,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-    const login = async (data: { login: string; password: string }) => {
+  const login = async (data: { login: string; password: string }) => {
     const res = await authAPI.login(data);
-    const { token, user } = res.data as AuthResponse;
+    console.log("🔐 Login response:", res.data);
+    
+    // Backend mengembalikan { success: true, user: {...}, token: "..." }
+    const responseData = res.data as any;
+    const token = responseData.token;
+    const user = responseData.user;
+
+    console.log("🔐 Extracted:", { user, token: token?.substring(0, 20) + "..." });
 
     setToken(token);
     setTokenCookie(token);
-    setRoleCookie(user.role);   // ⬅️ simpan role ke cookie (dibaca middleware)
+    setRoleCookie(user.role);
+    setUserNameCookie(user.nama || user.username || "User");
     setUser(user);
+
+    // Verify cookies after setting
+    console.log("🍪 Cookies after login:", {
+      role: getCookie("role"),
+      user_nama: getCookie("user_nama"),
+    });
+
     return user;
   };
 
@@ -93,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ? data.email.split("@")[0]
         : data.name.replace(/\s+/g, "").toLowerCase());
 
-    const payload: ApiRegisterRequest = {
+    const apiData: ApiRegisterRequest = {
       nama: data.name,
       email: data.email,
       username,
@@ -102,21 +157,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       jenis_kelamin: data.gender,
       alamat: data.address,
       password: data.password,
-      password_confirmation: data.password_confirmation,
+      password_confirmation: data.password_confirmation
     };
 
-    const res = await authAPI.registerUser(payload);
-    return res.data as AuthResponse;
+    const res = await authAPI.registerUser(apiData);
+    const responseData = res.data as any;
+    
+    const authRes: AuthResponse = {
+      token: responseData.token,
+      user: responseData.user
+    };
+
+    if (authRes.token && authRes.user) {
+      setToken(authRes.token);
+      setTokenCookie(authRes.token);
+      setRoleCookie(authRes.user.role);
+      setUserNameCookie(authRes.user.nama || authRes.user.username || "User");
+      setUser(authRes.user);
+    }
+
+    return authRes;
   };
 
-    const logout = () => {
-    authAPI.logout().finally(() => {
-      clearToken();
-      clearTokenCookie();
-      clearRoleCookie();  // ⬅️ bersihkan role
-      setUser(null);
-      if (typeof window !== "undefined") window.location.href = "/login";
-    });
+  const logout = () => {
+    clearToken();
+    clearTokenCookie();
+    clearRoleCookie();
+    clearUserNameCookie();
+    setUser(null);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("user_data");
+      window.location.href = "/login";
+    }
   };
 
   return (
@@ -136,10 +208,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
-};
+}
