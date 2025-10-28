@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { FileText, Search, Calendar, X, Activity, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, Search, Calendar, X, Activity, ChevronDown, ChevronUp } from "lucide-react";
 import { api } from "@/lib/api";
 import ScreeningLineChart from "@/components/ScreeningLineChart";
 
@@ -51,14 +51,14 @@ function formatIDTime(input?: string) {
   const hasOffset = /[+-]\d{2}:\d{2}$/.test(s);
   const hasZ = /Z$/.test(s);
   const isoish = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(s);
-  
+
   if (isoish && !hasOffset && !hasZ) {
     s = s.replace(" ", "T") + "Z";
   }
-  
+
   const d = new Date(s);
   if (isNaN(d.getTime())) return "-";
-  
+
   return new Intl.DateTimeFormat("id-ID", {
     timeZone: TZ,
     weekday: "long",
@@ -69,8 +69,6 @@ function formatIDTime(input?: string) {
     minute: "2-digit",
   }).format(d);
 }
-
-const greenGrad = "from-emerald-500 to-teal-500";
 
 function first<T = any>(obj: any, keys: string[], fallback?: any): T | any {
   for (const k of keys) {
@@ -110,14 +108,30 @@ function pickRiskText(x: any): string | undefined {
   return typeof n === "number" ? `${n.toFixed(2)}%` : s;
 }
 
-function classifyHT_Kemenkes(sys: number, dia: number): string {
-  if (!sys || !dia) return "-";
-  if (sys < 120 && dia < 80) return "Normal";
-  if (sys <= 129 && dia < 80) return "Meningkat";
-  if ((sys >= 130 && sys <= 139) || (dia >= 80 && dia <= 89)) return "Hipertensi Stage 1";
-  if (sys >= 140 || dia >= 90) return "Hipertensi Stage 2";
-  if (sys >= 180 || dia >= 120) return "Hipertensi Krisis";
-  return "Tidak Terklasifikasi";
+/** ✅ KMK No. HK.01.07/MENKES/4334/2021 — dipakai seragam di semua UI */
+function classifyHT_Kemenkes(sysRaw: any, diaRaw: any): string {
+  const s = toNumber(sysRaw);
+  const d = toNumber(diaRaw);
+  if (s == null || d == null) return "-";
+
+  if (s < 120 && d < 80) {
+    return "Optimal";
+  } else if ((s >= 120 && s <= 129) || (d >= 80 && d <= 84)) {
+    return "Normal";
+  } else if ((s >= 130 && s <= 139) || (d >= 85 && d <= 89)) {
+    return "Normal Tinggi (Pra Hipertensi)";
+  } else if (s >= 180 || d >= 110) {
+    return "Hipertensi Derajat 3";
+  } else if ((s >= 160 && s <= 179) || (d >= 100 && d <= 109)) {
+    return "Hipertensi Derajat 2";
+  } else if (s >= 140 && d < 90) {
+    // khusus HST: syaratnya "dan" (sistolik >= 140 **dan** diastolik < 90)
+    return "Hipertensi Sistolik Terisolasi";
+  } else if ((s >= 140 && s <= 159) || (d >= 90 && d <= 99)) {
+    return "Hipertensi Derajat 1";
+  } else {
+    return "Tidak dapat diklasifikasikan";
+  }
 }
 
 /* ============ Mapping ============ */
@@ -138,6 +152,7 @@ function mapRow(x: any): Row {
 
 function mapDetail(root: any): ScreeningDetail {
   const x = root?.data ?? root ?? {};
+
   const riskPct =
     toNumber(first(x, ["riskPct", "risk_percentage", "risk_percent"])) ??
     toNumber(first(x, ["percentage", "score", "diabetes_probability"]));
@@ -152,19 +167,39 @@ function mapDetail(root: any): ScreeningDetail {
         : "Risiko Sedang"
       : "Status Risiko");
 
-  const sys = first(x, ["sistolik", "systolic", "systolic_bp", "blood_pressure_systolic"]);
-  const dia = first(x, ["diastolik", "diastolic", "diastolic_bp", "blood_pressure_diastolic"]);
-  const tekanan =
-    first(x, ["tekanan_darah"]) ??
-    (sys || dia ? `${sys ?? "-"} / ${dia ?? "-"}` : undefined);
+  // --- Ambil & normalisasi tekanan darah ---
+  const sysRaw0 = first(x, ["sistolik", "systolic", "systolic_bp", "blood_pressure_systolic"]);
+  const diaRaw0 = first(x, ["diastolik", "diastolic", "diastolic_bp", "blood_pressure_diastolic"]);
+  const tekananStr = first(x, ["tekanan_darah"]) as string | undefined;
 
+  let sys = toNumber(sysRaw0);
+  let dia = toNumber(diaRaw0);
+
+  // Parse bila hanya ada "120 / 80"
+  if ((sys == null || dia == null) && typeof tekananStr === "string") {
+    const m = tekananStr.match(/(\d+)\s*[/\-]\s*(\d+)/);
+    if (m) {
+      sys = toNumber(m[1]);
+      dia = toNumber(m[2]);
+    }
+  }
+
+  const tekanan =
+    tekananStr ?? (sys != null || dia != null ? `${sys ?? "-"} / ${dia ?? "-"}` : undefined);
+
+  // ✅ Klasifikasi KMK dihitung dari angka; fallback ke field BE bila perlu
+  const klasFromBp = classifyHT_Kemenkes(sys, dia);
+  const klasHT =
+    klasFromBp !== "-"
+      ? klasFromBp
+      : first(x, ["bp_classification", "klasifikasi_hipertensi", "htn_class"]) ?? "-";
+
+  // Gula darah siap tampil
   const gula =
     first(x, ["gula_darah"]) ??
-    (x.blood_glucose_level || x.blood_sugar ? `${x.blood_glucose_level ?? x.blood_sugar} mg/dL` : undefined);
-
-  const klasHT =
-    first(x, ["bp_classification", "klasifikasi_hipertensi", "htn_class"]) ??
-    classifyHT_Kemenkes(toNumber(sys) ?? 0, toNumber(dia) ?? 0);
+    (x.blood_glucose_level || x.blood_sugar
+      ? `${x.blood_glucose_level ?? x.blood_sugar} mg/dL`
+      : undefined);
 
   return {
     id: first(x, ["id", "screening_id", "result_id"]),
@@ -173,21 +208,24 @@ function mapDetail(root: any): ScreeningDetail {
     riskPct,
     riskText,
     riskLabel,
-    nama:
-      first(x, ["user.nama"]) ??
-      first(x, ["nama", "name", "patient_name", "user.name"]),
+
+    nama: first(x, ["user.nama"]) ?? first(x, ["nama", "name", "patient_name", "user.name"]),
     usia: first(x, ["usia", "age"]),
     jenis_kelamin: first(x, ["jenis_kelamin", "gender"]),
     gender: first(x, ["gender"]),
     bmi: first(x, ["bmi"]),
+
     tekanan_darah: tekanan,
-    sistolik: sys,
-    diastolik: dia,
+    sistolik: sys ?? sysRaw0,
+    diastolik: dia ?? diaRaw0,
+
     riwayat_merokok: first(x, ["riwayat_merokok", "smoking_history", "smoker_status"]),
     smoker_status: first(x, ["smoker_status"]),
     riwayat_jantung: first(x, ["riwayat_jantung", "heart_disease", "heart_history"]),
     heart_history: first(x, ["heart_history"]),
+
     klasifikasi_hipertensi: klasHT,
+
     gula_darah: gula,
     blood_sugar: first(x, ["blood_glucose_level", "blood_sugar"]),
   };
@@ -195,18 +233,21 @@ function mapDetail(root: any): ScreeningDetail {
 
 const LIST_PATH = "/nakes/diabetes-screenings";
 
-/* ============ Helper Component untuk Data Card ============ */
-function DataCard({ label, value, icon }: { label: string; value: any; icon: string }) {
+/* ============ Small UI Components ============ */
+function RiskChip({ value, text }: { value?: number; text?: string }) {
+  const pct = value ?? 0;
+  const label =
+    text ?? (Number.isFinite(pct) ? (Number.isInteger(pct) ? `${pct}%` : `${pct.toFixed(2)}%`) : "-");
+  // rendah <= 40 → hijau, sedang (40–48) → oranye, tinggi >= 48 → merah
+  const theme =
+    pct >= 48 ? "from-red-600 to-rose-600"
+    : pct <= 40 ? "from-emerald-600 to-teal-600"
+    : "from-amber-500 to-orange-600";
+
   return (
-    <div className="rounded-xl border-2 border-gray-100 bg-gradient-to-br from-white to-gray-50 p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start gap-3">
-        <span className="text-2xl">{icon}</span>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{label}</p>
-          <p className="text-base font-bold text-gray-900 truncate">{value || "-"}</p>
-        </div>
-      </div>
-    </div>
+    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-white text-sm font-semibold bg-gradient-to-r ${theme}`}>
+      {label}
+    </span>
   );
 }
 
@@ -221,7 +262,7 @@ function DataCardNoIcon({ label, value }: { label: string; value: any }) {
   );
 }
 
-/* ============ Modal Popup untuk Riwayat yang Diklik ============ */
+/* ============ Modal Popup: Detail item riwayat yang diklik ============ */
 function HistoryDetailPopup({
   open,
   onClose,
@@ -240,8 +281,12 @@ function HistoryDetailPopup({
   const pctText = d.riskText ?? (Number.isFinite(pctNum) ? `${pctNum}%` : "-");
 
   const labelByPct = Number.isFinite(pctNum)
-    ? (pctNum >= 48 ? "Risiko Tinggi" : (pctNum <= 40 ? "Risiko Rendah" : "Risiko Sedang"))
-    : (d.riskLabel ?? "Status Risiko");
+    ? pctNum >= 48
+      ? "Risiko Tinggi"
+      : pctNum <= 40
+      ? "Risiko Rendah"
+      : "Risiko Sedang"
+    : d.riskLabel ?? "Status Risiko";
 
   const tone =
     pctNum >= 48
@@ -250,20 +295,22 @@ function HistoryDetailPopup({
       ? "border-emerald-200 bg-emerald-50 text-emerald-900"
       : "border-amber-200 bg-amber-50 text-amber-900";
 
+  // ✅ Hitung ulang HT KMK untuk panel detail riwayat
+  const sysN = toNumber(d.sistolik);
+  const diaN = toNumber(d.diastolik);
+  const klasUI = classifyHT_Kemenkes(sysN, diaN);
+  const klasFinal = klasUI !== "-" ? klasUI : d.klasifikasi_hipertensi ?? "-";
+  const tekananUI = d.tekanan_darah ?? (sysN != null || diaN != null ? `${sysN ?? "-"} / ${diaN ?? "-"}` : "-");
+
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
       <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-slideUp max-h-[90vh] flex flex-col">
-        
-        {/* Header tanpa gradient, solid emerald */}
         <div className="relative px-6 py-5 bg-emerald-600 overflow-hidden">
           <div className="relative flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div>
-                <h2 className="text-2xl font-bold text-white">Detail Screening</h2>
-                <p className="text-sm text-white/90">{d.nama || "Pasien"}</p>
-              </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white">Detail Screening</h2>
+              <p className="text-sm text-white/90">{d.nama || "Pasien"}</p>
             </div>
-            
             <button
               onClick={onClose}
               className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all flex items-center justify-center group"
@@ -273,7 +320,6 @@ function HistoryDetailPopup({
           </div>
         </div>
 
-        {/* Content dengan scroll */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {loading ? (
             <div className="flex items-center justify-center py-20">
@@ -284,7 +330,6 @@ function HistoryDetailPopup({
             </div>
           ) : (
             <>
-              {/* Status Risiko Badge - persentase lebih kecil */}
               <div className={`rounded-2xl border-2 p-4 ${tone} shadow-lg`}>
                 <div className="flex items-center gap-3">
                   <div className="flex-1">
@@ -298,14 +343,13 @@ function HistoryDetailPopup({
                 </div>
               </div>
 
-              {/* Grid Data Screening - tanpa icon */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <DataCardNoIcon label="Nama Pasien" value={d.nama} />
                 <DataCardNoIcon label="Usia" value={d.usia ? `${d.usia} tahun` : "-"} />
                 <DataCardNoIcon label="Jenis Kelamin" value={d.jenis_kelamin || d.gender} />
                 <DataCardNoIcon label="BMI" value={d.bmi} />
-                <DataCardNoIcon label="Tekanan Darah" value={d.tekanan_darah} />
-                <DataCardNoIcon label="Klasifikasi HT" value={d.klasifikasi_hipertensi} />
+                <DataCardNoIcon label="Tekanan Darah" value={tekananUI} />
+                <DataCardNoIcon label="Klasifikasi HT" value={klasFinal} />
                 <DataCardNoIcon label="Gula Darah" value={d.gula_darah} />
                 <DataCardNoIcon label="Riwayat Merokok" value={d.riwayat_merokok || d.smoker_status} />
                 <DataCardNoIcon label="Riwayat Jantung" value={d.riwayat_jantung || d.heart_history} />
@@ -314,7 +358,6 @@ function HistoryDetailPopup({
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
           <button
             onClick={onClose}
@@ -328,7 +371,7 @@ function HistoryDetailPopup({
   );
 }
 
-/* ============ Modal Gabungan (Detail + Riwayat) ============ */
+/* ============ Modal Gabungan (Detail terbaru + Riwayat) ============ */
 function DetailModal({
   open,
   onClose,
@@ -350,8 +393,12 @@ function DetailModal({
   const pctText = d.riskText ?? (Number.isFinite(pctNum) ? `${pctNum}%` : "-");
 
   const labelByPct = Number.isFinite(pctNum)
-    ? (pctNum >= 48 ? "Risiko Tinggi" : (pctNum <= 40 ? "Risiko Rendah" : "Risiko Sedang"))
-    : (d.riskLabel ?? "Status Risiko");
+    ? pctNum >= 48
+      ? "Risiko Tinggi"
+      : pctNum <= 40
+      ? "Risiko Rendah"
+      : "Risiko Sedang"
+    : d.riskLabel ?? "Status Risiko";
 
   const tone =
     pctNum >= 48
@@ -359,6 +406,13 @@ function DetailModal({
       : pctNum <= 40
       ? "border-emerald-200 bg-emerald-50 text-emerald-900"
       : "border-amber-200 bg-amber-50 text-amber-900";
+
+  // ✅ Konsisten: hitung ulang klasifikasi KMK untuk panel detail terbaru
+  const sysN = toNumber(d.sistolik);
+  const diaN = toNumber(d.diastolik);
+  const klasUI = classifyHT_Kemenkes(sysN, diaN);
+  const klasFinal = klasUI !== "-" ? klasUI : d.klasifikasi_hipertensi ?? "-";
+  const tekananUI = d.tekanan_darah ?? (sysN != null || diaN != null ? `${sysN ?? "-"} / ${diaN ?? "-"}` : "-");
 
   return (
     <div className="fixed inset-0 z-[50] flex items-center justify-center">
@@ -382,15 +436,13 @@ function DetailModal({
             </button>
           </div>
 
-    
-
           {/* Body - Scrollable */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {/* GRAFIK RIWAYAT SCREENING */}
+            {/* Grafik riwayat */}
             {history.length > 0 && (
               <div className="mb-6">
-                <ScreeningLineChart 
-                  data={history.map(h => ({
+                <ScreeningLineChart
+                  data={history.map((h) => ({
                     id: h.id,
                     created_at: h.date,
                     diabetes_probability: h.riskText || `${h.riskPct ?? 0}%`,
@@ -406,7 +458,7 @@ function DetailModal({
                     diabetes_result: "",
                     bp_classification: "",
                     bp_recommendation: "",
-                  }))} 
+                  }))}
                   height={280}
                 />
               </div>
@@ -420,7 +472,7 @@ function DetailModal({
               <p className="text-sm opacity-70">Berdasarkan screening terbaru</p>
             </div>
 
-            {/* Grid Data */}
+            {/* Grid Data Screening Terbaru */}
             <div className="rounded-2xl border-2 border-gray-100 bg-white">
               <div className="px-5 py-4 border-b">
                 <p className="text-sm font-semibold text-gray-700">Data Screening Terbaru</p>
@@ -431,22 +483,11 @@ function DetailModal({
                   { label: "Usia", value: d.usia ? `${d.usia} tahun` : "-" },
                   { label: "Jenis Kelamin", value: d.jenis_kelamin ?? d.gender ?? "-" },
                   { label: "BMI", value: d.bmi ?? "-" },
-                  {
-                    label: "Tekanan Darah",
-                    value:
-                      d.tekanan_darah ??
-                      (d.sistolik || d.diastolik ? `${d.sistolik ?? "-"} / ${d.diastolik ?? "-"}` : "-"),
-                  },
-                  { label: "Klasifikasi HT", value: d.klasifikasi_hipertensi ?? "-" },
+                  { label: "Tekanan Darah", value: tekananUI },
+                  { label: "Klasifikasi HT", value: klasFinal },
                   { label: "Gula Darah", value: d.gula_darah ?? (d.blood_sugar ? `${d.blood_sugar} mg/dL` : "-") },
-                  {
-                    label: "Riwayat Merokok",
-                    value: d.riwayat_merokok ?? d.smoker_status ?? "-",
-                  },
-                  {
-                    label: "Riwayat Jantung",
-                    value: d.riwayat_jantung ?? d.heart_history ?? "-",
-                  },
+                  { label: "Riwayat Merokok", value: d.riwayat_merokok ?? d.smoker_status ?? "-" },
+                  { label: "Riwayat Jantung", value: d.riwayat_jantung ?? d.heart_history ?? "-" },
                 ].map((item, idx) => (
                   <div key={idx} className="rounded-lg border border-gray-200 p-3 bg-gray-50">
                     <p className="text-xs text-gray-500 mb-1">{item.label}</p>
@@ -505,7 +546,7 @@ function DetailModal({
             </div>
           </div>
         </div>
-      </div>
+      </div> 
     </div>
   );
 }
@@ -523,7 +564,7 @@ export default function LaporanKeseluruhan() {
   const [historyItems, setHistoryItems] = useState<Row[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // Modal secondary untuk history item yang diklik
+  // Modal secondary untuk riwayat-item
   const [selectedHistoryDetail, setSelectedHistoryDetail] = useState<ScreeningDetail | null>(null);
   const [showHistoryDetailPopup, setShowHistoryDetailPopup] = useState(false);
   const [loadingHistoryDetail, setLoadingHistoryDetail] = useState(false);
@@ -593,17 +634,17 @@ export default function LaporanKeseluruhan() {
     setLoadingHistoryDetail(true);
     setShowHistoryDetailPopup(true);
     setSelectedHistoryDetail(null);
-    
+
     try {
       const { data } = await api.get(`/nakes/diabetes-screenings/${screeningId}`);
       setSelectedHistoryDetail(mapDetail(data));
     } catch (e) {
       console.error(e);
-      setSelectedHistoryDetail({ 
-        nama: "Error", 
-        riskLabel: "Gagal memuat detail", 
-        riskPct: 0, 
-        riskText: "0%" 
+      setSelectedHistoryDetail({
+        nama: "Error",
+        riskLabel: "Gagal memuat detail",
+        riskPct: 0,
+        riskText: "0%",
       });
     } finally {
       setLoadingHistoryDetail(false);
@@ -611,18 +652,14 @@ export default function LaporanKeseluruhan() {
   }
 
   const q = search.trim().toLowerCase();
-  const filtered = useMemo(
-    () => (q ? rows.filter((r) => r.name?.toLowerCase().includes(q)) : rows),
-    [q, rows]
-  );
+  const filtered = useMemo(() => (q ? rows.filter((r) => r.name?.toLowerCase().includes(q)) : rows), [q, rows]);
 
-           return (
+  return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-9">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            {/* ICON CHIP – versi responsif */}
             <div className="relative isolate shrink-0">
               <span
                 aria-hidden
@@ -633,17 +670,14 @@ export default function LaporanKeseluruhan() {
               </div>
             </div>
 
-             {/* Judul + subjudul */}
             <div>
               <h1 className="text-[22px] leading-[1.15] sm:text-3xl md:text-4xl font-bold text-gray-800">
-                Laporan Keseluruhan<br className="hidden sm:block" />
+                Laporan Keseluruhan
               </h1>
-              <p className="text-gray-600 mt-1 sm:mt-0.5">
-                Riwayat Screening Pasien
-              </p>
+              <p className="text-gray-600 mt-1 sm:mt-0.5">Riwayat Screening Pasien</p>
             </div>
           </div>
-          </div>
+        </div>
 
         {errorMsg && (
           <div className="rounded-xl border-2 border-amber-200 bg-amber-50 text-amber-800 px-4 py-3">
@@ -754,15 +788,15 @@ export default function LaporanKeseluruhan() {
       </div>
 
       {/* Modal Gabungan */}
-      <DetailModal 
-        open={open} 
-        onClose={() => setOpen(false)} 
-        detail={detail} 
+      <DetailModal
+        open={open}
+        onClose={() => setOpen(false)}
+        detail={detail}
         history={historyItems}
         onHistoryItemClick={fetchSpecificScreeningDetail}
       />
 
-      {/* Modal Popup untuk Riwayat yang Diklik */}
+      {/* Modal Popup untuk item Riwayat yang diklik */}
       <HistoryDetailPopup
         open={showHistoryDetailPopup}
         onClose={() => setShowHistoryDetailPopup(false)}
@@ -776,43 +810,13 @@ export default function LaporanKeseluruhan() {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-
         @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.2s ease-out;
-        }
-
-        .animate-slideUp {
-          animation: slideUp 0.3s ease-out;
-        }
+        .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
+        .animate-slideUp { animation: slideUp 0.3s ease-out; }
       `}</style>
     </div>
-  );
-}
-
-/* ============ Small UI Components ============ */
-function RiskChip({ value, text }: { value?: number; text?: string }) {
-  const pct = value ?? 0;
-  const theme =
-    pct >= 48
-      ? "from-red-600 to-rose-600"
-      : pct <= 40
-      ? "from-emerald-600 to-teal-600"
-      : "from-amber-500 to-orange-600";
-  const label = text ?? (Number.isFinite(pct) ? (Number.isInteger(pct) ? `${pct}%` : `${pct.toFixed(2)}%`) : "-");
-  return (
-    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-white text-sm font-semibold bg-gradient-to-r ${theme}`}>
-      {label}
-    </span>
   );
 }
