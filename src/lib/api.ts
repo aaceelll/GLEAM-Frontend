@@ -64,13 +64,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Logging error + auto-logout bila 401
+// 🔥 UPDATED: Suppress 404 errors untuk dashboard endpoints
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     const status = err?.response?.status;
-    const url = err?.response?.config?.url;
+    const url = err?.response?.config?.url || "";
     const data = err?.response?.data;
+    
+    // 🔥 Suppress console.error untuk endpoint dashboard yang belum ada
+    const isDashboardEndpoint = url.includes("/dashboard") || url.includes("/nakes");
+    const is404 = status === 404;
+    
+    if (is404 && isDashboardEndpoint) {
+      // Jangan log ke console untuk menghindari spam
+      // console.warn(`Dashboard endpoint not ready: ${url}`);
+      return Promise.reject(err);
+    }
+    
+    // Log error lainnya seperti biasa
     console.error("API ERROR", status, url, data);
 
     if (status === 401) {
