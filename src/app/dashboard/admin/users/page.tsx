@@ -167,10 +167,10 @@ export default function UsersPage() {
             <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <span className="w-1.5 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></span>
-                    Daftar Akun
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <span aria-hidden className="w-1.5 h-5 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full" />
+                    <h2 className="text-xl font-bold">Daftar Akun</h2>
+                  </div>
                   <p className="text-sm text-gray-600 mt-1 ml-4">Kelola Akun Pengguna GLEAM</p>
                 </div>
               </div>
