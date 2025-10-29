@@ -28,6 +28,12 @@ export function PersonalInfoForm({
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [success, setSuccess] = React.useState(false)
+  const [ageError, setAgeError] = React.useState<string | null>(null)
+  
+  // State untuk tanggal lahir dropdown
+  const [birthDay, setBirthDay] = React.useState("")
+  const [birthMonth, setBirthMonth] = React.useState("")
+  const [birthYear, setBirthYear] = React.useState("")
   
   const [formData, setFormData] = React.useState({
     nama: initialData?.nama || "",
@@ -49,6 +55,29 @@ export function PersonalInfoForm({
     berobat_ke_dokter: initialData?.berobat_ke_dokter || "",
     sudah_berobat: initialData?.sudah_berobat || "",
   })
+
+  // Generate array untuk dropdown
+  const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'))
+  const months = [
+    { value: '01', label: 'Januari' },
+    { value: '02', label: 'Februari' },
+    { value: '03', label: 'Maret' },
+    { value: '04', label: 'April' },
+    { value: '05', label: 'Mei' },
+    { value: '06', label: 'Juni' },
+    { value: '07', label: 'Juli' },
+    { value: '08', label: 'Agustus' },
+    { value: '09', label: 'September' },
+    { value: '10', label: 'Oktober' },
+    { value: '11', label: 'November' },
+    { value: '12', label: 'Desember' },
+  ]
+  
+  // Generate tahun (dari tahun sekarang - 10 tahun sampai 100 tahun kebelakang)
+  const currentYear = new Date().getFullYear()
+  const minYear = currentYear - 10  // Minimal 10 tahun lalu
+  const maxYear = currentYear - 100 // Maksimal 100 tahun lalu
+  const years = Array.from({ length: minYear - maxYear + 1 }, (_, i) => (minYear - i).toString())
 
   // Update form jika initialData berubah
   React.useEffect(() => {
@@ -73,22 +102,66 @@ export function PersonalInfoForm({
         berobat_ke_dokter: initialData?.berobat_ke_dokter || "",
         sudah_berobat: initialData?.sudah_berobat || "",
       })
+      
+      // Parse tanggal lahir ke dropdown jika ada
+      if (initialData?.tanggal_lahir) {
+        const date = initialData.tanggal_lahir.split('T')[0]
+        const [year, month, day] = date.split('-')
+        setBirthYear(year)
+        setBirthMonth(month)
+        setBirthDay(day)
+      }
     }
   }, [initialData])
 
-  // Auto-calculate age from birth date
+  // Update tanggal_lahir ketika dropdown berubah - FORMAT: YYYY-MM-DD
   React.useEffect(() => {
-    if (formData.tanggal_lahir) {
-      const birthDate = new Date(formData.tanggal_lahir)
-      const today = new Date()
-      let age = today.getFullYear() - birthDate.getFullYear()
-      const monthDiff = today.getMonth() - birthDate.getMonth()
-      
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        age--
+    if (birthDay && birthMonth && birthYear) {
+      // CRITICAL: Format harus YYYY-MM-DD untuk backend!
+      const dateString = `${birthYear}-${birthMonth}-${birthDay}`
+      setFormData((prev) => ({ ...prev, tanggal_lahir: dateString }))
+    } else {
+      setFormData((prev) => ({ ...prev, tanggal_lahir: "" }))
+    }
+  }, [birthDay, birthMonth, birthYear])
+
+  // Auto-calculate age from birth date with minimum age validation
+  React.useEffect(() => {
+    if (formData.tanggal_lahir && formData.tanggal_lahir.length === 10) { // Pastikan format lengkap YYYY-MM-DD
+      try {
+        // Parse dengan format yang benar: YYYY-MM-DD
+        const [year, month, day] = formData.tanggal_lahir.split('-')
+        const birthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+        const today = new Date()
+        
+        // Hitung umur
+        let age = today.getFullYear() - birthDate.getFullYear()
+        const monthDiff = today.getMonth() - birthDate.getMonth()
+        
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--
+        }
+        
+        // Validasi umur
+        if (age < 0 || age > 120) {
+          // Tanggal tidak valid
+          setAgeError("Tanggal lahir tidak valid")
+          setFormData((prev) => ({ ...prev, umur: "" }))
+        } else if (age < 10) {
+          setAgeError("Umur minimal harus 10 tahun")
+          setFormData((prev) => ({ ...prev, umur: "" }))
+        } else {
+          setAgeError(null)
+          setFormData((prev) => ({ ...prev, umur: age.toString() }))
+        }
+      } catch (e) {
+        console.error("Error parsing date:", e)
+        setAgeError("Format tanggal tidak valid")
+        setFormData((prev) => ({ ...prev, umur: "" }))
       }
-      
-      setFormData((prev) => ({ ...prev, umur: age.toString() }))
+    } else {
+      setAgeError(null)
+      setFormData((prev) => ({ ...prev, umur: "" }))
     }
   }, [formData.tanggal_lahir])
 
@@ -118,10 +191,28 @@ export function PersonalInfoForm({
     e.preventDefault()
     setError(null)
     setSuccess(false)
+
+    // Validasi umur sebelum submit
+    if (ageError) {
+      setError("Tidak dapat menyimpan data. " + ageError)
+      return
+    }
+
+    if (formData.tanggal_lahir && !formData.umur) {
+      setError("Umur harus valid sebelum menyimpan data")
+      return
+    }
+
+    // Validasi tanggal lahir harus diisi
+    if (!birthDay || !birthMonth || !birthYear) {
+      setError("Tanggal lahir harus diisi lengkap")
+      return
+    }
+
     setLoading(true)
 
     try {
-      // Format tanggal lahir ke format yyyy-MM-dd
+      // Format tanggal lahir sudah dalam format YYYY-MM-DD
       const tanggalLahir = formData.tanggal_lahir 
         ? formData.tanggal_lahir.split('T')[0]
         : null
@@ -207,18 +298,62 @@ export function PersonalInfoForm({
           />
         </div>
 
-        {/* Tanggal Lahir */}
+        {/* Tanggal Lahir dengan 3 Dropdown */}
         <div className="space-y-2">
-          <Label htmlFor="tanggal_lahir" className="text-emerald-700 font-semibold">
+          <Label className="text-emerald-700 font-semibold">
             Tanggal Lahir
           </Label>
-          <Input
-            id="tanggal_lahir"
-            type="date"
-            value={formData.tanggal_lahir}
-            onChange={(e) => onChange("tanggal_lahir", e.target.value)}
-            className="w-full border-emerald-200 focus:border-emerald-500"
-          />
+          <div className="grid grid-cols-3 gap-2">
+            {/* Tanggal */}
+            <Select value={birthDay} onValueChange={setBirthDay}>
+              <SelectTrigger className={`border-emerald-200 focus:border-emerald-500 ${ageError && birthDay && birthMonth && birthYear ? 'border-red-500' : ''}`}>
+                <SelectValue placeholder="Tgl" />
+              </SelectTrigger>
+              <SelectContent>
+                {days.map((day) => (
+                  <SelectItem key={day} value={day}>
+                    {day}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Bulan */}
+            <Select value={birthMonth} onValueChange={setBirthMonth}>
+              <SelectTrigger className={`border-emerald-200 focus:border-emerald-500 ${ageError && birthDay && birthMonth && birthYear ? 'border-red-500' : ''}`}>
+                <SelectValue placeholder="Bulan" />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map((month) => (
+                  <SelectItem key={month.value} value={month.value}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Tahun */}
+            <Select value={birthYear} onValueChange={setBirthYear}>
+              <SelectTrigger className={`border-emerald-200 focus:border-emerald-500 ${ageError && birthDay && birthMonth && birthYear ? 'border-red-500' : ''}`}>
+                <SelectValue placeholder="Tahun" />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {ageError && birthDay && birthMonth && birthYear && (
+            <p className="text-xs text-red-500 font-semibold">
+              {ageError}
+            </p>
+          )}
+          <p className="text-xs text-gray-500">
+            * Pilih tanggal, bulan, dan tahun lahir Anda (minimal umur 10 tahun)
+          </p>
         </div>
 
         {/* Umur (Auto-calculated) */}
@@ -230,9 +365,8 @@ export function PersonalInfoForm({
             id="umur"
             type="number"
             value={formData.umur}
-            onChange={(e) => onChange("umur", e.target.value)}
             placeholder="Umur Anda"
-            className="w-full border-emerald-200 focus:border-emerald-500"
+            className="w-full border-emerald-200 focus:border-emerald-500 bg-gray-50"
             readOnly
           />
           <p className="text-xs text-gray-500">
@@ -273,29 +407,28 @@ export function PersonalInfoForm({
               <SelectValue placeholder="Pilih pendidikan terakhir" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="SD">SD</SelectItem>
-              <SelectItem value="SMP">SMP</SelectItem>
-              <SelectItem value="SMA / SMK">SMA / SMK</SelectItem>
-              <SelectItem value="D1">D1</SelectItem>
-              <SelectItem value="D2">D2</SelectItem>
-              <SelectItem value="D3">D3</SelectItem>
-              <SelectItem value="S1">S1</SelectItem>
-              <SelectItem value="S2">S2</SelectItem>
               <SelectItem value="S3">S3</SelectItem>
+              <SelectItem value="S2">S2</SelectItem>
+              <SelectItem value="S1">S1</SelectItem>
+              <SelectItem value="D3">D3</SelectItem>
+              <SelectItem value="SMA/SMK">SMA/SMK</SelectItem>
+              <SelectItem value="SMP">SMP</SelectItem>
+              <SelectItem value="SD">SD</SelectItem>
+              <SelectItem value="Tidak Sekolah">Tidak Sekolah</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Riwayat Pelayanan Kesehatan */}
+        {/* Riwayat tempat pelayanan kesehatan sebelumnya */}
         <div className="space-y-2">
-          <Label htmlFor="riwayat_kesehatan" className="text-emerald-700 font-semibold">
+          <Label htmlFor="riwayat_pelayanan_kesehatan" className="text-emerald-700 font-semibold">
             Riwayat tempat pelayanan kesehatan sebelumnya
           </Label>
           <Input
-            id="riwayat_kesehatan"
-            value={formData.riwayat_kesehatan}
-            onChange={(e) => onChange("riwayat_kesehatan", e.target.value)}
-            placeholder="puskesmas"
+            id="riwayat_pelayanan_kesehatan"
+            value={formData.riwayat_pelayanan_kesehatan}
+            onChange={(e) => onChange("riwayat_pelayanan_kesehatan", e.target.value)}
+            placeholder="mitra keluarga"
             className="w-full border-emerald-200 focus:border-emerald-500"
           />
         </div>
@@ -330,7 +463,6 @@ export function PersonalInfoForm({
           <Input
             id="berat_badan"
             type="number"
-            step="0.01"
             value={formData.berat_badan}
             onChange={(e) => onChange("berat_badan", e.target.value)}
             placeholder="50"
@@ -347,7 +479,6 @@ export function PersonalInfoForm({
           <Input
             id="tinggi_badan"
             type="number"
-            step="0.01"
             value={formData.tinggi_badan}
             onChange={(e) => onChange("tinggi_badan", e.target.value)}
             placeholder="155"
@@ -365,7 +496,7 @@ export function PersonalInfoForm({
             id="indeks_bmi"
             value={formData.indeks_bmi}
             readOnly
-            className="w-full border-emerald-200 focus:border-emerald-500"
+            className="w-full border-emerald-200 focus:border-emerald-500 bg-gray-50"
           />
           <p className="text-xs text-gray-500">
             * BMI dihitung otomatis berdasarkan berat & tinggi badan
@@ -437,7 +568,7 @@ export function PersonalInfoForm({
       <div className="flex justify-center pt-6 border-t border-emerald-100">
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !!ageError}
           className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
