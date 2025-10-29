@@ -426,24 +426,34 @@ export default function AdminForumPage() {
 
       {/* Modal Konfirmasi Hapus */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-delete-title"
+          className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+        >
           <div className="w-full max-w-sm rounded-2xl bg-white border-2 border-gray-100 shadow-2xl">
             <div className="px-5 py-4 border-b-2 border-gray-100 flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-red-100 text-red-600 grid place-items-center">
                 <Trash2 className="w-5 h-5" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">Hapus Diskusi?</h3>
+              <h3 id="confirm-delete-title" className="text-lg font-semibold text-gray-900">
+                Hapus Diskusi?
+              </h3>
             </div>
 
             <div className="px-5 py-4 space-y-1.5">
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-gray-700 break-words">
                 Apakah Anda yakin ingin benar-benar menghapus{" "}
-                <span className="font-semibold">"{confirmDelete.title}"</span>?
+                <span className="font-semibold break-all max-w-full inline-block">
+                  “{confirmDelete.title}”
+                </span>
+                ?
               </p>
               <p className="text-xs text-gray-500">Tindakan ini tidak dapat dibatalkan.</p>
             </div>
 
-            <div className="px-5 py-4 flex items-center justify-end gap-3 border-t-2 border-gray-100">
+            <div className="px-5 py-4 flex flex-wrap items-center justify-end gap-3 border-t-2 border-gray-100">
               <button
                 onClick={() => setConfirmDelete(null)}
                 className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold transition-all"

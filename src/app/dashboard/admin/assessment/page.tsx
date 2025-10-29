@@ -876,7 +876,9 @@ export default function AssessmentPage() {
             {!isScreening && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <label className="font-semibold text-gray-900 text-sm">Opsi Jawaban *</label>
+                  <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
+                    Opsi Jawaban <span className="text-red-500">*</span>
+                  </label>
                   <button
                     type="button"
                     onClick={addOption}
