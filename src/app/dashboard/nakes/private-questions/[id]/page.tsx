@@ -16,6 +16,8 @@ import {
   MessageSquare,
   Send,
   Lock,
+  LockOpen,
+  Trash2,
   User,
   RefreshCw,
   CheckCircle2,
@@ -102,35 +104,17 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
                   toast.type === "info" ? "bg-blue-600" : ""
                 }`}
               >
-                {isSuccess && <CheckCircle2 className="w-5 h-5 text-white" />}
-                {isError && <AlertCircle className="w-5 h-5 text-white" />}
-                {toast.type === "info" && <MessageSquare className="w-5 h-5 text-white" />}
+                {isSuccess && <CheckCircle2 className="w-6 h-6 text-white" />}
+                {isError && <AlertCircle className="w-6 h-6 text-white" />}
+                {toast.type === "info" && <AlertCircle className="w-6 h-6 text-white" />}
               </div>
-              
-              <p className="flex-1 text-sm font-semibold text-gray-900 pr-4">
-                {toast.message}
-              </p>
-              
+              <p className="flex-1 font-semibold text-gray-900 text-sm">{toast.message}</p>
               <button
                 onClick={() => onDismiss(toast.id)}
-                className="absolute top-2 right-2 p-1.5 rounded-lg hover:bg-white/50 transition-colors"
+                className="p-1 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 <X className="w-4 h-4 text-gray-600" />
               </button>
-            </div>
-
-            {/* Progress bar */}
-            <div className="h-1 w-full bg-gray-200 overflow-hidden">
-              <div
-                className={`h-full animate-progress ${
-                  isSuccess ? "bg-emerald-600" : ""
-                } ${isError ? "bg-red-600" : ""} ${
-                  toast.type === "info" ? "bg-blue-600" : ""
-                }`}
-                style={{
-                  animation: "progress 3s linear forwards",
-                }}
-              />
             </div>
           </div>
         );
@@ -139,14 +123,14 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
   );
 }
 
-// ⭐ Confirmation Modal - Tema GLEAM
+// ⭐ Confirm Modal Component - hanya untuk delete
 function ConfirmModal({
   open,
   onClose,
   onConfirm,
   title,
   message,
-  confirmText = "Ya, Lanjutkan",
+  confirmText = "Ya, lanjut",
   cancelText = "Batal",
 }: {
   open: boolean;
@@ -160,47 +144,35 @@ function ConfirmModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in"
+    <div className="fixed inset-0 z-[100]">
+      <button
+        type="button"
+        aria-label="Tutup dialog konfirmasi"
+        className="absolute inset-0 bg-black/50 backdrop-blur-md"
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className="relative bg-white rounded-3xl border-2 border-emerald-200 shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 opacity-30 rounded-3xl pointer-events-none" />
-        
-        <div className="relative">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Lock className="w-7 h-7 text-white" />
-          </div>
-          
-          <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">
-            {title}
-          </h3>
-          
-          <p className="text-gray-600 text-center mb-6">
-            {message}
-          </p>
-          
-          <div className="flex gap-3">
-            <Button
-              onClick={onClose}
-              variant="outline"
-              className="flex-1 border-2 border-gray-300 hover:bg-gray-100 h-11"
-            >
-              {cancelText}
-            </Button>
-            <Button
-              onClick={() => {
-                onConfirm();
-                onClose();
-              }}
-              className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 h-11 shadow-lg"
-            >
-              {confirmText}
-            </Button>
+      <div className="absolute inset-0 grid place-items-center p-4">
+        <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl">
+          <div className="p-6 md:p-8">
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">{title}</h3>
+            <p className="text-gray-600 leading-relaxed">{message}</p>
+
+            <div className="mt-8 flex flex-col-reverse sm:flex-row items-center justify-end gap-3">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-100"
+                onClick={onClose}
+              >
+                {cancelText}
+              </Button>
+              <Button
+                className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
+                onClick={onConfirm}
+              >
+                {confirmText}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -222,7 +194,7 @@ export default function NakesQuestionDetailPage() {
 
   // ⭐ Toast state
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false); // Modal hanya untuk delete
 
   // Toast functions
   const showToast = (message: string, type: ToastType = "success") => {
@@ -364,13 +336,29 @@ export default function NakesQuestionDetailPage() {
     );
   };
 
-  const handleCloseQuestion = async () => {
+  // ✅ Handler untuk toggle lock/unlock - TANPA MODAL
+  const handleToggleLock = async () => {
     try {
-      await api.patch(`/forum/threads/${questionId}/close`);
-      showToast("Pertanyaan berhasil ditutup!", "success");
-      await loadQuestion();
+      const response = await api.patch(`/forum/threads/${questionId}/toggle-lock`);
+      showToast(response.data.message || "Status berhasil diubah!", "success");
+      await loadQuestion(true); // Silent reload
     } catch (e: any) {
-      showToast(e?.response?.data?.message || "Gagal menutup pertanyaan", "error");
+      showToast(e?.response?.data?.message || "Gagal mengubah status", "error");
+    }
+  };
+
+  // ✅ Handler untuk delete - DENGAN MODAL
+  const handleDeleteQuestion = async () => {
+    try {
+      await api.delete(`/forum/threads/${questionId}/private`);
+      showToast("Pertanyaan berhasil dihapus!", "success");
+      setDeleteModalOpen(false);
+      setTimeout(() => {
+        router.push('/dashboard/nakes/private-questions');
+      }, 1000);
+    } catch (e: any) {
+      showToast(e?.response?.data?.message || "Gagal menghapus pertanyaan", "error");
+      setDeleteModalOpen(false);
     }
   };
 
@@ -406,14 +394,14 @@ export default function NakesQuestionDetailPage() {
       {/* Toast Container */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
-      {/* Confirm Modal */}
+      {/* Delete Confirm Modal - HANYA untuk delete */}
       <ConfirmModal
-        open={confirmModalOpen}
-        onClose={() => setConfirmModalOpen(false)}
-        onConfirm={handleCloseQuestion}
-        title="Tutup Pertanyaan?"
-        message="Pertanyaan akan dikunci dan tidak bisa dijawab lagi. Pastikan Anda sudah memberikan jawaban yang lengkap."
-        confirmText="Ya, Tutup"
+        open={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDeleteQuestion}
+        title="Hapus Pertanyaan?"
+        message="Pertanyaan dan semua jawabannya akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan."
+        confirmText="Ya, Hapus"
         cancelText="Batal"
       />
 
@@ -428,6 +416,17 @@ export default function NakesQuestionDetailPage() {
               <ArrowLeft className="w-4 h-4" />
               <span className="font-semibold">Kembali</span>
             </Link>
+
+            <Button
+              onClick={handleRefresh}
+              variant="outline"
+              size="sm"
+              className="border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+              disabled={refreshing}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
           </div>
 
           {/* Info assignment */}
@@ -536,83 +535,115 @@ export default function NakesQuestionDetailPage() {
             )}
           </Card>
 
-          {/* Form Jawaban */}
-          {canAnswer && (
+          {/* Form Jawaban atau Controls */}
+          {myRole === "nakes" && (
             <Card className="p-8 border-2 border-emerald-200 rounded-3xl shadow-xl bg-white">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-                <Send className="w-6 h-6 text-emerald-600" /> Kirim Jawaban
-              </h2>
-              <p className="text-sm text-gray-600 mb-6">
-                Berikan jawaban yang jelas dan profesional untuk membantu pasien.
-              </p>
-              <form onSubmit={handleSubmitAnswer}>
-                <Textarea
-                  rows={8}
-                  value={answerContent}
-                  onChange={(e) => setAnswerContent(e.target.value)}
-                  placeholder="Tulis jawaban profesional dan jelas di sini..."
-                  className="mb-4 border-2 border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500 bg-white rounded-xl resize-none text-base"
-                  required
-                  disabled={submitting}
-                />
-                <div className="flex gap-3">
-                  <Button
-                    type="submit"
-                    disabled={submitting || !answerContent.trim()}
-                    className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 h-12 font-semibold text-base shadow-lg"
-                  >
-                    {submitting ? (
-                      <>
-                        <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-                        Mengirim...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-5 h-5 mr-2" />
-                        Kirim Jawaban
-                      </>
-                    )}
-                  </Button>
-                  {question.reply_count > 0 && !question.is_locked && (
+              {!question.is_locked ? (
+                /* Form untuk Kirim Jawaban */
+                <>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+                    <Send className="w-6 h-6 text-emerald-600" /> Kirim Jawaban
+                  </h2>
+                  <p className="text-sm text-gray-600 mb-6">
+                    Berikan jawaban yang jelas dan profesional untuk membantu pasien.
+                  </p>
+                  <form onSubmit={handleSubmitAnswer}>
+                    <Textarea
+                      rows={8}
+                      value={answerContent}
+                      onChange={(e) => setAnswerContent(e.target.value)}
+                      placeholder="Tulis jawaban profesional dan jelas di sini..."
+                      className="mb-4 border-2 border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500 bg-white rounded-xl resize-none text-base"
+                      required
+                      disabled={submitting}
+                    />
+
+                    {/* Button Actions - RESPONSIVE dengan 3 button */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {/* Button Kirim Jawaban */}
+                      <Button
+                        type="submit"
+                        disabled={submitting || !answerContent.trim()}
+                        className="w-full sm:flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 h-12 font-semibold text-base shadow-lg"
+                      >
+                        {submitting ? (
+                          <>
+                            <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+                            Mengirim...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-5 h-5 mr-2" />
+                            Kirim Jawaban
+                          </>
+                        )}
+                      </Button>
+
+                      {/* Button Lock - Hanya tampil jika ada jawaban */}
+                      {question.reply_count > 0 && (
+                        <Button
+                          type="button"
+                          onClick={handleToggleLock}
+                          variant="outline"
+                          className="w-full sm:w-auto border-2 border-gray-300 text-gray-700 hover:bg-gray-100 h-12 px-6"
+                        >
+                          <Lock className="w-5 h-5 mr-2" />
+                          Tutup
+                        </Button>
+                      )}
+
+                      {/* Button Hapus */}
+                      <Button
+                        type="button"
+                        onClick={() => setDeleteModalOpen(true)}
+                        variant="outline"
+                        className="w-full sm:w-auto border-2 border-red-300 text-red-700 hover:bg-red-50 h-12 px-6"
+                      >
+                        <Trash2 className="w-5 h-5 mr-2" />
+                        Hapus
+                      </Button>
+                    </div>
+                  </form>
+                </>
+              ) : (
+                /* Controls ketika pertanyaan dikunci */
+                <>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+                    <Lock className="w-6 h-6 text-gray-600" /> Pertanyaan Ditutup
+                  </h2>
+                  <p className="text-sm text-gray-600 mb-6">
+                    Pertanyaan ini sudah ditutup. Anda dapat membuka kembali atau menghapus pertanyaan.
+                  </p>
+
+                  {/* Button Actions untuk pertanyaan yang dikunci */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {/* Button Buka */}
                     <Button
                       type="button"
-                      onClick={() => setConfirmModalOpen(true)}
-                      variant="outline"
-                      className="border-2 border-gray-300 hover:bg-gray-100 h-12 px-6"
+                      onClick={handleToggleLock}
+                      className="w-full sm:flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 h-12 font-semibold text-base shadow-lg"
                     >
-                      <Lock className="w-5 h-5 mr-2" />
-                      Tutup
+                      <LockOpen className="w-5 h-5 mr-2" />
+                      Buka Pertanyaan
                     </Button>
-                  )}
-                </div>
-              </form>
+
+                    {/* Button Hapus */}
+                    <Button
+                      type="button"
+                      onClick={() => setDeleteModalOpen(true)}
+                      variant="outline"
+                      className="w-full sm:w-auto border-2 border-red-300 text-red-700 hover:bg-red-50 h-12 px-6"
+                    >
+                      <Trash2 className="w-5 h-5 mr-2" />
+                      Hapus
+                    </Button>
+                  </div>
+                </>
+              )}
             </Card>
           )}
-
-          {/* Auto-refresh indicator */}
-          <div className="text-center py-4">
-            <p className="text-xs text-gray-500 flex items-center justify-center gap-2">
-              <RefreshCw className="w-3 h-3" />
-              Auto-refresh setiap 5 detik
-            </p>
-          </div>
         </div>
       </div>
-
-      {/* Animation CSS */}
-      <style jsx global>{`
-        @keyframes progress {
-          from {
-            width: 100%;
-          }
-          to {
-            width: 0%;
-          }
-        }
-        .animate-progress {
-          animation: progress 3s linear forwards;
-        }
-      `}</style>
     </>
   );
 }
