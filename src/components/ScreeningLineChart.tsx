@@ -330,7 +330,7 @@ export default function ScreeningLineChart({
               dataKey="prob"
               stroke="url(#gleamStroke)"
               strokeWidth={3}
-              dot={{ r: 3, strokeWidth: 1.5, stroke: "#ffffff" }}
+              dot={false}
               activeDot={{ r: 5 }}
               isAnimationActive={true}
             />
