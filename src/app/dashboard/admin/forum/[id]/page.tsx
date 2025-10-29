@@ -286,9 +286,13 @@ export default function AdminForumDetailPage() {
       {confirmOpen !== null && (
         <div className="fixed inset-0 z-[100]">
           {/* Backdrop */}
-          <div
+          <button
+            type="button"
+            aria-label="Tutup dialog konfirmasi"
             className="absolute inset-0 bg-black/50 backdrop-blur-md"
-            onClick={() => (deletingId ? null : setConfirmOpen(null))}
+            onClick={() => {
+              if (!deletingId) setConfirmOpen(null);
+            }}
           />
 
           {/* Dialog */}
