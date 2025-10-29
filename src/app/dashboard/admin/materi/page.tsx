@@ -239,8 +239,8 @@ export default function MateriPage() {
 
   const greenGrad = "from-emerald-500 to-teal-500";
 
-          return (
-    <div className="min-h-screen bg-white px-6 md:px-10 py-9">
+  return (
+    <div className="min-h-screen bg-white px-6 md:px-10 py-9 overflow-x-hidden">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
@@ -345,12 +345,22 @@ export default function MateriPage() {
                         {index + 1}
                       </div>
 
-                      <div className="flex-1 min-w-0 space-y-4">
-                        <h3 className="font-bold text-gray-900 text-2xl group-hover:text-emerald-700 transition-colors">
+                      <div className="flex-1 min-w-0 w-full space-y-4">
+                        <h3
+                          className="font-bold text-gray-900
+                                    text-lg sm:text-xl md:text-2xl
+                                    leading-tight
+                                    break-all sm:break-words [overflow-wrap:anywhere]
+                                    group-hover:text-emerald-700 transition-colors"
+                        >
                           {konten.judul}
                         </h3>
 
-                        <p className="text-gray-600 text-base leading-relaxed break-words whitespace-pre-wrap [overflow-wrap:anywhere]">
+                        <p
+                          className="text-gray-600 text-sm sm:text-base leading-relaxed
+                                    max-w-full whitespace-pre-wrap
+                                    break-all sm:break-words [overflow-wrap:anywhere]"
+                        >
                           {konten.deskripsi}
                         </p>
 
@@ -561,7 +571,7 @@ export default function MateriPage() {
       {/* Modal Konfirmasi Hapus */}
       {confirmDelete && (
         <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white border-2 border-gray-100 shadow-2xl">
+          <div className="w-full max-w-[92vw] sm:max-w-sm rounded-2xl bg-white border-2 border-gray-100 shadow-2xl">
             <div className="px-5 py-4 border-b-2 border-gray-100 flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-red-100 text-red-600 grid place-items-center">
                 <Trash2 className="w-5 h-5" />
@@ -572,7 +582,9 @@ export default function MateriPage() {
             <div className="px-5 py-4 space-y-1.5">
               <p className="text-sm text-gray-700">
                 Apakah Anda yakin ingin benar-benar menghapus{" "}
-                <span className="font-semibold">{confirmDelete.title}</span>?
+                <span className="font-semibold break-all [overflow-wrap:anywhere]">
+                  {confirmDelete.title}
+                </span>
               </p>
               <p className="text-xs text-gray-500">Tindakan ini tidak dapat dibatalkan.</p>
             </div>

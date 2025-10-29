@@ -174,7 +174,7 @@ function ReviewModal({ open, onClose, data }: { open: boolean; onClose: () => vo
                           </p>
                           <div className="text-xs space-y-1">
                             <p>
-                              <span className="font-medium text-gray-700">Jawaban User:</span>{" "}
+                              <span className="font-medium text-gray-700">Jawaban Anda:</span>{" "}
                               <span className="text-gray-900">{r.user_answer_text}</span>
                               <span className="ml-2 text-gray-600">(Skor: {r.user_score})</span>
                             </p>

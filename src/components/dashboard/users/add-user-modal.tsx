@@ -2,7 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usersAPI } from "@/lib/api";
-import { X, AlertCircle } from "lucide-react";
+import { X, AlertCircle, Eye, EyeOff, ChevronsUpDown, Check } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 type Props = {
@@ -32,6 +38,15 @@ export default function AddUserModal({ onCreated, onClose }: Props) {
     password: "",
     password_confirmation: "",
   });
+
+  // Validators
+  const isGmail = (v: string) => /^[a-z0-9._%+-]+@gmail\.com$/i.test(v.trim());
+  const strongPass = (v: string) =>
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(v);
+  const validPhone = (v: string) => /^08\d{8,11}$/.test(v.trim()); // 08 + (8–11) digit = 10–13 digit
+
+  const [showPwd, setShowPwd] = useState(false);
+  const [showPwd2, setShowPwd2] = useState(false);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -68,6 +83,37 @@ export default function AddUserModal({ onCreated, onClose }: Props) {
       return;
     }
 
+    // ✅ Email wajib @gmail.com
+    if (!isGmail(form.email)) {
+      setWarn({
+        open: true,
+        title: "Email Tidak Valid",
+        message: "Gunakan alamat email @gmail.com.",
+      });
+      return;
+    }
+
+    // ✅ Password kuat (min 8, huruf kecil, huruf besar, angka, simbol)
+    if (!strongPass(form.password)) {
+      setWarn({
+        open: true,
+        title: "Password Lemah",
+        message:
+          "Password minimal 8 karakter dan harus mengandung huruf kecil, huruf besar, angka, dan karakter khusus.",
+      });
+      return;
+    }
+
+    // ✅ Nomor telepon 08xxxxxxxx (10–13 digit)
+    if (!validPhone(form.nomor_telepon)) {
+      setWarn({
+        open: true,
+        title: "Nomor Telepon Tidak Valid",
+        message: "Nomor telepon harus dimulai dari 08 dan berjumlah 10–13 digit.",
+      });
+      return;
+    }
+
     try {
       setSaving(true);
       const payload: any = {
@@ -84,11 +130,25 @@ export default function AddUserModal({ onCreated, onClose }: Props) {
       onCreated();
       onClose();
     } catch (e: any) {
-      const msg =
-        e?.response?.data?.message ||
-        (e?.response?.data?.errors && Object.values(e.response.data.errors).flat()[0]) ||
+      const res = e?.response;
+      let msg =
+        res?.data?.errors?.username?.[0] ||
+        res?.data?.errors?.email?.[0] ||
+        res?.data?.errors?.nama?.[0] ||
+        res?.data?.message ||
         "Gagal membuat akun";
-      toast.error(String(msg));
+
+      // Normalisasi pesan agar jelas
+      if (typeof msg === "string") {
+        if (/username/i.test(msg)) msg = "Username sudah digunakan. Silakan pilih yang lain.";
+        else if (/email/i.test(msg)) msg = "Email sudah digunakan. Gunakan email lain.";
+        else if (/nama/i.test(msg)) msg = "Nama sudah digunakan.";
+      }
+      if (res?.status === 409) msg = "Data sudah terdaftar.";
+
+      // tampilkan popup hijau yang sudah ada
+      setWarn({ open: true, title: "Tidak Dapat Membuat Akun", message: String(msg) });
+      toast.error(String(msg)); // opsional, biar tetap ada toast
     } finally {
       setSaving(false);
     }
@@ -177,43 +237,105 @@ export default function AddUserModal({ onCreated, onClose }: Props) {
             <label className="text-sm font-semibold text-gray-900">
               Role <span className="text-red-500">*</span>
             </label>
-            <select
-              value={form.role}
-              onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
-            >
-              <option value="admin">Admin</option>
-              <option value="manajemen">Manajemen</option>
-              <option value="nakes">Nakes</option>
 
-            </select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="w-full inline-flex items-center justify-between gap-3 px-4 py-3.5 border-2 rounded-xl text-sm
+                            bg-white/90 backdrop-blur-sm border-emerald-200 hover:border-emerald-400
+                            focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition-all"
+                  aria-label="Pilih role"
+                >
+                  <span className="truncate text-gray-900">
+                    {form.role === "nakes"
+                      ? "Tenaga Kesehatan (Nakes)"
+                      : form.role.charAt(0).toUpperCase() + form.role.slice(1)}
+                  </span>
+                  <ChevronsUpDown className="w-4 h-4 opacity-70" />
+                </button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent
+                align="start"
+                className="w-[var(--radix-dropdown-menu-trigger-width)] p-1 rounded-xl border-2
+                          border-emerald-200 bg-white/95 backdrop-blur-md shadow-xl"
+              >
+                <DropdownMenuItem
+                  className="rounded-lg px-3 py-2 text-sm hover:bg-emerald-50 cursor-pointer"
+                  onClick={() => setForm({ ...form, role: "admin" })}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    {form.role === "admin" ? <Check className="w-4 h-4" /> : <span className="w-4 h-4" />}
+                    Admin
+                  </span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  className="rounded-lg px-3 py-2 text-sm hover:bg-emerald-50 cursor-pointer"
+                  onClick={() => setForm({ ...form, role: "manajemen" })}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    {form.role === "manajemen" ? <Check className="w-4 h-4" /> : <span className="w-4 h-4" />}
+                    Manajemen
+                  </span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  className="rounded-lg px-3 py-2 text-sm hover:bg-emerald-50 cursor-pointer"
+                  onClick={() => setForm({ ...form, role: "nakes" })}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    {form.role === "nakes" ? <Check className="w-4 h-4" /> : <span className="w-4 h-4" />}
+                    Tenaga Kesehatan (Nakes)
+                  </span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <p className="text-xs text-gray-500">Pilih peran untuk menentukan akses.</p>
           </div>
 
           {/* Password + Konfirmasi */}
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-900">
-                Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
-                placeholder="******"
-              />
+              <label className="text-sm font-semibold text-gray-900">Password Baru</label>
+              <div className="relative">
+                <input
+                  type={showPwd ? "text" : "password"}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className="w-full px-4 py-3 pr-11 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
+                  placeholder="(opsional)"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPwd((v) => !v)}
+                  className="absolute inset-y-0 right-3 grid place-items-center"
+                >
+                  {showPwd ? <EyeOff className="h-5 w-5 text-gray-500" /> : <Eye className="h-5 w-5 text-gray-500" />}
+                </button>
+              </div>
             </div>
+
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-900">
-                Konfirmasi Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="password"
-                value={form.password_confirmation}
-                onChange={(e) => setForm({ ...form, password_confirmation: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
-                placeholder="******"
-              />
+              <label className="text-sm font-semibold text-gray-900">Konfirmasi Password Baru</label>
+              <div className="relative">
+                <input
+                  type={showPwd2 ? "text" : "password"}
+                  value={form.password_confirmation}
+                  onChange={(e) => setForm({ ...form, password_confirmation: e.target.value })}
+                  className="w-full px-4 py-3 pr-11 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
+                  placeholder="(opsional)"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPwd2((v) => !v)}
+                  className="absolute inset-y-0 right-3 grid place-items-center"
+                >
+                  {showPwd2 ? <EyeOff className="h-5 w-5 text-gray-500" /> : <Eye className="h-5 w-5 text-gray-500" />}
+                </button>
+              </div>
             </div>
           </div>
 

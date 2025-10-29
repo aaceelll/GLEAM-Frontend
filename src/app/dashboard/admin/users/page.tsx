@@ -47,8 +47,11 @@ export default function UsersPage() {
   const [filteredRows, setFilteredRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [showAdd, setShowAdd] = useState(false);
+ const [showAdd, setShowAdd] = useState(false);
   const [editUser, setEditUser] = useState<Row | null>(null);
+
+  // ✅ Banner sukses
+  const [banner, setBanner] = useState<null | { type: "success"; text: string }>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -118,7 +121,9 @@ export default function UsersPage() {
       await usersAPI.delete(toDelete.id);
       toast.success("User berhasil dihapus");
       setToDelete(null);
-      load();
+      await load();
+      setBanner({ type: "success", text: "Akun berhasil dihapus!" }); // ✅
+      setTimeout(() => setBanner(null), 3000);
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Gagal menghapus user");
     }
@@ -159,7 +164,18 @@ export default function UsersPage() {
             <UserPlus className="h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
             Tambah Akun
           </button>
-  
+
+        {/* Banner sukses */}
+        {banner && (
+          <div
+            className="rounded-2xl px-5 py-4 flex items-start gap-3 shadow-lg border-2 bg-emerald-50 border-emerald-200 text-emerald-900 mb-4"
+          >
+            <svg className="h-6 w-6 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm-1 14l-4-4 1.4-1.4L11 12.2l4.6-4.6L17 9l-6 7z"/>
+            </svg>
+            <span className="font-semibold">{banner.text}</span>
+          </div>
+        )}
 
         {/* Card + Search + Table */}
         <section>
@@ -363,10 +379,12 @@ export default function UsersPage() {
         <AddUserModal
           onCreated={async () => {
             await load();
+            setBanner({ type: "success", text: "Akun berhasil ditambahkan!" }); // ✅
+            setTimeout(() => setBanner(null), 3000); // auto-hide
           }}
           onClose={() => {
             setShowAdd(false);
-            setTimeout(blurSearch, 0); // pastikan search tidak fokus lagi
+            setTimeout(blurSearch, 0);
           }}
         />
       )}
@@ -376,6 +394,8 @@ export default function UsersPage() {
           user={editUser}
           onUpdated={async () => {
             await load();
+            setBanner({ type: "success", text: "Akun berhasil diperbarui!" });
+            setTimeout(() => setBanner(null), 3000); // auto hide 3 detik
           }}
           onClose={() => {
             setEditUser(null);
