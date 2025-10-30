@@ -1,0 +1,89 @@
+{
+  "type": "FeatureCollection",
+  "generator": "overpass-turbo",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
+  "timestamp": "2025-10-30T08:13:44Z",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "relation/8308316",
+        "admin_level": "9",
+        "boundary": "administrative",
+        "flood_prone": "no",
+        "is_in:city": "Semarang",
+        "is_in:municipality": "Banyumanik",
+        "is_in:province": "Jawa Tengah",
+        "is_in:village": "Padangsari",
+        "landslide_prone": "no",
+        "name": "RW 07",
+        "source": "HOT_InAWARESurvey_2018",
+        "type": "boundary"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              110.4300293,
+              -7.0729929
+            ],
+            [
+              110.4301849,
+              -7.0724602
+            ],
+            [
+              110.430209,
+              -7.0722472
+            ],
+            [
+              110.4304206,
+              -7.0715062
+            ],
+            [
+              110.4298523,
+              -7.0712996
+            ],
+            [
+              110.4296806,
+              -7.0718799
+            ],
+            [
+              110.426973,
+              -7.0711206
+            ],
+            [
+              110.4267383,
+              -7.0710548
+            ],
+            [
+              110.4264657,
+              -7.0709757
+            ],
+            [
+              110.4263762,
+              -7.0714434
+            ],
+            [
+              110.4276583,
+              -7.071816
+            ],
+            [
+              110.4275134,
+              -7.0724229
+            ],
+            [
+              110.4299945,
+              -7.0731123
+            ],
+            [
+              110.4300293,
+              -7.0729929
+            ]
+          ]
+        ]
+      },
+      "id": "relation/8308316"
+    }
+  ]
+}

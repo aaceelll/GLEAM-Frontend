@@ -1,0 +1,65 @@
+{
+  "type": "FeatureCollection",
+  "generator": "overpass-turbo",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
+  "timestamp": "2025-10-30T08:15:46Z",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "relation/8308313",
+        "admin_level": "9",
+        "boundary": "administrative",
+        "flood_prone": "no",
+        "is_in:city": "Semarang",
+        "is_in:municipality": "Banyumanik",
+        "is_in:province": "Jawa Tengah",
+        "is_in:village": "Padangsari",
+        "landslide_prone": "no",
+        "name": "RW 10",
+        "source": "HOT_InAWARESurvey_2018",
+        "type": "boundary"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              110.4304206,
+              -7.0715062
+            ],
+            [
+              110.430209,
+              -7.0722472
+            ],
+            [
+              110.4301849,
+              -7.0724602
+            ],
+            [
+              110.4300293,
+              -7.0729929
+            ],
+            [
+              110.4308742,
+              -7.0732614
+            ],
+            [
+              110.4313094,
+              -7.0718137
+            ],
+            [
+              110.4309145,
+              -7.0716856
+            ],
+            [
+              110.4304206,
+              -7.0715062
+            ]
+          ]
+        ]
+      },
+      "id": "relation/8308313"
+    }
+  ]
+}

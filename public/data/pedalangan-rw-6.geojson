@@ -1,0 +1,73 @@
+{
+  "type": "FeatureCollection",
+  "generator": "overpass-turbo",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
+  "timestamp": "2025-10-30T08:30:12Z",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "relation/8314915",
+        "admin_level": "9",
+        "boundary": "administrative",
+        "flood_prone": "no",
+        "is_in:city": "Semarang",
+        "is_in:municipality": "Banyumanik",
+        "is_in:province": "Jawa Tengah",
+        "is_in:village": "Pedalangan",
+        "landslide_prone": "no",
+        "name": "RW 06",
+        "source": "HOT_InAWARESurvey_2018",
+        "type": "boundary"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              110.4273596,
+              -7.0697511
+            ],
+            [
+              110.427272,
+              -7.0697185
+            ],
+            [
+              110.4263467,
+              -7.069463
+            ],
+            [
+              110.4252201,
+              -7.0692075
+            ],
+            [
+              110.4243135,
+              -7.070352
+            ],
+            [
+              110.4264261,
+              -7.0709642
+            ],
+            [
+              110.4264657,
+              -7.0709757
+            ],
+            [
+              110.4267383,
+              -7.0710548
+            ],
+            [
+              110.426973,
+              -7.0711206
+            ],
+            [
+              110.4273596,
+              -7.0697511
+            ]
+          ]
+        ]
+      },
+      "id": "relation/8314915"
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "type": "FeatureCollection",
+  "generator": "overpass-turbo",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
+  "timestamp": "2025-10-30T08:12:40Z",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "relation/8308318",
+        "admin_level": "9",
+        "boundary": "administrative",
+        "flood_prone": "no",
+        "is_in:city": "Semarang",
+        "is_in:municipality": "Banyumanik",
+        "is_in:province": "Jawa Tengah",
+        "is_in:village": "Padangsari",
+        "landslide_prone": "no",
+        "name": "RW 05",
+        "source": "HOT_InAWARESurvey_2018",
+        "type": "boundary"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              110.4262501,
+              -7.0720449
+            ],
+            [
+              110.4259846,
+              -7.0729899
+            ],
+            [
+              110.4258129,
+              -7.0735755
+            ],
+            [
+              110.4257861,
+              -7.0738124
+            ],
+            [
+              110.4257888,
+              -7.0740546
+            ],
+            [
+              110.4257968,
+              -7.0743847
+            ],
+            [
+              110.4264057,
+              -7.0745364
+            ],
+            [
+              110.4265881,
+              -7.0745257
+            ],
+            [
+              110.4267061,
+              -7.0744139
+            ],
+            [
+              110.4267892,
+              -7.0742329
+            ],
+            [
+              110.4269099,
+              -7.0739614
+            ],
+            [
+              110.4269984,
+              -7.0737192
+            ],
+            [
+              110.4271728,
+              -7.073674
+            ],
+            [
+              110.4272417,
+              -7.0733917
+            ],
+            [
+              110.4273176,
+              -7.0730804
+            ],
+            [
+              110.4266739,
+              -7.0728914
+            ],
+            [
+              110.4268724,
+              -7.0722393
+            ],
+            [
+              110.4262501,
+              -7.0720449
+            ]
+          ]
+        ]
+      },
+      "id": "relation/8308318"
+    }
+  ]
+}

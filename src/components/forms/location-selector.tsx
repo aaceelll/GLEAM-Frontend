@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -49,6 +49,16 @@ export function LocationSelector({
       onChange("rw", "")
     }
   }, [kelurahan])
+
+  // ✅ TAMBAHAN: Reset koordinat saat RW berubah
+  useEffect(() => {
+    // Saat user ganti RW, hapus koordinat lama agar tidak salah lokasi
+    if (rw) {
+      onChange("latitude", "")
+      onChange("longitude", "")
+      // Alamat tidak dihapus karena mungkin user sudah ketik manual
+    }
+  }, [rw])
 
   const handleLocationSelect = (lat: number, lng: number, addr: string) => {
     onChange("latitude", lat.toString())
@@ -108,26 +118,24 @@ export function LocationSelector({
             <SelectTrigger className="h-12 rounded-xl border-2 border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed">
               <SelectValue placeholder={kelurahan ? "Pilih RW" : "Pilih Kelurahan dulu"} />
             </SelectTrigger>
-            <SelectContent className="max-h-60">
-              {availableRW.map((rwItem) => (
-                <SelectItem key={rwItem} value={rwItem}>
-                  {rwItem}
+            <SelectContent>
+              {availableRW.map((rwOption) => (
+                <SelectItem key={rwOption} value={rwOption}>
+                  {rwOption}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {!kelurahan && (
-            <p className="text-xs text-gray-500 mt-1">
-              Pilih kelurahan terlebih dahulu
-            </p>
-          )}
         </div>
       </div>
 
-      {/* Peta + Input Alamat */}
-      {showMap && kelurahan && (
+      {/* ✅ PERBAIKAN: Tampilkan map SELALU, tidak perlu tunggu kelurahan */}
+      {showMap && (
         <MapSelector
           kelurahan={kelurahan}
+          rw={rw}
+          latitude={latitude}
+          longitude={longitude}
           address={address}
           onLocationSelect={handleLocationSelect}
           onAddressChange={handleAddressChange}
