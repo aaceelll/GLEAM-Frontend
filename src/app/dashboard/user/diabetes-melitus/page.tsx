@@ -837,11 +837,21 @@ export default function DiabetesMelitusPage() {
 
                     {/* konten utama */}
                     <div className="flex-1 min-w-0 space-y-4">
-                      <h3 className="font-bold text-gray-900 text-2xl group-hover:text-emerald-700 transition-colors">
+                      <h3
+                        className="font-bold text-gray-900
+                                  text-lg sm:text-xl md:text-2xl
+                                  leading-tight
+                                  break-all sm:break-words [overflow-wrap:anywhere]
+                                  group-hover:text-emerald-700 transition-colors"
+                      >
                         {it.judul}
                       </h3>
 
-                      <p className="text-gray-600 text-base leading-relaxed break-words whitespace-pre-wrap [overflow-wrap:anywhere]">
+                      <p
+                        className="text-gray-600 text-sm sm:text-base leading-relaxed
+                                  max-w-full whitespace-pre-wrap
+                                  break-all sm:break-words [overflow-wrap:anywhere]"
+                      >
                         {it.deskripsi}
                       </p>
 
@@ -851,7 +861,11 @@ export default function DiabetesMelitusPage() {
                             href={it.file_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-700 hover:to-yellow-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
+                                      text-white bg-gradient-to-r from-orange-500 to-yellow-400
+                                      hover:from-orange-700 hover:to-yellow-700 transition-all
+                                      shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm
+                                      w-full sm:w-auto"
                           >
                             <Download className="h-4 w-4" />
                             Unduh PDF
@@ -862,7 +876,11 @@ export default function DiabetesMelitusPage() {
                             href={`https://www.youtube.com/watch?v=${it.video_id}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-700 hover:to-blue-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
+                                      text-white bg-gradient-to-r from-blue-700 to-blue-500
+                                      hover:from-blue-700 hover:to-blue-700 transition-all
+                                      shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm
+                                      w-full sm:w-auto"
                           >
                             <Video className="h-4 w-4" />
                             Tonton Video
