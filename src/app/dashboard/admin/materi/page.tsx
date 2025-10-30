@@ -52,14 +52,16 @@ function isCrossOrigin(url: string) {
   }
 }
 
-async function downloadPdfWithAuth(konten: { file_url?: string | null; judul: string }) {
+async function downloadPdfWithAuth(konten: { id?: string | number; file_url?: string | null; judul: string }) {
   const raw = konten.file_url ?? "";
   const url = toAbsolute(raw);
   if (!url) throw new Error("URL file kosong");
 
-  // kalau cross-origin → langsung buka tab baru (hindari error CORS)
+  const openNewTab = () => window.open(url, "_blank", "noopener,noreferrer");
+
+  // 1) kalau cross-origin → buka tab (biar gak kena CORS XHR)
   if (typeof window !== "undefined" && isCrossOrigin(url)) {
-    window.open(url, "_blank", "noopener,noreferrer");
+    openNewTab();
     return;
   }
 
@@ -69,8 +71,10 @@ async function downloadPdfWithAuth(konten: { file_url?: string | null; judul: st
       responseType: "blob",
       withCredentials: true,
       headers: token ? { Authorization: `Bearer ${token}` } : {},
+      validateStatus: () => true, // biar bisa cek 403/404 sendiri
     });
 
+    if (res.status === 200) {
     const blob = new Blob([res.data], { type: res.headers["content-type"] || "application/pdf" });
     const href = URL.createObjectURL(blob);
     const cd = res.headers["content-disposition"];
@@ -85,9 +89,31 @@ async function downloadPdfWithAuth(konten: { file_url?: string | null; judul: st
     a.click();
     a.remove();
     URL.revokeObjectURL(href);
+    return;
+    // window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  // 2) fallback: kalau static 403/404 dan kita punya id → tembak endpoint download
+    if ((res.status === 403 || res.status === 404) && konten.id != null) {
+      const dl = await api.get(`/admin/materi/konten/${konten.id}/download`, {
+        responseType: "blob",
+        withCredentials: true,
+      });
+      const href = URL.createObjectURL(dl.data);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = (konten.judul || "materi").replace(/[^\w\-]+/g, "_") + ".pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(href);
+      return;
+    }
+
+     // 3) terakhir: buka tab biasa
+    openNewTab();
   } catch {
-    // same-origin tapi gagal → tetap buka tab
-    window.open(url, "_blank", "noopener,noreferrer");
+    openNewTab();
   }
 }
 
@@ -370,7 +396,7 @@ export default function MateriPage() {
                               href={toAbsolute(konten.file_url)}
                               onClick={async (e) => {
                                 e.preventDefault();
-                                await downloadPdfWithAuth({ file_url: konten.file_url, judul: konten.judul });
+                                await downloadPdfWithAuth({ id: konten.id,  file_url: konten.file_url, judul: konten.judul });
                               }}
                               target="_blank"
                               rel="noopener noreferrer"
