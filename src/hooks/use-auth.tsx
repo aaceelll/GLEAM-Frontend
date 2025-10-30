@@ -187,7 +187,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     if (typeof window !== "undefined") {
       localStorage.removeItem("user_data");
-      window.location.href = "/login";
+      document.cookie = "just_logged_out=1; Path=/; Max-Age=60; SameSite=Lax";
+      // window.location.href = "/login";
+      window.location.replace("/login");
     }
   };
 
