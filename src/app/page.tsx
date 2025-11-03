@@ -9,8 +9,6 @@ import {
   BookOpen,
   Heart,
   MessageSquare,
-  FileText,
-  Clock,
   CheckCircle2,
   TrendingUp,
   Users,
@@ -20,12 +18,13 @@ import {
   Bell,
   Sparkles,
   ArrowRight,
-  Zap,
   Target,
-  Award,
-  Smartphone,
   Brain,
   HeartPulse,
+  AlertCircle,
+  Pill,
+  Utensils,
+  ChevronDown as ChevronIcon,
 } from "lucide-react";
 
 /* ===== Lightweight UI helpers (agar file mandiri) ===== */
@@ -34,6 +33,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
   className?: string;
 };
+
 const Button: React.FC<ButtonProps> = ({ children, variant = "default", className = "", ...props }) => {
   const base = "inline-flex items-center justify-center font-semibold transition-all cursor-pointer border-0";
   const variantCls =
@@ -143,7 +143,71 @@ function DropdownButton({
   );
 }
 
+function EducationAccordion({
+  id,
+  title,
+  icon: Icon,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  open: boolean;
+  onToggle: (id: string) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`group rounded-2xl border-2 bg-white transition-all duration-300
+      ${open ? "border-emerald-300 shadow-2xl" : "border-gray-100 shadow-sm"}
+      hover:-translate-y-1 hover:shadow-2xl hover:border-emerald-300`}
+    >
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => onToggle(id)}
+        className="w-full flex items-center justify-between gap-4 px-5 py-4 md:px-6 md:py-5
+                   rounded-2xl focus:outline-none focus-visible:ring-4
+                   focus-visible:ring-emerald-200/70 transition-all"
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-9 h-9 rounded-xl grid place-items-center transition-all
+            ${open
+              ? "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg"
+              : "bg-gradient-to-br from-emerald-400 to-teal-500 shadow"}
+            group-hover:scale-105`}
+          >
+            <Icon className="w-5 h-5 text-white" />
+          </div>
+          <span
+            className={`text-base md:text-lg font-bold transition-colors
+            ${open ? "text-emerald-700" : "text-gray-900"} group-hover:text-emerald-700`}
+          >
+            {title}
+          </span>
+        </div>
+
+        <ChevronDown
+          className={`w-5 h-5 transition-transform duration-300 text-gray-600
+          ${open ? "rotate-180 text-emerald-600" : ""} group-hover:text-emerald-700`}
+        />
+      </button>
+
+      <div
+        className={`px-5 md:px-6 overflow-hidden transition-[max-height,opacity] duration-300
+        ${open ? "max-h-[1000px] opacity-100 pb-5 md:pb-6" : "max-h-0 opacity-0 pb-0"}`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
+  const [educationOpen, setEducationOpen] = useState<Record<string, boolean>>({});
   return (
     <>
       {/* Gradient hijau full-page */}
@@ -486,6 +550,127 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Education Section - Penjelasan Umum dengan Accordion */}
+      <section
+            id="how-it-works"
+            className="relative z-10 py-20 md:py-32 bg-transparent"
+          >
+        <div className="container mx-auto px-4 sm:px-6 max-w-screen-xl">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="inline-block px-4 py-2 bg-teal-100 text-teal-700 rounded-full text-sm font-bold mb-4 border border-teal-200">
+              Penjelasan Umum
+            </div>
+            <h3 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Panduan Lengkap untuk Memahami, Mencegah, dan Mengelola Diabetes
+            </h3>
+          </div>
+
+        {/* Accordion Items */}
+        <div className="space-y-5">
+          <EducationAccordion
+            id="overview"
+            title="Apa Itu Diabetes"
+            icon={Brain}
+            open={!!educationOpen.overview}
+            onToggle={(id) => setEducationOpen((s) => ({ ...s, [id]: !s[id] }))}
+          >
+            <p className="text-gray-700 leading-relaxed">
+              Kondisi kronis saat kadar gula darah tinggi karena kekurangan insulin atau tubuh tidak efektif menggunakan insulin.
+            </p>
+            <ul className="space-y-2.5 pl-5 mt-3">
+              <li className="list-disc text-[15px] text-gray-800">Insulin membantu glukosa masuk ke sel.</li>
+              <li className="list-disc text-[15px] text-gray-800">Jika insulin kurang → glukosa menumpuk → komplikasi.</li>
+              <li className="list-disc text-[15px] text-gray-800">Deteksi dini + perawatan rutin mencegah komplikasi.</li>
+            </ul>
+          </EducationAccordion>
+
+          <EducationAccordion
+            id="types"
+            title="Jenis Diabetes"
+            icon={Heart}
+            open={!!educationOpen.types}
+            onToggle={(id) => setEducationOpen((s) => ({ ...s, [id]: !s[id] }))}
+          >
+            <p className="text-gray-700 leading-relaxed">
+              Ada beberapa tipe dengan mekanisme berbeda namun hasil akhirnya sama: kadar gula darah tinggi.
+            </p>
+            <ul className="space-y-2.5 pl-5 mt-3">
+              <li className="list-disc text-[15px] text-gray-800">Tipe 1: autoimun—pankreas tidak memproduksi insulin.</li>
+              <li className="list-disc text-[15px] text-gray-800">Tipe 2: resistensi insulin—terkait pola hidup.</li>
+              <li className="list-disc text-[15px] text-gray-800">Gestasional: terjadi saat hamil.</li>
+            </ul>
+          </EducationAccordion>
+
+          <EducationAccordion
+            id="symptoms"
+            title="Gejala"
+            icon={AlertCircle}
+            open={!!educationOpen.symptoms}
+            onToggle={(id) => setEducationOpen((s) => ({ ...s, [id]: !s[id] }))}
+          >
+            <p className="text-gray-700 leading-relaxed">
+              Sebagian orang tanpa gejala; pemeriksaan rutin penting.
+            </p>
+            <ul className="space-y-2.5 pl-5 mt-3">
+              <li className="list-disc text-[15px] text-gray-800">Sering haus, sering buang air kecil, cepat lelah.</li>
+              <li className="list-disc text-[15px] text-gray-800">Penurunan berat badan, penglihatan kabur.</li>
+              <li className="list-disc text-[15px] text-gray-800">Luka sulit sembuh, infeksi berulang.</li>
+            </ul>
+          </EducationAccordion>
+
+          <EducationAccordion
+            id="prevention"
+            title="Pencegahan"
+            icon={CheckCircle2}
+            open={!!educationOpen.prevention}
+            onToggle={(id) => setEducationOpen((s) => ({ ...s, [id]: !s[id] }))}
+          >
+            <p className="text-gray-700 leading-relaxed">
+              Perubahan kecil tapi konsisten bisa mencegah diabetes.
+            </p>
+            <ul className="space-y-2.5 pl-5 mt-3">
+              <li className="list-disc text-[15px] text-gray-800">Jaga berat badan ideal.</li>
+              <li className="list-disc text-[15px] text-gray-800">Aktif bergerak minimal 150 menit/minggu.</li>
+              <li className="list-disc text-[15px] text-gray-800">Konsumsi makanan bergizi seimbang.</li>
+            </ul>
+          </EducationAccordion>
+
+          <EducationAccordion
+            id="diet"
+            title="Pola Makan"
+            icon={Utensils}
+            open={!!educationOpen.diet}
+            onToggle={(id) => setEducationOpen((s) => ({ ...s, [id]: !s[id] }))}
+          >
+            <p className="text-gray-700 leading-relaxed">
+              Fokus pada makanan bernutrisi dan kontrol porsi.
+            </p>
+            <ul className="space-y-2.5 pl-5 mt-3">
+              <li className="list-disc text-[15px] text-gray-800">Utamakan sayur, buah rendah gula, dan protein sehat.</li>
+              <li className="list-disc text-[15px] text-gray-800">Batasi karbo olahan, gorengan, dan makanan tinggi garam.</li>
+            </ul>
+          </EducationAccordion>
+
+          <EducationAccordion
+            id="treatment"
+            title="Pengobatan"
+            icon={Pill}
+            open={!!educationOpen.treatment}
+            onToggle={(id) => setEducationOpen((s) => ({ ...s, [id]: !s[id] }))}
+          >
+            <p className="text-gray-700 leading-relaxed">
+              Gabungan gaya hidup sehat dan terapi medis.
+            </p>
+            <ul className="space-y-2.5 pl-5 mt-3">
+              <li className="list-disc text-[15px] text-gray-800">Obat oral sesuai anjuran dokter.</li>
+              <li className="list-disc text-[15px] text-gray-800">Insulin bila diperlukan.</li>
+              <li className="list-disc text-[15px] text-gray-800">Pantau gula darah rutin.</li>
+            </ul>
+          </EducationAccordion>
+        </div>
+      </div>
+    </section>
 
       {/* CTA Section */}
       <section

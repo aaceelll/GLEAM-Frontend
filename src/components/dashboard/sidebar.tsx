@@ -42,7 +42,7 @@ const menuItems = {
   user: [
     { icon: Home, label: "Beranda", href: "/dashboard/user" },
     { icon: Activity, label: "Diabetes Melitus", href: "/dashboard/user/diabetes-melitus" },
-    { icon: BookOpen, label: "Penjelasan Umum", href: "/dashboard/user/education" },
+    // { icon: BookOpen, label: "Penjelasan Umum", href: "/dashboard/user/education" },
     { icon: History, label: "Riwayat Quiz", href: "/dashboard/user/riwayat" },
     { icon: FileText, label: "Ulasan Website", href: "/dashboard/user/ulasan-website" },
     { icon: MessageSquare, label: "Forum Komunitas", href: "/dashboard/user/forum" },
