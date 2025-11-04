@@ -245,7 +245,7 @@ export default function UlasanPage() {
                         <td className="pr-11 py-4 text-right">
                           <button
                             onClick={() => openReviewModal(r.user)}
-                            className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors whitespace-nowrap"
+                            className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 whitespace-nowrap"
                           >
                             <Eye className="w-4 h-4" />
                             Detail
@@ -272,7 +272,7 @@ export default function UlasanPage() {
               </div>
               <button
                 onClick={() => setReviewModalOpen(false)}
-                className="text-gray-500 hover:text-gray-800"
+                className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg p-2 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
               >✕</button>
             </div>
             <div className="p-5 space-y-3 max-h-[70vh] overflow-y-auto">
@@ -298,7 +298,7 @@ export default function UlasanPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+                        className="border-emerald-300 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 hover:border-emerald-400 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
                         onClick={() => openDetailModal(rev.id)}
                       >
                         Lihat Detail
@@ -323,33 +323,57 @@ export default function UlasanPage() {
               </div>
               <button
                 onClick={closeDetailModal}
-                className="text-gray-500 hover:text-gray-800"
+                className="text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg p-2 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
               >✕</button>
             </div>
-            <div className="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
+            <div className="p-6 space-y-3 overflow-y-auto max-h-[70vh]">
               {Object.entries(QUESTIONS).map(([key, label], idx) => {
                 const value = (selectedReview as any)[key];
+                const hasAnswer = value !== undefined && value !== null;
                 return (
-                  <div key={key} className="border rounded-lg p-3 bg-gray-50">
-                    <p className="text-sm text-gray-800">{idx + 1}. {label}</p>
-                    <p className="text-xs mt-1 text-gray-600">
-                      Jawaban:{" "}
-                      {value ? (
-                        <span className={`px-2 py-1 rounded-full border ${SCALE_COLORS[value]}`}>
+                  <div 
+                    key={key} 
+                    className={`rounded-lg p-4 border-2 transition-all ${
+                      hasAnswer 
+                        ? 'bg-white border-gray-200 hover:border-emerald-200' 
+                        : 'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <p className="text-sm font-medium text-gray-800 leading-relaxed mb-2">
+                      {idx + 1}. {label}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-gray-500">Jawaban:</span>
+                      {hasAnswer ? (
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full border-2 text-xs font-semibold ${SCALE_COLORS[value]}`}>
                           {SCALE_LABELS[value]}
                         </span>
                       ) : (
-                        <span className="italic text-gray-400">Tidak dijawab</span>
+                        <span className="text-xs italic text-gray-400">Tidak dijawab</span>
                       )}
-                    </p>
+                    </div>
                   </div>
                 );
               })}
-              <div>
-                <p className="font-semibold text-gray-800">Saran:</p>
-                <p className="text-sm text-gray-700 bg-white p-3 rounded-lg border border-emerald-200 mt-1">
-                  {selectedReview.suggestion?.trim() || "Tidak ada saran"}
-                </p>
+              
+              <div className="pt-2">
+                <div className={`rounded-lg p-4 border-2 transition-all ${
+                  selectedReview.suggestion?.trim() 
+                    ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200' 
+                    : 'bg-gray-50 border-gray-200'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessageCircle className="w-4 h-4 text-emerald-600" />
+                    <p className="font-semibold text-gray-800">Saran & Masukan</p>
+                  </div>
+                  <p className={`text-sm leading-relaxed ${
+                    selectedReview.suggestion?.trim() 
+                      ? 'text-gray-700' 
+                      : 'text-gray-400 italic'
+                  }`}>
+                    {selectedReview.suggestion?.trim() || "Tidak ada saran"}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
