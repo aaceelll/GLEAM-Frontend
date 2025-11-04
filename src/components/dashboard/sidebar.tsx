@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import {
   Home, FileText, ClipboardList, MessageSquare, Users, Settings,
   BarChart3, MapPin, Activity, User as UserIcon, History, BookOpen, LogOut,
-  ChevronDown, ChevronUp, Menu, X 
+  ChevronDown, ChevronUp, Menu, X, MessageCircle 
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -30,6 +30,7 @@ const menuItems = {
     { icon: Home, label: "Beranda", href: "/dashboard/manajemen" },
     { icon: BarChart3, label: "Laporan Keseluruhan", href: "/dashboard/manajemen/laporan" },
     { icon: MapPin, label: "Lokasi Persebaran", href: "/dashboard/manajemen/lokasi" },
+    { icon: MessageCircle, label: "Ulasan Website", href: "/dashboard/manajemen/ulasan" },
     { icon: Settings, label: "Pengaturan", href: "/dashboard/manajemen/pengaturan" },
   ],
   nakes: [
