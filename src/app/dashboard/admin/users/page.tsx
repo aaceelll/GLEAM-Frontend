@@ -152,7 +152,7 @@ export default function UsersPage() {
                 Manajemen Akun dan Peran<br className="hidden sm:block" />
               </h1>
               <p className="text-gray-600 mt-1 sm:mt-0.5">
-                Kelola Akun Staff
+                Kelola Akun Pengguna
               </p>
             </div>
           </div>
