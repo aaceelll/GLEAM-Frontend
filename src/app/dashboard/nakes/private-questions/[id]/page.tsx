@@ -190,7 +190,6 @@ export default function NakesQuestionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [myRole, setMyRole] = useState<string>("");
-  const [refreshing, setRefreshing] = useState(false);
 
   // ⭐ Toast state
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -383,12 +382,6 @@ export default function NakesQuestionDetailPage() {
     }
   };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadQuestion();
-    setTimeout(() => setRefreshing(false), 500);
-  };
-
   return (
     <>
       {/* Toast Container */}
@@ -416,17 +409,6 @@ export default function NakesQuestionDetailPage() {
               <ArrowLeft className="w-4 h-4" />
               <span className="font-semibold">Kembali</span>
             </Link>
-
-            <Button
-              onClick={handleRefresh}
-              variant="outline"
-              size="sm"
-              className="border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-              disabled={refreshing}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
           </div>
 
           {/* Info assignment */}
@@ -585,7 +567,17 @@ export default function NakesQuestionDetailPage() {
                           type="button"
                           onClick={handleToggleLock}
                           variant="outline"
-                          className="w-full sm:w-auto border-2 border-gray-300 text-gray-700 hover:bg-gray-100 h-12 px-6"
+                          className="
+                            w-full sm:w-auto
+                            border-2 border-gray-300
+                            text-gray-700
+                            hover:bg-gray-100 hover:text-gray-900
+                            h-12 px-6
+                            transition-all duration-300
+                            hover:shadow-lg hover:-translate-y-0.5
+                            active:translate-y-0
+                            rounded-xl
+                          "
                         >
                           <Lock className="w-5 h-5 mr-2" />
                           Tutup
@@ -597,7 +589,17 @@ export default function NakesQuestionDetailPage() {
                         type="button"
                         onClick={() => setDeleteModalOpen(true)}
                         variant="outline"
-                        className="w-full sm:w-auto border-2 border-red-300 text-red-700 hover:bg-red-50 h-12 px-6"
+                        className="
+                          w-full sm:w-auto
+                          border-2 border-red-300
+                          text-red-700
+                          hover:bg-red-50 hover:text-red-800
+                          h-12 px-6
+                          transition-all duration-300
+                          hover:shadow-lg hover:-translate-y-0.5
+                          active:translate-y-0
+                          rounded-xl
+                        "
                       >
                         <Trash2 className="w-5 h-5 mr-2" />
                         Hapus

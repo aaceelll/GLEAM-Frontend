@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Activity, Loader2, TrendingUp } from "lucide-react";
+import { User, MapPin, Activity, Loader2, TrendingUp, Search, X } from "lucide-react";
 import { api } from "@/lib/api";
 import dynamic from "next/dynamic";
 import { UserDetailModal } from "@/components/modals/user-detail-modal";
@@ -45,6 +45,8 @@ export default function LokasiPersebaran() {
   const [showUserDetail, setShowUserDetail] = useState(false);
   const [showRWModal, setShowRWModal] = useState(false);
   const [selectedRW, setSelectedRW] = useState<{ kelurahan: string; rw: string }>({ kelurahan: "", rw: "" });
+  const [search, setSearch] = useState(""); 
+
 
   useEffect(() => { fetchData(); }, []);
 
@@ -93,6 +95,21 @@ export default function LokasiPersebaran() {
     setSelectedRW({ kelurahan, rw });
     setShowRWModal(true);
   };
+
+  // NEW: hasil pencarian dipetakan per kelurahan
+const searchLower = search.trim().toLowerCase();
+const resultsByKelurahan = {
+  Pedalangan: users.filter(
+    (u) =>
+      u.kelurahan?.toLowerCase() === "pedalangan" &&
+      (u.nama?.toLowerCase().includes(searchLower) || u.email?.toLowerCase().includes(searchLower))
+  ),
+  Padangsari: users.filter(
+    (u) =>
+      u.kelurahan?.toLowerCase() === "padangsari" &&
+      (u.nama?.toLowerCase().includes(searchLower) || u.email?.toLowerCase().includes(searchLower))
+  ),
+};
 
   if (loading) {
     return (
@@ -174,6 +191,51 @@ export default function LokasiPersebaran() {
           </CardContent>
         </Card>
 
+        {/* Search global untuk nama pengguna */}
+        <div className="w-full">
+          <div className="relative max-w-4xl mx-0">
+            {/* wrapper dengan ring, border, hover, dan focus yang konsisten */}
+            <div
+              className="
+                group relative rounded-2xl ring-1 ring-emerald-200/70 border-2 border-emerald-200/40 bg-white
+                shadow-sm hover:shadow-md transition-all
+                focus-within:ring-emerald-500 focus-within:border-emerald-500
+              "
+            >
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-500/80" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari nama pengguna"
+                className="
+                  w-full h-14 rounded-2xl bg-transparent
+                  pl-12 pr-12 outline-none
+                  placeholder:text-gray-400 text-gray-800
+                "
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="
+                    absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 grid place-items-center
+                    rounded-xl hover:bg-emerald-50 active:scale-95 transition
+                    text-emerald-600
+                  "
+                  aria-label="Bersihkan pencarian"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+
+            {search && (
+              <p className="text-sm text-gray-500 mt-2">
+                Menampilkan hasil untuk: <span className="font-semibold text-gray-700">“{search}”</span>
+              </p>
+            )}
+          </div>
+        </div>
+
         {/* Data Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <RWSection
@@ -181,12 +243,18 @@ export default function LokasiPersebaran() {
             rwData={statistics?.pedalangan_rw || []}
             onRWClick={handleRWCardClick}
             gradient="from-emerald-500 to-teal-600"
+            searchQuery={search}                                   // NEW
+            searchResults={resultsByKelurahan.Pedalangan}          // NEW
+            onUserClick={handleUserClick}                          // NEW
           />
           <RWSection
             kelurahan="Padangsari"
             rwData={statistics?.padangsari_rw || []}
             onRWClick={handleRWCardClick}
             gradient="from-teal-500 to-cyan-600"
+            searchQuery={search}                                   // NEW
+            searchResults={resultsByKelurahan.Padangsari}          // NEW
+            onUserClick={handleUserClick}                          // NEW
           />
         </div>
       </div>
@@ -227,9 +295,23 @@ interface RWSectionProps {
   rwData: RWData[];
   onRWClick: (kelurahan: string, rw: string) => void;
   gradient: string;
+  // NEW:
+  searchQuery?: string;
+  searchResults?: UserLocation[];
+  onUserClick?: (u: UserLocation) => void;
 }
 
-function RWSection({ kelurahan, rwData, onRWClick, gradient }: RWSectionProps) {
+function RWSection({
+  kelurahan,
+  rwData,
+  onRWClick,
+  gradient,
+  searchQuery = "",
+  searchResults = [],
+  onUserClick,
+}: RWSectionProps) {
+  const isSearching = !!searchQuery.trim();
+
   return (
     <Card className="group relative overflow-hidden border-0 shadow-2xl rounded-3xl backdrop-blur-xl bg-white/90 hover:shadow-emerald-300/50 transition-all duration-700 hover:scale-[1.01]">
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
@@ -242,25 +324,89 @@ function RWSection({ kelurahan, rwData, onRWClick, gradient }: RWSectionProps) {
         </div>
         <div>
           <CardTitle className={`text-xl font-black bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{kelurahan}</CardTitle>
-          <p className="text-sm text-gray-600 font-medium mt-1">Distribusi kasus per RW</p>
+          <p className="text-sm text-gray-600 font-medium mt-1">
+            {isSearching ? "Hasil pencarian" : "Distribusi kasus per RW"}
+          </p>
         </div>
       </CardHeader>
 
       <CardContent className="p-6 space-y-4 relative">
-        <div className="grid grid-cols-1 gap-3 max-h-[60vh] sm:max-h-[600px] overflow-y-auto pr-0 sm:pr-2 py-1 custom-scrollbar">
-          {rwData.map((rw, idx) => (
-            <RWCard
-              key={rw.rw}
-              rw={rw.rw}
-              count={rw.count}
-              kelurahan={kelurahan}
-              onClick={() => onRWClick(kelurahan, rw.rw)}
-              delay={idx * 50}
-            />
-          ))}
-        </div>
+        {isSearching ? (
+          searchResults.length > 0 ? (
+            <div className="space-y-3">
+              {searchResults.map((u) => (
+                <SearchUserCard key={u.id} user={u} onClick={() => onUserClick?.(u)} />
+              ))}
+            </div>
+          ) : (
+            <div
+              className="
+                p-5 rounded-3xl bg-emerald-50
+                border-2 border-emerald-200 text-emerald-900
+                shadow-sm
+              "
+            >
+              Data tidak ditemukan.
+            </div>
+          )
+        ) : (
+          <div className="grid grid-cols-1 gap-3 max-h-[60vh] sm:max-h-[600px] overflow-y-auto pr-0 sm:pr-2 py-1 custom-scrollbar">
+            {rwData.map((rw, idx) => (
+              <RWCard
+                key={rw.rw}
+                rw={rw.rw}
+                count={rw.count}
+                kelurahan={kelurahan}
+                onClick={() => onRWClick(kelurahan, rw.rw)}
+                delay={idx * 50}
+              />
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+function SearchUserCard({ user, onClick }: { user: UserLocation; onClick: () => void }) {
+  const addr = (user.address || user.alamat || "") as string;
+  return (
+    <button
+      onClick={onClick}
+      className="
+        w-full text-left
+        transition-all
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500
+      "
+    >
+      <div
+        className="
+          flex items-start gap-4 p-5 rounded-3xl
+          bg-white border-2 border-emerald-300
+          shadow-sm hover:shadow-lg hover:-translate-y-0.5
+          hover:border-emerald-500
+          transition-all
+        "
+      >
+        <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white grid place-items-center shrink-0 shadow">
+          {/* ikon user */}
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white grid place-items-center shrink-0 shadow">
+            <User className="w-6 h-6" />
+          </div>
+        </div>
+        <div className="min-w-0">
+          <p className="font-semibold text-emerald-700 text-[15px] leading-tight truncate">
+            {user.nama || "-"}
+          </p>
+          <p className="text-gray-700 text-sm truncate">{user.email || "-"}</p>
+          {addr && (
+            <p className="text-gray-500 text-sm mt-0.5 line-clamp-1">
+              {addr}
+            </p>
+          )}
+        </div>
+      </div>
+    </button>
   );
 }
 

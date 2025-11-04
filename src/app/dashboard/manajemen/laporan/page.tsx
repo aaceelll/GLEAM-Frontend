@@ -532,7 +532,7 @@ export default function LaporanKeseluruhan() {
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder={`Cari nama di ${tab === "pre" ? "Pre Test" : "Post Test"}…`}
+                  placeholder="Cari nama pengguna"
                   className="pl-12 h-12 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                 />
               </div>
