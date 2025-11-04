@@ -114,7 +114,7 @@ function ReviewModal({ open, onClose, data }: { open: boolean; onClose: () => vo
             <button
               aria-label="Tutup"
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100"
+              className="p-2 rounded-lg hover:bg-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
             >
               <X className="w-4 h-4 text-gray-600" />
             </button>
@@ -276,7 +276,7 @@ function HistoryModal({
             <button
               aria-label="Tutup"
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100"
+              className="p-2 rounded-lg hover:bg-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
             >
               <X className="w-4 h-4 text-gray-600" />
             </button>
@@ -334,7 +334,7 @@ function HistoryModal({
                       </span>
                       <button
                         onClick={() => onSelectHistory(item.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         Lihat
@@ -512,8 +512,8 @@ export default function LaporanKeseluruhan() {
                 className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold transition-all duration-300 
                   ${
                     isActive
-                      ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.03]"
-                      : "text-gray-600 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:text-emerald-700 hover:shadow-md"
+                      ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.03] hover:-translate-y-0.5"
+                      : "text-gray-600 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:text-emerald-700 hover:shadow-md hover:-translate-y-0.5"
                   }`}
               >
                 {t.label}
@@ -622,7 +622,7 @@ export default function LaporanKeseluruhan() {
                         <td className="pr-11 py-4 text-right">
                           <button
                             onClick={() => handleOpenHistory(row.userId, row.name)}
-                            className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors whitespace-nowrap"
+                            className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 whitespace-nowrap"
                             title="Lihat riwayat & detail"
                           >
                             Detail

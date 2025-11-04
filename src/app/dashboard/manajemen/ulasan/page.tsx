@@ -31,17 +31,26 @@ function formatIDTime(input?: string) {
   let s = String(input).trim();
   const isoish = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(s);
   if (isoish && !/[Z+-]\d{2}:?\d{2}$/.test(s)) s = s.replace(" ", "T") + "Z";
+
   const d = new Date(s);
   if (isNaN(d.getTime())) return "-";
-  return new Intl.DateTimeFormat("id-ID", {
+
+  const tanggal = new Intl.DateTimeFormat("id-ID", {
     timeZone: TZ,
     day: "2-digit",
     month: "long",
     year: "numeric",
+  }).format(d);
+
+  const jam = new Intl.DateTimeFormat("id-ID", {
+    timeZone: TZ,
     hour: "2-digit",
     minute: "2-digit",
   }).format(d);
+
+  return `${tanggal} pukul ${jam}`;
 }
+
 
 const QUESTIONS: Record<string, string> = {
   q1: "Saya ingin menggunakan website ini secara rutin.",
@@ -241,7 +250,7 @@ export default function UlasanPage() {
                             {formatIDTime(r.created_at)}
                           </div>
                         </td>
-                        <td className="py-4 text-sm text-gray-600">{r.user.email}</td>
+                        <td className="py-4 text-sm text-gray-600 text-center">{r.user.email}</td>
                         <td className="pr-11 py-4 text-right">
                           <button
                             onClick={() => openReviewModal(r.user)}
@@ -333,23 +342,22 @@ export default function UlasanPage() {
                 return (
                   <div 
                     key={key} 
-                    className={`rounded-lg p-4 border-2 transition-all ${
+                    className={`rounded-lg p-4 border transition-all ${
                       hasAnswer 
-                        ? 'bg-white border-gray-200 hover:border-emerald-200' 
-                        : 'bg-gray-50 border-gray-200'
+                        ? 'bg-white border-gray-200 hover:border-emerald-300 hover:shadow-sm' 
+                        : 'bg-gray-50/50 border-gray-100'
                     }`}
                   >
-                    <p className="text-sm font-medium text-gray-800 leading-relaxed mb-2">
-                      {idx + 1}. {label}
+                    <p className="text-sm text-gray-700 leading-relaxed mb-2.5">
+                      <span className="font-medium text-gray-900">{idx + 1}.</span> {label}
                     </p>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-gray-500">Jawaban:</span>
                       {hasAnswer ? (
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full border-2 text-xs font-semibold ${SCALE_COLORS[value]}`}>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${SCALE_COLORS[value]}`}>
                           {SCALE_LABELS[value]}
                         </span>
                       ) : (
-                        <span className="text-xs italic text-gray-400">Tidak dijawab</span>
+                        <span className="text-xs text-gray-400">Tidak dijawab</span>
                       )}
                     </div>
                   </div>
@@ -357,19 +365,19 @@ export default function UlasanPage() {
               })}
               
               <div className="pt-2">
-                <div className={`rounded-lg p-4 border-2 transition-all ${
+                <div className={`rounded-lg p-4 border transition-all ${
                   selectedReview.suggestion?.trim() 
-                    ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200' 
-                    : 'bg-gray-50 border-gray-200'
+                    ? 'bg-emerald-50/30 border-emerald-200/50' 
+                    : 'bg-gray-50/50 border-gray-100'
                 }`}>
                   <div className="flex items-center gap-2 mb-2">
                     <MessageCircle className="w-4 h-4 text-emerald-600" />
-                    <p className="font-semibold text-gray-800">Saran & Masukan</p>
+                    <p className="font-medium text-gray-900 text-sm">Saran & Masukan</p>
                   </div>
                   <p className={`text-sm leading-relaxed ${
                     selectedReview.suggestion?.trim() 
                       ? 'text-gray-700' 
-                      : 'text-gray-400 italic'
+                      : 'text-gray-400'
                   }`}>
                     {selectedReview.suggestion?.trim() || "Tidak ada saran"}
                   </p>
