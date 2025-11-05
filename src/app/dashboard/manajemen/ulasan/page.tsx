@@ -211,11 +211,18 @@ export default function UlasanPage() {
             {/* Table */}
             <div className="overflow-x-auto rounded-2xl border border-gray-100">
               <table className="w-full min-w-[640px] border-collapse text-sm md:text-base table-auto">
+                <colgroup>
+                  <col className="w-[6%] md:w-[8%]" /> {/* No */}
+                  <col className="w-[20%] md:w-[22%]" /> {/* Nama */}
+                  <col className="w-[18%] md:w-[22%]" /> {/* Tanggal */}
+                  <col className="w-[28%] md:w-[30%]" /> {/* Email */}
+                  <col className="w-[12%] md:w-[12%]" /> {/* Aksi */}
+                </colgroup>
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="pl-12 py-3 text-left font-semibold text-gray-700 border-b w-16">No</th>
-                    <th className="py-3 text-left font-semibold text-gray-700 border-b">Nama</th>
-                    <th className="py-3 text-left font-semibold text-gray-700 border-b">Tanggal Review</th>
+                    <th className="py-3 text-center font-semibold text-gray-700 border-b">Nama</th>
+                    <th className="py-3 text-center font-semibold text-gray-700 border-b">Tanggal Review</th>
                     <th className="py-3 text-center font-semibold text-gray-700 border-b">Email</th>
                     <th className="pr-15 py-3 text-right font-semibold text-gray-700 border-b w-32">Aksi</th>
                   </tr>
@@ -243,14 +250,20 @@ export default function UlasanPage() {
                         className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-emerald-50/50 hover:to-teal-50/50 transition-colors"
                       >
                         <td className="pl-12 py-4 text-sm text-gray-600">{start + idx + 1}</td>
-                        <td className="py-4 px-2 text-sm font-medium text-gray-900 break-words max-w-[200px]">{r.user.nama}</td>
+                        <td className="py-4 px-2 text-sm text-gray-600 text-center break-words md:break-normal max-w-[140px] md:max-w-[250px] truncate md:whitespace-normal">
+                            <div className="truncate md:whitespace-normal">{r.user.nama}</div>
+                          </td>
                         <td className="py-4 px-2 text-sm text-gray-600 whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
                             <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
                             <span className="truncate">{formatIDTime(r.created_at)}</span>
                           </div>
                         </td>
-                        <td className="py-4 px-2 text-sm text-gray-600 text-center break-all max-w-[250px]">{r.user.email}</td>
+                        <td className="py-4 px-2 text-sm text-gray-600 text-center break-words md:break-normal max-w-[140px] md:max-w-[250px] truncate md:whitespace-normal">
+                          <span className="inline-block w-full break-words">
+                            {r.user.email}
+                          </span>
+                        </td>
                         <td className="pr-11 py-4 text-right">
                           <button
                             onClick={() => openReviewModal(r.user)}
