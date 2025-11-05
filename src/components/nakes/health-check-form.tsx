@@ -1,35 +1,15 @@
 // src/components/nakes/health-check-form.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Search, X } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";  // ✅ Import useAuth hook
 
 interface Patient {
   id: number;
   nama: string;
   umur: number;
   jenis_kelamin: string;
-}
-
-// ✅ Helper function untuk ambil user dari cookie/localStorage
-function getCurrentUserId(): number | null {
-  // Coba dari localStorage dulu
-  if (typeof window !== 'undefined') {
-    try {
-      const userData = localStorage.getItem('user_data');
-      if (userData) {
-        const user = JSON.parse(userData);
-        if (user && user.id) {
-          console.log('✅ User ID from localStorage:', user.id);
-          return user.id;
-        }
-      }
-    } catch (e) {
-      console.error('Error parsing user_data from localStorage:', e);
-    }
-  }
-  
-  return null;
 }
 
 export default function HealthCheckForm() {
@@ -39,8 +19,9 @@ export default function HealthCheckForm() {
   const [isSearching, setIsSearching] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  // ✅ State untuk nakesId
-  const [nakesId, setNakesId] = useState<number | null>(null);
+  // ✅ SOLUSI TERBAIK: Pakai useAuth hook yang sudah ada!
+  const { user } = useAuth();
+  const nakesId = user?.id || null;
 
   const [formData, setFormData] = useState({
     jenis_kelamin: "",
@@ -52,58 +33,6 @@ export default function HealthCheckForm() {
     bmi: "",
     gula_darah: "",
   });
-
-  // ✅ Get nakesId saat component mount
-  useEffect(() => {
-    // Method 1: Coba ambil dari localStorage/cookie
-    const userId = getCurrentUserId();
-    if (userId) {
-      setNakesId(userId);
-      console.log('✅ Nakes ID set from localStorage:', userId);
-      return;
-    }
-
-    // Method 2: Fallback - Coba fetch dari API
-    const fetchCurrentUser = async () => {
-      try {
-        // Get token
-        const token = localStorage.getItem('gleam_token') || 
-                     document.cookie.split('; ').find(row => row.startsWith('auth_token='))?.split('=')[1];
-        
-        if (!token) {
-          console.error('❌ No token found');
-          return;
-        }
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-          }
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          const data = result.user || result;
-          console.log('✅ Current user from API:', data);
-          
-          if (data.id) {
-            setNakesId(data.id);
-            console.log('✅ Nakes ID set from API:', data.id);
-            
-            // Save to localStorage for next time
-            localStorage.setItem('user_data', JSON.stringify(data));
-          }
-        } else {
-          console.error('❌ Failed to fetch user:', response.status);
-        }
-      } catch (error) {
-        console.error('❌ Error fetching current user:', error);
-      }
-    };
-    
-    fetchCurrentUser();
-  }, []);
 
   const handleSearch = async (term: string) => {
     setSearchTerm(term);
@@ -163,7 +92,7 @@ export default function HealthCheckForm() {
     // ✅ VALIDASI: Pastikan nakesId sudah ada
     if (!nakesId) {
       alert("Error: Tidak dapat mengidentifikasi nakes yang login. Silakan login ulang.");
-      console.error('❌ nakesId is null or undefined');
+      console.error('❌ nakesId is null - user:', user);
       return;
     }
 
@@ -205,7 +134,7 @@ export default function HealthCheckForm() {
       const payload = {
         patientName: selectedPatient?.nama || "Unknown",
         userId: selectedPatient?.id,
-        nakesId: nakesId,  // ✅ Gunakan nakesId dari state
+        nakesId: nakesId,  // ✅ Gunakan nakesId dari useAuth
         age: formData.umur,
         gender: formData.jenis_kelamin,
         systolic_bp: formData.tekanan_sistol,
@@ -262,7 +191,7 @@ export default function HealthCheckForm() {
             <h1 className="text-2xl font-bold text-gray-800">Form Screening Diabetes</h1>
             {nakesId && (
               <span className="text-sm text-emerald-600 font-medium">
-                Nakes ID: {nakesId}
+                ✅ Nakes ID: {nakesId}
               </span>
             )}
           </div>
@@ -270,8 +199,11 @@ export default function HealthCheckForm() {
           {/* Warning jika nakesId belum ada */}
           {!nakesId && (
             <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-              <p className="text-yellow-800 text-sm">
+              <p className="text-yellow-800 text-sm font-medium">
                 ⚠️ Sedang memuat data user... Jika pesan ini terus muncul, silakan login ulang.
+              </p>
+              <p className="text-yellow-700 text-xs mt-1">
+                User: {user ? JSON.stringify(user) : 'null'}
               </p>
             </div>
           )}
@@ -327,7 +259,6 @@ export default function HealthCheckForm() {
 
           {/* FORM */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Form fields... sama seperti sebelumnya */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Jenis Kelamin *</label>
