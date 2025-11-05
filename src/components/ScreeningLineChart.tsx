@@ -315,20 +315,21 @@ export default function ScreeningLineChart({
             />
 
             {/* Area halus dibawah line untuk nuansa */}
-            <Area
-              type="monotone"
-              dataKey="prob"
-              stroke="none"
-              fill="rgba(16, 185, 129, 0.15)"
-              isAnimationActive={true}
-            />
+           <Area
+  type="monotone"
+  dataKey="prob"
+  stroke="none"
+  fill="rgba(16, 185, 129, 0.25)" // hijau lembut (emerald-500)
+  fillOpacity={1}
+  isAnimationActive={true}
+/>
 
             <Tooltip content={<CustomTooltip />} />
 
             <Line
               type="monotone"
               dataKey="prob"
-              stroke="url(#gleamStroke)"
+              stroke="#059669" // emerald-600
               strokeWidth={3}
               dot={false}
               activeDot={{ r: 5 }}
