@@ -210,14 +210,14 @@ export default function UlasanPage() {
 
             {/* Table */}
             <div className="overflow-x-auto rounded-2xl border border-gray-100">
-              <table className="w-full min-w-[640px] border-collapse text-sm md:text-base table-fixed">
+              <table className="w-full min-w-[640px] border-collapse text-sm md:text-base table-auto">
                 <thead>
                   <tr className="bg-gray-50">
-                    <th className="pl-12 py-3 text-left font-semibold text-gray-700 border-b">No</th>
+                    <th className="pl-12 py-3 text-left font-semibold text-gray-700 border-b w-16">No</th>
                     <th className="py-3 text-left font-semibold text-gray-700 border-b">Nama</th>
                     <th className="py-3 text-left font-semibold text-gray-700 border-b">Tanggal Review</th>
                     <th className="py-3 text-center font-semibold text-gray-700 border-b">Email</th>
-                    <th className="pr-15 py-3 text-right font-semibold text-gray-700 border-b">Aksi</th>
+                    <th className="pr-15 py-3 text-right font-semibold text-gray-700 border-b w-32">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -243,14 +243,14 @@ export default function UlasanPage() {
                         className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-emerald-50/50 hover:to-teal-50/50 transition-colors"
                       >
                         <td className="pl-12 py-4 text-sm text-gray-600">{start + idx + 1}</td>
-                        <td className="py-4 text-sm font-medium text-gray-900">{r.user.nama}</td>
-                        <td className="py-4 text-sm text-gray-600">
+                        <td className="py-4 px-2 text-sm font-medium text-gray-900 break-words max-w-[200px]">{r.user.nama}</td>
+                        <td className="py-4 px-2 text-sm text-gray-600 whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
-                            <Calendar className="w-4 h-4 text-gray-400" />
-                            {formatIDTime(r.created_at)}
+                            <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+                            <span className="truncate">{formatIDTime(r.created_at)}</span>
                           </div>
                         </td>
-                        <td className="py-4 text-sm text-gray-600 text-center">{r.user.email}</td>
+                        <td className="py-4 px-2 text-sm text-gray-600 text-center break-all max-w-[250px]">{r.user.email}</td>
                         <td className="pr-11 py-4 text-right">
                           <button
                             onClick={() => openReviewModal(r.user)}
