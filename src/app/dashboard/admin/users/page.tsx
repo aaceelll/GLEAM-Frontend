@@ -46,16 +46,10 @@ export default function UsersPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [filteredRows, setFilteredRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
-
- const [showAdd, setShowAdd] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
   const [editUser, setEditUser] = useState<Row | null>(null);
-
-  // ✅ Banner sukses
   const [banner, setBanner] = useState<null | { type: "success"; text: string }>(null);
-
   const [searchQuery, setSearchQuery] = useState("");
-
-  // AlertDialog delete
   const [toDelete, setToDelete] = useState<Row | null>(null);
 
   const rowsPerPage = 10;
@@ -122,20 +116,19 @@ export default function UsersPage() {
       toast.success("User berhasil dihapus");
       setToDelete(null);
       await load();
-      setBanner({ type: "success", text: "Akun berhasil dihapus!" }); // ✅
+      setBanner({ type: "success", text: "Akun berhasil dihapus!" });
       setTimeout(() => setBanner(null), 3000);
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Gagal menghapus user");
     }
   }
 
-          return (
+  return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-9">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            {/* ICON CHIP – versi responsif */}
             <div className="relative isolate shrink-0">
               <span
                 aria-hidden
@@ -146,32 +139,32 @@ export default function UsersPage() {
               </div>
             </div>
 
-             {/* Judul + subjudul */}
             <div>
               <h1 className="text-[22px] leading-[1.15] sm:text-3xl md:text-4xl font-bold text-gray-800">
                 Manajemen Akun dan Peran<br className="hidden sm:block" />
               </h1>
-              <p className="text-gray-600 mt-1 sm:mt-0.5">
-                Kelola Akun Pengguna
-              </p>
+              <p className="text-gray-600 mt-1 sm:mt-0.5">Kelola Akun Pengguna</p>
             </div>
           </div>
         </div>
-          <button
-            onClick={() => setShowAdd(true)}
-            className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
-          >
-            <UserPlus className="h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
-            Tambah Akun
-          </button>
+
+        <button
+          onClick={() => setShowAdd(true)}
+          className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
+        >
+          <UserPlus className="h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
+          Tambah Akun
+        </button>
 
         {/* Banner sukses */}
         {banner && (
-          <div
-            className="rounded-2xl px-5 py-4 flex items-start gap-3 shadow-lg border-2 bg-emerald-50 border-emerald-200 text-emerald-900 mb-4"
-          >
-            <svg className="h-6 w-6 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm-1 14l-4-4 1.4-1.4L11 12.2l4.6-4.6L17 9l-6 7z"/>
+          <div className="rounded-2xl px-5 py-4 flex items-start gap-3 shadow-lg border-2 bg-emerald-50 border-emerald-200 text-emerald-900 mb-4">
+            <svg
+              className="h-6 w-6 flex-shrink-0 mt-0.5"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm-1 14l-4-4 1.4-1.4L11 12.2l4.6-4.6L17 9l-6 7z" />
             </svg>
             <span className="font-semibold">{banner.text}</span>
           </div>
@@ -184,10 +177,15 @@ export default function UsersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span aria-hidden className="w-1.5 h-5 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full" />
+                    <span
+                      aria-hidden
+                      className="w-1.5 h-5 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"
+                    />
                     <h2 className="text-xl font-bold">Daftar Akun</h2>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1 ml-4">Kelola Akun Pengguna GLEAM</p>
+                  <p className="text-sm text-gray-600 mt-1 ml-4">
+                    Kelola Akun Pengguna GLEAM
+                  </p>
                 </div>
               </div>
             </div>
@@ -199,11 +197,6 @@ export default function UsersPage() {
                 <Input
                   id="admin-users-search"
                   type="text"
-                  name="admin-users-search"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
                   placeholder="Cari nama, username, atau email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -226,6 +219,7 @@ export default function UsersPage() {
                       <th className="text-center p-4 font-bold text-gray-700">Aksi</th>
                     </tr>
                   </thead>
+
                   <tbody>
                     {loading ? (
                       <tr>
@@ -241,8 +235,12 @@ export default function UsersPage() {
                               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-200 mb-4">
                                 <Search className="h-8 w-8 text-amber-600" />
                               </div>
-                              <p className="text-gray-700 font-bold">Tidak ada hasil pencarian</p>
-                              <p className="text-sm text-gray-500 mt-1">Coba kata kunci lain</p>
+                              <p className="text-gray-700 font-bold">
+                                Tidak ada hasil pencarian
+                              </p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                Coba kata kunci lain
+                              </p>
                             </div>
                           ) : (
                             <div className="py-8">
@@ -265,17 +263,11 @@ export default function UsersPage() {
                             idx % 2 === 0 ? "bg-white" : "bg-gray-50/30"
                           }`}
                         >
-                          <td className="p-4">
-                            <div className="font-medium text-gray-900">{r.nama}</div>
-                          </td>
-                          <td className="p-4">
-                            <div className="text-gray-700">{r.username}</div>
-                          </td>
-                          <td className="p-4">
-                            <div className="text-gray-600 text-sm">{r.email}</div>
-                          </td>
-                          <td className="p-4">
-                            <div className="text-gray-600">{r.nomor_telepon || "-"}</div>
+                          <td className="p-4 font-medium text-gray-900">{r.nama}</td>
+                          <td className="p-4 text-gray-700">{r.username}</td>
+                          <td className="p-4 text-gray-600 text-sm">{r.email}</td>
+                          <td className="p-4 text-gray-600">
+                            {r.nomor_telepon || "-"}
                           </td>
                           <td className="p-4">
                             <span
@@ -286,17 +278,55 @@ export default function UsersPage() {
                           </td>
                           <td className="p-4">
                             <div className="flex items-center justify-center gap-2">
+                              {/* ✏️ Tombol Edit */}
                               <button
-                                onClick={() => setEditUser(r)}
-                                className="p-2.5 rounded-xl text-amber-600 bg-amber-50 hover:bg-gradient-to-br hover:from-amber-500 hover:to-orange-500 hover:text-white transition-all hover:scale-110 shadow-sm"
-                                title="Edit"
+                                onClick={() => {
+                                  if (r.role === "user") {
+                                    toast.warning(
+                                      "Akun pasien tidak dapat diedit oleh admin"
+                                    );
+                                    return;
+                                  }
+                                  setEditUser(r);
+                                }}
+                                disabled={r.role === "user"}
+                                className={`p-2.5 rounded-xl transition-all shadow-sm ${
+                                  r.role === "user"
+                                    ? "text-gray-400 bg-gray-100 cursor-not-allowed"
+                                    : "text-amber-600 bg-amber-50 hover:bg-gradient-to-br hover:from-amber-500 hover:to-orange-500 hover:text-white hover:scale-110"
+                                }`}
+                                title={
+                                  r.role === "user"
+                                    ? "Tidak dapat mengedit akun pasien"
+                                    : "Edit"
+                                }
                               >
                                 <Pencil className="h-4 w-4" />
                               </button>
+
+                              {/* 🗑️ Tombol Hapus */}
                               <button
-                                onClick={() => setToDelete(r)}
-                                className="p-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-gradient-to-br hover:from-red-500 hover:to-pink-500 hover:text-white transition-all hover:scale-110 shadow-sm"
-                                title="Hapus"
+                                onClick={() => {
+                                  const currentEmail =
+                                    localStorage.getItem("gleam_email");
+                                  if (r.email === currentEmail) {
+                                    toast.warning(
+                                      "Anda tidak dapat menghapus akun sendiri"
+                                    );
+                                    return;
+                                  }
+                                  setToDelete(r);
+                                }}
+                                className={`p-2.5 rounded-xl transition-all shadow-sm ${
+                                  localStorage.getItem("gleam_email") === r.email
+                                    ? "text-gray-400 bg-gray-100 cursor-not-allowed"
+                                    : "text-red-600 bg-red-50 hover:bg-gradient-to-br hover:from-red-500 hover:to-pink-500 hover:text-white hover:scale-110"
+                                }`}
+                                title={
+                                  localStorage.getItem("gleam_email") === r.email
+                                    ? "Tidak dapat menghapus akun sendiri"
+                                    : "Hapus"
+                                }
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
@@ -310,7 +340,7 @@ export default function UsersPage() {
               </div>
             </div>
 
-            {/* Pagination - UPDATED FOR RESPONSIVE */}
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="px-3 sm:px-6 pb-4">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 bg-gradient-to-r from-gray-50 to-slate-50 border-2 border-gray-100 rounded-2xl p-3 sm:p-4">
@@ -329,40 +359,50 @@ export default function UsersPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      onClick={() =>
+                        setCurrentPage((p) => Math.max(1, p - 1))
+                      }
                       disabled={currentPage === 1}
-                      className="border-gray-300 hover:bg-emerald-50 hover:border-emerald-300 disabled:opacity-50 rounded-xl text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9"
+                      className="border-gray-300 text-gray-700 hover:text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 disabled:opacity-50 rounded-xl text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9 transition-colors"
                     >
                       Sebelumnya
                     </Button>
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let page: number;
-                      if (totalPages <= 5) page = i + 1;
-                      else if (currentPage <= 3) page = i + 1;
-                      else if (currentPage >= totalPages - 2) page = totalPages - 4 + i;
-                      else page = currentPage - 2 + i;
-                      return (
-                        <Button
-                          key={page}
-                          variant={currentPage === page ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setCurrentPage(page)}
-                          className={
-                            currentPage === page
-                              ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl shadow-md text-xs sm:text-sm min-w-[2rem] sm:min-w-[2.5rem] h-8 sm:h-9 px-2 sm:px-3"
-                              : "border-gray-300 hover:bg-emerald-50 hover:border-emerald-300 rounded-xl text-xs sm:text-sm min-w-[2rem] sm:min-w-[2.5rem] h-8 sm:h-9 px-2 sm:px-3"
-                          }
-                        >
-                          {page}
-                        </Button>
-                      );
-                    })}
+                    {Array.from(
+                      { length: Math.min(5, totalPages) },
+                      (_, i) => {
+                        let page: number;
+                        if (totalPages <= 5) page = i + 1;
+                        else if (currentPage <= 3) page = i + 1;
+                        else if (currentPage >= totalPages - 2)
+                          page = totalPages - 4 + i;
+                        else page = currentPage - 2 + i;
+                        return (
+                          <Button
+                            key={page}
+                            variant={
+                              currentPage === page ? "default" : "outline"
+                            }
+                            size="sm"
+                            onClick={() => setCurrentPage(page)}
+                            className={
+                              currentPage === page
+                                ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl shadow-md text-xs sm:text-sm min-w-[2rem] sm:min-w-[2.5rem] h-8 sm:h-9 px-2 sm:px-3 transition-colors"
+                                : "border-gray-300 text-gray-700 hover:text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 rounded-xl text-xs sm:text-sm min-w-[2rem] sm:min-w-[2.5rem] h-8 sm:h-9 px-2 sm:px-3 transition-colors"
+                            }
+                          >
+                            {page}
+                          </Button>
+                        );
+                      }
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
                       disabled={currentPage === totalPages}
-                      className="border-gray-300 hover:bg-emerald-50 hover:border-emerald-300 disabled:opacity-50 rounded-xl text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9"
+                      className="border-gray-300 text-gray-700 hover:text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 disabled:opacity-50 rounded-xl text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9 transition-colors"
                     >
                       Selanjutnya
                     </Button>
@@ -379,8 +419,8 @@ export default function UsersPage() {
         <AddUserModal
           onCreated={async () => {
             await load();
-            setBanner({ type: "success", text: "Akun berhasil ditambahkan!" }); // ✅
-            setTimeout(() => setBanner(null), 3000); // auto-hide
+            setBanner({ type: "success", text: "Akun berhasil ditambahkan!" });
+            setTimeout(() => setBanner(null), 3000);
           }}
           onClose={() => {
             setShowAdd(false);
@@ -395,7 +435,7 @@ export default function UsersPage() {
           onUpdated={async () => {
             await load();
             setBanner({ type: "success", text: "Akun berhasil diperbarui!" });
-            setTimeout(() => setBanner(null), 3000); // auto hide 3 detik
+            setTimeout(() => setBanner(null), 3000);
           }}
           onClose={() => {
             setEditUser(null);
@@ -412,15 +452,17 @@ export default function UsersPage() {
               <div className="w-9 h-9 rounded-xl bg-red-100 text-red-600 grid place-items-center">
                 <Trash2 className="w-5 h-5" />
               </div>
-              <AlertDialogTitle className="text-lg font-bold">Hapus Akun?</AlertDialogTitle>
+              <AlertDialogTitle className="text-lg font-bold">
+                Hapus Akun?
+              </AlertDialogTitle>
             </div>
           </AlertDialogHeader>
 
           <div className="px-6 py-4 border-b border-gray-100">
             <AlertDialogDescription className="text-gray-600">
               Apakah Anda yakin ingin menghapus akun{" "}
-              <b className="text-gray-900">"{toDelete?.nama}"</b>? Tindakan ini tidak dapat
-              dibatalkan.
+              <b className="text-gray-900">"{toDelete?.nama}"</b>? Tindakan ini
+              tidak dapat dibatalkan.
             </AlertDialogDescription>
           </div>
 
