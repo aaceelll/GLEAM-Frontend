@@ -319,7 +319,7 @@ export default function ScreeningLineChart({
               type="monotone"
               dataKey="prob"
               stroke="none"
-              fill="url(#gleamArea)"
+              fill="rgba(16, 185, 129, 0.15)"
               isAnimationActive={true}
             />
 
@@ -345,12 +345,12 @@ export default function ScreeningLineChart({
                 tickFormatter={fmtShortDate}
               >
                 <AreaChart data={parsed}>
-                  <defs>
+                  {/* <defs>
                     <linearGradient id="gleamMini" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="rgba(16,185,129,0.35)" />
                       <stop offset="100%" stopColor="rgba(16,185,129,0.06)" />
                     </linearGradient>
-                  </defs>
+                  </defs> */}
                   <Area
                     dataKey="prob"
                     stroke="#34D399"
