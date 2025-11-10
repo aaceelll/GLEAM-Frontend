@@ -249,7 +249,7 @@ export default function EditUserModal({ user, onUpdated, onClose }: Props) {
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
-              placeholder="email@contoh.com"
+              placeholder="email@gmail.com"
             />
           </div>
 

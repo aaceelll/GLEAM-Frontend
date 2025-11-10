@@ -215,7 +215,7 @@ export default function AddUserModal({ onCreated, onClose }: Props) {
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
-              placeholder="email@contoh.com"
+              placeholder="email@gmail.com"
             />
           </div>
 
@@ -299,14 +299,16 @@ export default function AddUserModal({ onCreated, onClose }: Props) {
           {/* Password + Konfirmasi */}
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-900">Password Baru</label>
+              <label className="text-sm font-semibold text-gray-900">
+                Password Baru <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <input
                   type={showPwd ? "text" : "password"}
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   className="w-full px-4 py-3 pr-11 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
-                  placeholder="(opsional)"
+                  placeholder="(Wajib Diisi)"
                 />
                 <button
                   type="button"
@@ -319,14 +321,16 @@ export default function AddUserModal({ onCreated, onClose }: Props) {
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-900">Konfirmasi Password Baru</label>
+              <label className="text-sm font-semibold text-gray-900">
+                Konfirmasi Password <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <input
                   type={showPwd2 ? "text" : "password"}
                   value={form.password_confirmation}
                   onChange={(e) => setForm({ ...form, password_confirmation: e.target.value })}
                   className="w-full px-4 py-3 pr-11 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
-                  placeholder="(opsional)"
+                  placeholder="(Wajib Diisi)"
                 />
                 <button
                   type="button"
