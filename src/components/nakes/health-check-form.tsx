@@ -1,8 +1,9 @@
 // src/components/nakes/health-check-form.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Search, X } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";  // ✅ Import useAuth hook
 
 interface Patient {
   id: number;
@@ -18,8 +19,9 @@ export default function HealthCheckForm() {
   const [isSearching, setIsSearching] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  // ✅ TAMBAHKAN: State untuk nakesId
-  const [nakesId, setNakesId] = useState<number | null>(null);
+  // ✅ SOLUSI TERBAIK: Pakai useAuth hook yang sudah ada!
+  const { user } = useAuth();
+  const nakesId = user?.id || null;
 
   const [formData, setFormData] = useState({
     jenis_kelamin: "",
@@ -31,31 +33,6 @@ export default function HealthCheckForm() {
     bmi: "",
     gula_darah: "",
   });
-
-  // ✅ TAMBAHKAN: Fetch user yang login untuk dapat nakesId
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await fetch('/api/auth/me');
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Current user:', data);
-          
-          // Set nakesId dari user yang login
-          if (data.role === 'nakes' || data.role === 'admin') {
-            setNakesId(data.id);
-            console.log('✅ Nakes ID set to:', data.id);
-          } else {
-            console.warn('⚠️ User bukan nakes atau admin');
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error fetching current user:', error);
-      }
-    };
-    
-    fetchCurrentUser();
-  }, []);
 
   const handleSearch = async (term: string) => {
     setSearchTerm(term);
@@ -114,7 +91,8 @@ export default function HealthCheckForm() {
     
     // ✅ VALIDASI: Pastikan nakesId sudah ada
     if (!nakesId) {
-      alert("Error: Tidak dapat mengidentifikasi nakes. Silakan login ulang.");
+      alert("Error: Tidak dapat mengidentifikasi nakes yang login. Silakan login ulang.");
+      console.error('❌ nakesId is null - user:', user);
       return;
     }
 
@@ -125,6 +103,8 @@ export default function HealthCheckForm() {
 
     setLoading(true);
     try {
+      console.log('📤 Submitting screening with nakesId:', nakesId);
+      
       // Call ML API
       const response = await fetch("https://wati1205-api-klasifikasi-dm.hf.space/predict", {
         method: "POST",
@@ -142,7 +122,7 @@ export default function HealthCheckForm() {
       });
 
       const resultData = await response.json();
-      console.log("Result dari API HF:", resultData);
+      console.log("✅ Result dari API HF:", resultData);
 
       if (resultData.error) {
         alert("Gagal screening: " + resultData.error);
@@ -150,44 +130,53 @@ export default function HealthCheckForm() {
         return;
       }
 
-      // ✅ FIX: Gunakan nakesId dari state, bukan hardcoded
-      console.log('📤 Sending screening with nakesId:', nakesId);
+      // ✅ Save to backend dengan nakesId
+      const payload = {
+        patientName: selectedPatient?.nama || "Unknown",
+        userId: selectedPatient?.id,
+        nakesId: nakesId,  // ✅ Gunakan nakesId dari useAuth
+        age: formData.umur,
+        gender: formData.jenis_kelamin,
+        systolic_bp: formData.tekanan_sistol,
+        diastolic_bp: formData.tekanan_diastol,
+        heart_disease: formData.riwayat_penyakit_jantung,
+        smoking_history: formData.riwayat_merokok,
+        bmi: formData.bmi,
+        blood_glucose_level: formData.gula_darah,
+        diabetes_probability: resultData.probabilitas_diabetes,
+        diabetes_result: resultData.hasil_diabetes,
+        bp_classification: resultData.tekanan_darah?.klasifikasi,
+        bp_recommendation: resultData.tekanan_darah?.rekomendasi,
+        full_result: resultData.hasil_lengkap,
+      };
+
+      console.log('📤 Sending screening payload:', payload);
       
       const saveResponse = await fetch("/api/screenings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          patientName: selectedPatient?.nama || "Unknown",
-          userId: selectedPatient?.id,
-          nakesId: nakesId,  // ✅ Gunakan ID dari user yang login
-          age: formData.umur,
-          gender: formData.jenis_kelamin,
-          systolic_bp: formData.tekanan_sistol,
-          diastolic_bp: formData.tekanan_diastol,
-          heart_disease: formData.riwayat_penyakit_jantung,
-          smoking_history: formData.riwayat_merokok,
-          bmi: formData.bmi,
-          blood_glucose_level: formData.gula_darah,
-          diabetes_probability: resultData.probabilitas_diabetes,
-          diabetes_result: resultData.hasil_diabetes,
-          bp_classification: resultData.tekanan_darah?.klasifikasi,
-          bp_recommendation: resultData.tekanan_darah?.rekomendasi,
-          full_result: resultData.hasil_lengkap,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!saveResponse.ok) {
         const errorData = await saveResponse.json();
-        console.error('Error saving screening:', errorData);
+        console.error('❌ Error saving screening:', errorData);
         alert("Gagal menyimpan hasil screening: " + (errorData.message || errorData.error));
         setLoading(false);
         return;
       }
 
-      alert(`Hasil: ${resultData.probabilitas_diabetes} - ${resultData.hasil_diabetes}`);
+      const savedData = await saveResponse.json();
+      console.log('✅ Screening saved:', savedData);
+
+      alert(`✅ Screening berhasil!\n\nHasil: ${resultData.probabilitas_diabetes} - ${resultData.hasil_diabetes}`);
+      
+      // Reset form
+      clearSelection();
+      
     } catch (error) {
-      console.error("Error:", error);
-      alert("Terjadi kesalahan");
+      console.error("❌ Error:", error);
+      alert("Terjadi kesalahan saat menyimpan screening");
     } finally {
       setLoading(false);
     }
@@ -198,7 +187,26 @@ export default function HealthCheckForm() {
     <div className="flex-1 overflow-auto bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-sm p-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">Form Screening Diabetes</h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-gray-800">Form Screening Diabetes</h1>
+            {nakesId && (
+              <span className="text-sm text-emerald-600 font-medium">
+                ✅ Nakes ID: {nakesId}
+              </span>
+            )}
+          </div>
+
+          {/* Warning jika nakesId belum ada */}
+          {!nakesId && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+              <p className="text-yellow-800 text-sm font-medium">
+                ⚠️ Sedang memuat data user... Jika pesan ini terus muncul, silakan login ulang.
+              </p>
+              <p className="text-yellow-700 text-xs mt-1">
+                User: {user ? JSON.stringify(user) : 'null'}
+              </p>
+            </div>
+          )}
 
           {/* Search Patient */}
           {!selectedPatient ? (
@@ -366,7 +374,7 @@ export default function HealthCheckForm() {
               </button>
               <button
                 type="submit"
-                className="flex-1 px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50"
+                className="flex-1 px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={loading || !selectedPatient || !nakesId}
               >
                 {loading ? "Memproses..." : "Lakukan Screening"}
