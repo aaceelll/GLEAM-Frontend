@@ -108,20 +108,43 @@ export default function UsersPage() {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const currentRows = filteredRows.slice(startIndex, endIndex);
+  const [errorBanner, setErrorBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (errorBanner) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [errorBanner]);
 
   async function confirmDelete() {
-    if (!toDelete) return;
-    try {
-      await usersAPI.delete(toDelete.id);
-      toast.success("User berhasil dihapus");
-      setToDelete(null);
-      await load();
-      setBanner({ type: "success", text: "Akun berhasil dihapus!" });
-      setTimeout(() => setBanner(null), 3000);
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Gagal menghapus user");
+  if (!toDelete) return;
+
+  try {
+    await usersAPI.delete(toDelete.id);
+
+    toast.success("User berhasil dihapus");
+    setToDelete(null);
+    await load();
+
+    setBanner({ type: "success", text: "Akun berhasil dihapus!" });
+    setTimeout(() => setBanner(null), 3000);
+
+  } catch (error: any) {
+    const msg = error?.response?.data?.message;
+
+    if (msg === "Tidak dapat menghapus akun sendiri") {
+      setToDelete(null); // tutup modal
+
+      // tampilkan banner merah
+      setErrorBanner("Anda tidak dapat menghapus akun sendiri");
+      setTimeout(() => setErrorBanner(null), 4000);
+
+      return;
     }
+
+    toast.error(msg || "Gagal menghapus user");
   }
+}
 
   return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-9">
@@ -167,6 +190,19 @@ export default function UsersPage() {
               <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm-1 14l-4-4 1.4-1.4L11 12.2l4.6-4.6L17 9l-6 7z" />
             </svg>
             <span className="font-semibold">{banner.text}</span>
+          </div>
+        )}
+
+        {errorBanner && (
+          <div className="rounded-2xl px-5 py-4 flex items-start gap-3 shadow-lg border-2 bg-red-50 border-red-200 text-red-900 mb-4">
+            <svg
+              className="h-6 w-6 flex-shrink-0 mt-0.5"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 14h-2v-2h2v2zm0-4h-2V6h2v6z" />
+            </svg>
+            <span className="font-semibold">{errorBanner}</span>
           </div>
         )}
 
