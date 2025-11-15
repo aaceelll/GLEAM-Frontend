@@ -193,7 +193,10 @@ export function Sidebar({ role, displayName: displayNameProp }: SidebarProps) {
                     : "text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 hover:translate-x-1"
                 )}
               >
-                <Link href={item.href} className="flex items-center gap-3 w-full">
+                <Link href={item.href} 
+                  data-testid={`menu-${item.label.replace(/\s+/g, '-').toLowerCase()}`}
+                  className="flex items-center gap-3 w-full"
+                >
                   <div className={cn("relative", isActive && "animate-pulse")}>
                     <Icon className="h-5 w-5 relative z-10" />
                     {isActive && <div className="absolute inset-0 bg-white/30 blur-md rounded-full" />}
