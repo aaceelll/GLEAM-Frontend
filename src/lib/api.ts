@@ -109,9 +109,18 @@ api.interceptors.response.use(
 export const authAPI = {
   registerUser: (data: ApiRegisterRequest) =>
     api.post("/auth/register/user", data),
-  login: (data: { login: string; password: string }) =>
-    api.post("/auth/login", data),
+
+  login: (data: { login: string; password: string }) => {
+    // Tentukan field mana yang dipakai
+    const payload = data.login.includes("@")
+      ? { email: data.login, password: data.password }
+      : { username: data.login, password: data.password };
+
+    return api.post("/auth/login", payload);
+  },
+
   me: () => api.get("/auth/me"),
+
   logout: () => api.post("/auth/logout"),
 };
 
