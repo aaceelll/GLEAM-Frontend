@@ -19,7 +19,7 @@ export default function SoalList({ bankId, soal, loading, onChanged }: Props) {
 
   const tambah = async () => {
     if (!bankId || !form.teks) return;
-    await api.post('/admin/soal', { ...form, bankId });
+    await api.post(`/admin/bank-soal/${bankId}/soal`, { ...form, bankId });
     setForm({ teks:'', tipe:'true_false', bobot:1, kunci:'true' });
     onChanged();
   };

@@ -6,15 +6,13 @@ import { Input } from "@/components/ui/input";
 import { FileText, Search, Calendar, X, ClipboardList, CheckCircle, XCircle, Eye, Percent } from "lucide-react";
 import { api } from "@/lib/api";
 
-/* ============ Types ============ */
 type TabKey = "pre" | "post";
-
 type Row = {
   userId: string | number;
   name: string;
   latestDate: string;
   latestScore: number;
-  count: number; // jumlah submission user ini
+  count: number; 
   type: "pre" | "post";
 };
 
@@ -51,9 +49,7 @@ type SubmissionDetail = {
   review?: Review[];
 };
 
-/* ============ Helpers ============ */
 const TZ = "Asia/Jakarta";
-
 function formatIDTime(input?: string) {
   if (!input) return "-";
   let s = String(input).trim();
@@ -73,18 +69,9 @@ function formatIDTime(input?: string) {
   }).format(d);
 }
 
-function coerceArray(root: any): any[] {
-  if (!root) return [];
-  if (Array.isArray(root)) return root;
-  if (Array.isArray(root?.data)) return root.data;
-  return [];
-}
-
-/* ====== Endpoints ====== */
 const LIST_PATH = "/manajemen/quiz/submissions";
 const DETAIL_PATH = "/manajemen/quiz/submissions";
 
-/* ============ Modal Review Jawaban ============ */
 function ReviewModal({ open, onClose, data }: { open: boolean; onClose: () => void; data?: SubmissionDetail | null; }) {
   if (!open) return null;
 
@@ -94,9 +81,7 @@ function ReviewModal({ open, onClose, data }: { open: boolean; onClose: () => vo
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      {/* overflow-hidden mencegah isi "kotak" keluar dari radius */}
       <div className="relative w-full max-w-4xl rounded-2xl bg-white border-2 border-gray-100 shadow-2xl overflow-hidden">
-        {/* gunakan svh agar nyaman di iOS Safari, plus padding agar tidak nempel */}
         <div className="max-h-[85svh] overflow-y-auto">
           {/* Header */}
           <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b bg-white">
@@ -114,8 +99,7 @@ function ReviewModal({ open, onClose, data }: { open: boolean; onClose: () => vo
             <button
               aria-label="Tutup"
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
-            >
+              className="p-2 rounded-lg hover:bg-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
               <X className="w-4 h-4 text-gray-600" />
             </button>
           </div>
@@ -201,7 +185,6 @@ function ReviewModal({ open, onClose, data }: { open: boolean; onClose: () => vo
     </div>
   );
 }
-
 /* ============ Modal Riwayat User ============ */
 function HistoryModal({
   open,
@@ -225,15 +208,13 @@ function HistoryModal({
     if (open && userId) {
       fetchHistory();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, userId, type]);
 
   async function fetchHistory() {
     setLoading(true);
     try {
       const res = await api.get(LIST_PATH, { params: { tipe: type } });
-      const all = coerceArray(res?.data ?? res);
-      
+      const all = Array.isArray(res.data?.data) ? res.data.data : [];
       // Filter hanya submission dari user ini
       const userSubmissions = all
         .filter((x: any) => x.user_id === userId)
@@ -276,8 +257,7 @@ function HistoryModal({
             <button
               aria-label="Tutup"
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
-            >
+              className="p-2 rounded-lg hover:bg-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
               <X className="w-4 h-4 text-gray-600" />
             </button>
           </div>
@@ -298,8 +278,7 @@ function HistoryModal({
                 {history.map((item, idx) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all overflow-hidden"
-                  >
+                    className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all overflow-hidden">
                     <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center">
                       <span className="text-sm font-bold text-emerald-700">{idx + 1}</span>
                     </div>
@@ -334,8 +313,7 @@ function HistoryModal({
                       </span>
                       <button
                         onClick={() => onSelectHistory(item.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
-                      >
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
                         <Eye className="w-3.5 h-3.5" />
                         Lihat
                       </button>
@@ -358,23 +336,18 @@ export default function LaporanKeseluruhan() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // modal states
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{ id: string | number; name: string } | null>(null);
-  
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewData, setReviewData] = useState<SubmissionDetail | null>(null);
 
-  /* --- FETCHERS --- */
   async function fetchList(current: TabKey = tab) {
     setLoading(true);
     setErrorMsg(null);
     try {
       const res = await api.get(LIST_PATH, { params: { tipe: current } });
-      const all = coerceArray(res?.data ?? res);
+      const all = Array.isArray(res.data?.data) ? res.data.data : [];
 
-      // Group by user_id
       const grouped = all.reduce((acc: any, item: any) => {
         const userId = item.user_id;
         if (!acc[userId]) {
@@ -387,7 +360,6 @@ export default function LaporanKeseluruhan() {
         acc[userId].submissions.push(item);
         return acc;
       }, {});
-
       // Convert to array and get latest data
       const userRows: Row[] = Object.values(grouped).map((user: any) => {
         const sorted = user.submissions.sort((a: any, b: any) => 
@@ -405,7 +377,11 @@ export default function LaporanKeseluruhan() {
         };
       });
 
+      userRows.sort((a, b) => {
+        return new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime();
+      });
       setRows(userRows);
+
     } catch (e) {
       console.error("API ERROR list:", e);
       setErrorMsg("Gagal memuat data.");
@@ -418,7 +394,7 @@ export default function LaporanKeseluruhan() {
   async function fetchReviewDetail(id: string | number) {
     try {
       const res = await api.get(`${DETAIL_PATH}/${id}`);
-      const submission = res?.data?.submission ?? res?.data ?? {};
+      const submission = res?.data?.submission ?? {};
       const review = res?.data?.review ?? [];
 
       setReviewData({
@@ -433,8 +409,8 @@ export default function LaporanKeseluruhan() {
         answers: submission.answers,
         review: review,
       });
-      setHistoryOpen(false); // tutup modal history
-      setReviewOpen(true); // buka modal review
+      setHistoryOpen(false); 
+      setReviewOpen(true); 
     } catch (e) {
       console.error("API ERROR detail:", e);
       setReviewData(null);
@@ -446,17 +422,14 @@ export default function LaporanKeseluruhan() {
     setHistoryOpen(true);
   }
 
-  /* --- AUTO LOAD --- */
   useEffect(() => {
     fetchList("pre");
   }, []);
 
   useEffect(() => {
     fetchList(tab);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
-  /* --- FILTER --- */
   const q = search.trim().toLowerCase();
   const filtered = useMemo(
     () => (q ? rows.filter((r) => r.name?.toLowerCase().includes(q)) : rows),
@@ -469,12 +442,10 @@ export default function LaporanKeseluruhan() {
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            {/* ICON CHIP – versi responsif */}
             <div className="relative isolate shrink-0">
               <span
                 aria-hidden
-                className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"
-              />
+                className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"/>
               <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
                 <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
@@ -553,12 +524,12 @@ export default function LaporanKeseluruhan() {
             <div className="overflow-x-auto rounded-2xl border border-gray-100">
               <table className="w-full min-w-[640px] border-collapse text-sm md:text-base table-fixed">
                 <colgroup>
-                  {/* Untuk layar besar (≥ md) */}
+                {/* Untuk layar besar (≥ md) */}
                   <col className="md:w-[18%] w-[22%]" />   {/* No */}
                   <col className="md:w-[18%] w-[22%]" />  {/* Nama */}
                   <col className="md:w-[18%] w-[22%]" />  {/* Tanggal */}
                   <col className="md:w-[18%] w-[22%]" />  {/* Skor */}
-                  <col className="md:w-[18%] w-[22%]" />  {/* Aksi */}
+                  <col className="md:w-[18%] w-[22%]" />  {/* Aksi */} 
                 </colgroup>
                 <thead>
                   <tr className="bg-gray-50">

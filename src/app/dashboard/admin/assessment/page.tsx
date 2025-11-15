@@ -2,25 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { api } from "@/lib/api";
-import {
-  Plus,
-  FolderOpen,
-  Pencil,
-  Trash2,
-  Search,
-  ListChecks,
-  CheckCircle2,
-  AlertCircle,
-  Info,
-} from "lucide-react";
+import { Plus, FolderOpen, Pencil, Trash2, Search, ListChecks, CheckCircle2, AlertCircle, Info, X} from "lucide-react";
 
-/** ====== Types ====== */
 type BankSoal = {
   id: string;
   nama: string;
   totalSoal: number;
   updatedAt?: string;
-  /** derived di FE: tampilkan ke user jika totalSoal > 0 */
   isShown?: boolean;
 };
 type Soal = {
@@ -31,7 +19,6 @@ type Soal = {
 };
 type Msg = { type: "success" | "error"; text: string } | null;
 
-/** ====== ENDPOINTS ====== */
 const API_PATHS = {
   bankList: "/admin/bank-soal",
   soalList: (bankId: string) => `/admin/bank-soal/${bankId}/soal`,
@@ -39,7 +26,6 @@ const API_PATHS = {
   soalDelete: (id: string | number) => `/admin/soal/${id}`,
 };
 
-/* ------------------------- Reusable UI ------------------------- */
 const hoverCard =
   "group relative overflow-hidden rounded-2xl border-2 border-emerald-100 bg-white " +
   "transition-all duration-500 hover:border-emerald-400 " +
@@ -69,8 +55,7 @@ function ConfirmModal({
           <button
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-gray-100 transition"
-            aria-label="Close"
-          >
+            aria-label="Close">
             <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
@@ -78,14 +63,12 @@ function ConfirmModal({
         <div className="px-5 py-4 flex items-center justify-end gap-3 border-t-2 border-gray-100">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold transition-all"
-          >
+            className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold transition-all">
             Batal
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold shadow-md hover:from-red-600 hover:to-rose-700 hover:shadow-lg transition-all"
-          >
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold shadow-md hover:from-red-600 hover:to-rose-700 hover:shadow-lg transition-all">
             {confirmText}
           </button>
         </div>
@@ -122,8 +105,7 @@ function GreenModalFrame({
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300"
-          >
+            className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300">
             <X className="h-6 w-6 text-white" />
           </button>
         </div>
@@ -133,33 +115,22 @@ function GreenModalFrame({
   );
 }
 
-/* ============================ PAGE ============================ */
 export default function AssessmentPage() {
   const [msg, setMsg] = useState<Msg>(null);
-
   const [banks, setBanks] = useState<BankSoal[]>([]);
   const [banksLoading, setBanksLoading] = useState(true);
   const [bankQuery, setBankQuery] = useState("");
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
-
   const [soal, setSoal] = useState<Soal[]>([]);
   const [soalLoading, setSoalLoading] = useState(false);
   const [soalQuery, setSoalQuery] = useState("");
-
-  // urutan tampil saat ini — supaya kartu tidak “loncat” saat refresh
   const orderRef = useRef<string[]>([]);
-
-  // Modals
   const [openAddBank, setOpenAddBank] = useState(false);
   const [addBankName, setAddBankName] = useState("");
   const [openRename, setOpenRename] = useState<{ id: string; nama: string } | null>(null);
-  const [confirmDeleteBank, setConfirmDeleteBank] = useState<{ id: string; nama: string } | null>(
-    null
-  );
+  const [confirmDeleteBank, setConfirmDeleteBank] = useState<{ id: string; nama: string } | null>( null);
   const [openAddSoal, setOpenAddSoal] = useState(false);
   const [confirmDeleteSoal, setConfirmDeleteSoal] = useState<string | null>(null);
-
-  // Form Soal
   const [qText, setQText] = useState("");
   const [isScreening, setIsScreening] = useState(false);
   const [options, setOptions] = useState<{ label: string; skor: string }[]>([
@@ -167,7 +138,6 @@ export default function AssessmentPage() {
     { label: "", skor: "" },
   ]);
 
-  /* ------------------------ Derived ------------------------ */
   const filteredBanks = useMemo(() => {
     const q = bankQuery.toLowerCase();
     return !q ? banks : banks.filter((b) => b.nama.toLowerCase().includes(q));
@@ -201,7 +171,6 @@ export default function AssessmentPage() {
     return fallback;
   }
 
-  /* ------------------------ Fetchers ------------------------ */
   const sortByOrderRef = useCallback((list: BankSoal[]) => {
     if (orderRef.current.length === 0) return list;
     const order = orderRef.current;
@@ -210,7 +179,6 @@ export default function AssessmentPage() {
       return i === -1 ? Number.MAX_SAFE_INTEGER : i;
     };
     const sorted = [...list].sort((a, b) => idxOf(a.id) - idxOf(b.id));
-    // update order (tambah id baru di belakang)
     orderRef.current = [
       ...order.filter((id) => sorted.some((x) => x.id === id)),
       ...sorted.map((x) => x.id).filter((id) => !order.includes(id)),
@@ -234,7 +202,6 @@ export default function AssessmentPage() {
         };
       });
 
-      // set initial order (first load) atau pertahankan urutan tampilan saat ini
       let next = mapped;
       if (orderRef.current.length === 0 && banks.length === 0) {
         orderRef.current = mapped.map((m) => m.id);
@@ -289,7 +256,6 @@ export default function AssessmentPage() {
     fetchSoal(selectedBankId);
   }, [selectedBankId, fetchSoal]);
 
-  /* ------------------------ CRUD: Bank ------------------------ */
   async function handleCreateBank() {
     if (!addBankName.trim()) return;
     try {
@@ -297,7 +263,7 @@ export default function AssessmentPage() {
       showMsg({ type: "success", text: "Bank soal berhasil ditambahkan!" });
       setAddBankName("");
       setOpenAddBank(false);
-      await fetchBanks(); // urutan stabil karena sortByOrderRef
+      await fetchBanks(); 
     } catch (err) {
       showMsg({ type: "error", text: parseErrText(err, "Gagal menambah bank soal.") });
     }
@@ -322,7 +288,6 @@ export default function AssessmentPage() {
     const { id } = confirmDeleteBank;
     try {
       await api.delete(`${API_PATHS.bankList}/${id}`);
-      // hapus id dari orderRef supaya urutan tetap konsisten
       orderRef.current = orderRef.current.filter((x) => x !== id);
       showMsg({ type: "success", text: "Bank soal dihapus!" });
       if (selectedBankId === id) setSelectedBankId(null);
@@ -334,8 +299,7 @@ export default function AssessmentPage() {
       setConfirmDeleteBank(null);
     }
   }
-
-  /* ------------------------ CRUD: Soal ------------------------ */
+/* ------------------------ CRUD: Soal ------------------------ */
   function setOpt(i: number, patch: Partial<{ label: string; skor: string }>) {
     setOptions((prev) => {
       const next = [...prev];
@@ -401,7 +365,7 @@ export default function AssessmentPage() {
       setOpenAddSoal(false);
       resetSoalForm();
       await fetchSoal(selectedBankId);
-      await fetchBanks(); // penting: update totalSoal → badge tampil otomatis
+      await fetchBanks(); 
     } catch (err) {
       showMsg({ type: "error", text: parseErrText(err, "Gagal menambahkan soal.") });
     }
@@ -413,27 +377,23 @@ export default function AssessmentPage() {
       await api.delete(API_PATHS.soalDelete(id));
       showMsg({ type: "success", text: "Soal berhasil dihapus!" });
       await fetchSoal(selectedBankId);
-      await fetchBanks(); // penting: update totalSoal → badge tampil otomatis
+      await fetchBanks(); 
     } catch (err) {
       showMsg({ type: "error", text: parseErrText(err, "Gagal menghapus soal.") });
     } finally {
       setConfirmDeleteSoal(null);
     }
   }
-
-  /* ------------------------ UI ------------------------ */
-          return (
+/* ------------------------ UI ------------------------ */
+  return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-9">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            {/* ICON CHIP – versi responsif */}
             <div className="relative isolate shrink-0">
               <span
                 aria-hidden
-                className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"
-              />
+                className="absolute -inset-1.5 sm:-inset-2 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-teal-500/25 blur-lg -z-10"/>
               <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow">
                 <ListChecks className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
@@ -453,8 +413,7 @@ export default function AssessmentPage() {
 
           <button
             className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
-            onClick={() => setOpenAddBank(true)}
-          >
+            onClick={() => setOpenAddBank(true)}>
             <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
             Tambah Bank Soal
           </button>
@@ -503,8 +462,7 @@ export default function AssessmentPage() {
                 value={bankQuery}
                 onChange={(e) => setBankQuery(e.target.value)}
                 placeholder="Cari bank soal..."
-                className="w-full pl-9 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
-              />
+                className="w-full pl-9 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"/>
             </div>
           </div>
 
@@ -567,7 +525,6 @@ export default function AssessmentPage() {
                               </h3>
                               <div className="text-xs text-gray-500 flex items-center gap-2 flex-wrap">
                                 <span>{bank.totalSoal} soal</span>
-                                {/* ✅ BADGE OTOMATIS BERDASARKAN JUMLAH SOAL */}
                                 {bank.totalSoal > 0 ? (
                                   <>
                                     <span className="text-gray-300">•</span>
@@ -588,25 +545,24 @@ export default function AssessmentPage() {
                           </div>
 
                           {/* kanan: action area */}
-<div className="flex items-center gap-2 z-10 pointer-events-auto"
-     onClick={(e) => e.stopPropagation()}
-     onMouseDown={(e) => e.stopPropagation()}>
-  {/* ✅ HAPUS BUTTON PUBLISH/DRAFT, TINGGAL EDIT & DELETE */}
-  <button
-    onClick={() => setOpenRename({ id: bank.id, nama: bank.nama })}
-    className="p-2 rounded-lg text-amber-600 bg-amber-50 hover:bg-amber-500 hover:text-white transition-colors shadow-sm"
-    title="Ubah Nama"
-    aria-label="Ubah Nama">
-    <Pencil className="h-4 w-4" />
-  </button>
-  <button
-    onClick={() => setConfirmDeleteBank({ id: bank.id, nama: bank.nama })}
-    className="p-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-500 hover:text-white transition-colors shadow-sm"
-    title="Hapus"
-    aria-label="Hapus">
-    <Trash2 className="h-4 w-4" />
-  </button>
-</div>
+                          <div className="flex items-center gap-2 z-10 pointer-events-auto"
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => setOpenRename({ id: bank.id, nama: bank.nama })}
+                              className="p-2 rounded-lg text-amber-600 bg-amber-50 hover:bg-amber-500 hover:text-white transition-colors shadow-sm"
+                              title="Ubah Nama"
+                              aria-label="Ubah Nama">
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteBank({ id: bank.id, nama: bank.nama })}
+                              className="p-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-500 hover:text-white transition-colors shadow-sm"
+                              title="Hapus"
+                              aria-label="Hapus">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -650,106 +606,111 @@ export default function AssessmentPage() {
                   <ListChecks className="h-10 w-10 text-gray-400" />
                 </div>
                 <p className="text-gray-700 font-bold text-lg">Pilih Bank Soal</p>
-                <p className="text-sm text-gray-500">
-                  Pilih bank soal dahulu untuk melihat pertanyaan
-                </p>
+                <p className="text-sm text-gray-500">Pilih bank soal dahulu untuk melihat pertanyaan</p>
               </div>
             ) : soalLoading ? (
               <div className="py-10 flex flex-col items-center justify-center">
                 <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin"></div>
                 <p className="text-sm text-gray-500 mt-4 font-medium">Memuat daftar soal...</p>
               </div>
-            ) : filteredSoal.length === 0 ? (
-              <div className="py-16 text-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
-                  <Info className="h-10 w-10 text-gray-400" />
-                </div>
-                <p className="text-gray-700 font-bold text-lg">Belum Ada Soal</p>
-                <p className="text-sm text-gray-500">
-                  Klik tombol &quot;Tambah Soal&quot; untuk membuat pertanyaan pertama
-                </p>
-              </div>
             ) : (
               <div className="space-y-4">
-                {/* Pencarian soal */}
-                <div className="relative mb-2">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    value={soalQuery}
-                    onChange={(e) => setSoalQuery(e.target.value)}
-                    placeholder="Cari di daftar soal..."
-                    className="w-full pl-9 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
-                  />
-                </div>
+                {soal.length > 0 && (
+                  <div className="relative mb-2">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      value={soalQuery}
+                      onChange={(e) => setSoalQuery(e.target.value)}
+                      placeholder="Cari di daftar soal..."
+                      className="w-full pl-9 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none"
+                    />
+                  </div>
+                )}
+                {filteredSoal.length === 0 ? (
+                  <div className="py-16 text-center">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
+                      <Info className="h-10 w-10 text-gray-400" />
+                    </div>
 
-                {filteredSoal.map((q, idx) => (
-                  <div
-                    key={q.id}
-                    className="relative overflow-hidden rounded-2xl border-2 border-gray-100 bg-white p-4 sm:p-5 hover:border-emerald-300 hover:shadow-lg transition-all"
-                  >
-                    {/* Header - nomor + tipe sebagai pill */}
-                    <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3 sm:gap-4">
-                      <div className="flex items-start gap-3 w-full">
-                        <span className="flex-shrink-0 w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 font-bold grid place-items-center shadow-inner">
-                          {idx + 1}
-                        </span>
-                        <div className="flex-1 min-w-0 w-full">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="font-semibold text-gray-900 leading-snug break-words">
-                              {q.teks}
-                            </h3>
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap ${
-                                q.tipe === "screening"
-                                  ? "bg-violet-50 text-violet-700 border-violet-200"
-                                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              }`}
-                            >
-                              {q.tipe === "screening" ? "Screening" : "Pilihan ganda"}
+                    <p className="text-gray-700 font-bold text-lg">Belum Ada Soal</p>
+                    <p className="text-sm text-gray-500">
+                      {soal.length === 0
+                        ? 'Klik tombol "Tambah Soal" untuk membuat pertanyaan pertama'
+                        : 'Tidak ditemukan hasil pencarian'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredSoal.map((q, idx) => (
+                      <div
+                        key={q.id}
+                        className="relative overflow-hidden rounded-2xl border-2 border-gray-100 bg-white p-4 sm:p-5 hover:border-emerald-300 hover:shadow-lg transition-all">
+                        <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3 sm:gap-4">
+                          <div className="flex items-start gap-3 w-full">
+                            <span className="flex-shrink-0 w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 font-bold grid place-items-center shadow-inner">
+                              {idx + 1}
                             </span>
+
+                            <div className="flex-1 min-w-0 w-full">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="font-semibold text-gray-900 leading-snug break-words">
+                                  {q.teks}
+                                </h3>
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap ${
+                                    q.tipe === "screening"
+                                      ? "bg-violet-50 text-violet-700 border-violet-200"
+                                      : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  }`}
+                                >
+                                  {q.tipe === "screening" ? "Screening" : "Pilihan ganda"}
+                                </span>
+                              </div>
+                              {/* opsi sebagai chips */}
+                              {q.opsi && q.opsi.length > 0 && (
+                                <div className="mt-3 flex flex-col gap-2 w-full">
+                                  {q.opsi.map((opt) => (
+                                    <div
+                                      key={opt.no}
+                                      className="flex items-start gap-2 px-3 py-2 rounded-xl w-full border bg-gray-50 border-gray-200"
+                                    >
+                                      <span className="w-5 h-5 flex-shrink-0 rounded-md bg-gray-200 text-gray-700 text-[10px] font-bold grid place-items-center">
+                                        {opt.no}
+                                      </span>
+                                      <span className="text-sm text-gray-700 flex-1 break-words [word-break:break-word]">
+                                        {opt.teks}
+                                      </span>
+                                      {opt.skor !== undefined && (
+                                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold whitespace-nowrap flex-shrink-0">
+                                          Skor {opt.skor}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
 
-                          {/* opsi sebagai chips */}
-                          {q.opsi && q.opsi.length > 0 && (
-                            <div className="mt-3 flex flex-col gap-2 w-full">
-                              {q.opsi.map((opt) => (
-                                <div
-                                  key={opt.no}
-                                  className="flex items-start gap-2 px-3 py-2 rounded-xl w-full border bg-gray-50 border-gray-200"
-                                >
-                                  <span className="w-5 h-5 flex-shrink-0 rounded-md bg-gray-200 text-gray-700 text-[10px] font-bold grid place-items-center">
-                                    {opt.no}
-                                  </span>
-                                  <span className="text-sm text-gray-700 flex-1 break-words [word-break:break-word]">{opt.teks}</span>
-                                  {opt.skor !== undefined && (
-                                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold whitespace-nowrap flex-shrink-0">
-                                      Skor {opt.skor}
-                                    </span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          {/* Aksi (hapus) */}
+                          <button
+                            className="self-end sm:self-start p-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-red-500 hover:text-white transition-all hover:scale-110 shadow-sm flex-shrink-0"
+                            onClick={() => setConfirmDeleteSoal(q.id)}
+                            title="Hapus Soal"
+                            aria-label="Hapus Soal"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
-
-                      {/* Aksi (hapus) */}
-                      <button
-                        className="self-end sm:self-start p-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-red-500 hover:text-white transition-all hover:scale-110 shadow-sm flex-shrink-0"
-                        onClick={() => setConfirmDeleteSoal(q.id)}
-                        title="Hapus Soal"
-                        aria-label="Hapus Soal"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                )}
           </div>
-        </section>
-      </div>
+          )}
+        </div>
+      </section>
+    </div>
 
       {/* Tambah Bank Soal */}
       {openAddBank && (
@@ -757,8 +718,7 @@ export default function AssessmentPage() {
           titleIcon={<Plus className="h-6 w-6" />}
           title="Tambah Bank Soal"
           subtitle="Buat bank soal baru untuk assessment"
-          onClose={() => setOpenAddBank(false)}
-        >
+          onClose={() => setOpenAddBank(false)}>
           <div className="p-6 space-y-5">
             <div className="space-y-2">
               <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
@@ -776,14 +736,12 @@ export default function AssessmentPage() {
             <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={() => setOpenAddBank(false)}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105"
-              >
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105">
                 Batal
               </button>
               <button
                 onClick={handleCreateBank}
-                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg"
-              >
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg">
                 Simpan
               </button>
             </div>
@@ -797,8 +755,7 @@ export default function AssessmentPage() {
           titleIcon={<Pencil className="h-6 w-6" />}
           title="Ubah Nama Bank Soal"
           subtitle="Perbarui nama agar lebih jelas"
-          onClose={() => setOpenRename(null)}
-        >
+          onClose={() => setOpenRename(null)}>
           <div className="p-6 space-y-5">
             <div className="space-y-2">
               <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
@@ -816,14 +773,12 @@ export default function AssessmentPage() {
             <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={() => setOpenRename(null)}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105"
-              >
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105">
                 Batal
               </button>
               <button
                 onClick={handleRenameBank}
-                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg"
-              >
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg">
                 Simpan
               </button>
             </div>
@@ -854,12 +809,10 @@ export default function AssessmentPage() {
           title="Tambah Soal Baru"
           subtitle="Lengkapi formulir di bawah"
           onClose={() => setOpenAddSoal(false)}
-          maxWidth="max-w-3xl"
-        >
+          maxWidth="max-w-3xl">
           <form
             onSubmit={handleCreateSoal}
-            className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-100px)]"
-          >
+            className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-100px)]">
             <div className="space-y-2">
               <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
                 Pertanyaan <span className="text-red-500">*</span>
@@ -882,8 +835,7 @@ export default function AssessmentPage() {
                   <button
                     type="button"
                     onClick={addOption}
-                    className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
-                  >
+                    className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
                     <Plus className="h-4 w-4" />
                     Tambah Opsi
                   </button>
@@ -916,8 +868,7 @@ export default function AssessmentPage() {
                           type="button"
                           onClick={() => removeOption(i)}
                           className="p-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                          title={options.length <= 2 ? "Minimal 2 opsi" : "Hapus opsi"}
-                        >
+                          title={options.length <= 2 ? "Minimal 2 opsi" : "Hapus opsi"}>
                           <Trash2 className="h-4 w-4" />
                         </button>
                       )}
@@ -931,14 +882,12 @@ export default function AssessmentPage() {
               <button
                 type="button"
                 onClick={() => setOpenAddSoal(false)}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105"
-              >
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold transition-all hover:scale-105">
                 Batal
               </button>
               <button
                 type="submit"
-                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg"
-              >
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg">
                 Simpan Soal
               </button>
             </div>
@@ -955,13 +904,5 @@ export default function AssessmentPage() {
         onClose={() => setConfirmDeleteSoal(null)}
       />
     </div>
-  );
-}
-
-function X(props: any) {
-  return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-    </svg>
   );
 }

@@ -1,30 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Plus,
-  X,
-  Pencil,
-  Trash2,
-  FileText,
-  Video,
-  CheckCircle2,
-  AlertCircle,
-  Download,
-  Calendar,
-  Clock,
-} from "lucide-react";
+import { Plus, X, Pencil, Trash2, FileText, Video, CheckCircle2, AlertCircle, Download, Calendar, Clock,} from "lucide-react";
 import axios from "axios";
 import { api } from "@/lib/api";
 
-/* ================= Konstanta ================= */
 const MAX_TITLE = 255;
-
-/* ================= Helper (SATU VERSI SAJA) ================= */
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").replace(/\/+$/, "");
 const FILE_HOST = API_BASE.replace(/\/api\/?$/, "");
-
-// ⬇️ Materi yang dikelola halaman ini
 const MATERI_SLUG = "diabetes-melitus";
 
 function toAbsolute(url?: string | null) {
@@ -62,19 +45,17 @@ async function downloadPdfWithAuth(konten: { id?: string | number; file_url?: st
 
   const openNewTab = () => window.open(url, "_blank", "noopener,noreferrer");
 
-  // 1) kalau cross-origin → buka tab (biar gak kena CORS XHR)
   if (typeof window !== "undefined" && isCrossOrigin(url)) {
     openNewTab();
     return;
   }
-
   try {
     const token = getToken();
     const res = await axios.get(url, {
       responseType: "blob",
       withCredentials: true,
       headers: token ? { Authorization: `Bearer ${token}` } : {},
-      validateStatus: () => true, // biar bisa cek 403/404 sendiri
+      validateStatus: () => true, 
     });
 
     if (res.status === 200) {
@@ -84,7 +65,6 @@ async function downloadPdfWithAuth(konten: { id?: string | number; file_url?: st
       const fromHeader = getFilenameFromCD(cd);
       const fallback = (konten.judul || "materi").replace(/[^\w\-]+/g, "_") + ".pdf";
       const filename = fromHeader || fallback;
-
       const a = document.createElement("a");
       a.href = href;
       a.download = filename;
@@ -95,7 +75,6 @@ async function downloadPdfWithAuth(konten: { id?: string | number; file_url?: st
       return;
     }
 
-    // 2) fallback: kalau static 403/404 dan kita punya id → tembak endpoint download
     if ((res.status === 403 || res.status === 404) && konten.id != null) {
       const dl = await api.get(`/admin/materi/konten/${konten.id}/download`, {
         responseType: "blob",
@@ -111,15 +90,12 @@ async function downloadPdfWithAuth(konten: { id?: string | number; file_url?: st
       URL.revokeObjectURL(href);
       return;
     }
-
-    // 3) terakhir: buka tab biasa
     openNewTab();
   } catch {
     openNewTab();
   }
 }
 
-/* ================= Types ================= */
 type Konten = {
   id: string;
   judul: string;
@@ -135,7 +111,6 @@ type FieldErrors = {
   deskripsi?: string;
   file_pdf?: string;
 };
-
 /* ============== Page ============== */
 export default function MateriPage() {
   const [kontenList, setKontenList] = useState<Konten[]>([]);
@@ -144,10 +119,7 @@ export default function MateriPage() {
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  // Modal konfirmasi hapus
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; title: string } | null>(null);
-
   const [formData, setFormData] = useState({
     judul: "",
     video_id: "",
@@ -155,13 +127,9 @@ export default function MateriPage() {
     file_pdf: null as File | null,
     deskripsi: "",
   });
-
-  // Banner global di halaman (sukses/gagal setelah submit)
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  // Error di dalam modal (per-field + banner di atas form)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [topError, setTopError] = useState<string | null>(null);
-
   useEffect(() => {
     fetchKonten();
   }, []);
@@ -171,7 +139,6 @@ export default function MateriPage() {
     try {
       const res = await api.get("/admin/materi/konten", { params: { slug: MATERI_SLUG } });
       const list: Konten[] = Array.isArray(res.data?.data) ? res.data.data : [];
-      // sort ASC by created_at (terlama duluan)
       const sorted = list.slice().sort((a, b) => {
         const ta = new Date(a.created_at ?? a.updated_at ?? 0).getTime();
         const tb = new Date(b.created_at ?? b.updated_at ?? 0).getTime();
@@ -223,7 +190,6 @@ export default function MateriPage() {
 
     if (!j) errs.judul = "Judul wajib diisi.";
     else if (j.length > MAX_TITLE) errs.judul = `Judul maksimal ${MAX_TITLE} karakter.`;
-
     if (!d) errs.deskripsi = "Deskripsi wajib diisi.";
 
     setFieldErrors(errs);
@@ -234,11 +200,9 @@ export default function MateriPage() {
   async function handleSubmit() {
     setSubmitting(true);
     setTopError(null);
-
-    // Validasi client-side
     if (!validateForm()) {
       setSubmitting(false);
-      return; // modal tetap terbuka
+      return; 
     }
 
     try {
@@ -264,21 +228,18 @@ export default function MateriPage() {
         setMsg({ type: "success", text: "Konten berhasil ditambahkan!" });
       }
 
-      // reset error form & tutup modal saat sukses
       setFieldErrors({});
       setTopError(null);
       setShowModal(false);
       fetchKonten();
       setTimeout(() => setMsg(null), 3000);
     } catch (error: any) {
-      // Tangkap 422 & map field
       const status = error?.response?.status;
       const errs = (error?.response?.data?.errors ?? {}) as Record<string, string[]>;
       const mapped: FieldErrors = {};
       if (errs.judul?.[0]) mapped.judul = errs.judul[0];
       if (errs.deskripsi?.[0]) mapped.deskripsi = errs.deskripsi[0];
       if (errs.file_pdf?.[0]) mapped.file_pdf = errs.file_pdf[0];
-
       if (status === 422 && Object.keys(mapped).length) {
         setFieldErrors(mapped);
         setTopError(Object.values(mapped)[0]);
@@ -304,16 +265,12 @@ export default function MateriPage() {
       setMsg({ type: "error", text: "Gagal menghapus konten." });
     }
   }
-
   const greenGrad = "from-emerald-500 to-teal-500";
-
   return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-9 overflow-x-hidden">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            {/* ICON CHIP – versi responsif */}
             <div className="relative isolate shrink-0">
               <span
                 aria-hidden
@@ -338,8 +295,7 @@ export default function MateriPage() {
 
         <button
           onClick={openAddModal}
-          className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold"
-        >
+          className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold">
           <Plus className="h-5 w-5" />
           Tambah Konten
         </button>
@@ -403,32 +359,20 @@ export default function MateriPage() {
                 {kontenList.map((konten, index) => (
                   <div
                     key={konten.id}
-                    className="group relative bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden"
-                  >
+                    className="group relative bg-white border-2 border-gray-100 rounded-3xl p-6 hover:border-transparent hover:shadow-2xl transition-all duration-300 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500 to-teal-500 opacity-5 rounded-bl-full" />
-
                     <div className="relative flex flex-col md:flex-row items-start gap-5">
                       <div className="flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
                         {index + 1}
                       </div>
-
                       <div className="flex-1 min-w-0 w-full space-y-4">
                         <h3
-                          className="font-bold text-gray-900
-                                    text-lg sm:text-xl md:text-2xl
-                                    leading-tight
-                                    break-all sm:break-words [overflow-wrap:anywhere]
-                                    group-hover:text-emerald-700 transition-colors"
-                        >
+                          className="font-bold text-gray-900 text-lg sm:text-xl md:text-2xl leading-tight break-all sm:break-words [overflow-wrap:anywhere] group-hover:text-emerald-700 transition-colors">
                           {konten.judul}
                         </h3>
-
                         <p
-                          className="text-gray-600 text-sm sm:text-base leading-relaxed
-                                    max-w-full whitespace-pre-wrap
-                                    break-all sm:break-words [overflow-wrap:anywhere]"
-                        >
+                          className="text-gray-600 text-sm sm:text-base leading-relaxed max-w-full whitespace-pre-wrap break-all sm:break-words [overflow-wrap:anywhere]">
                           {konten.deskripsi}
                         </p>
 
@@ -442,8 +386,7 @@ export default function MateriPage() {
                               }}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-700 hover:to-yellow-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
-                            >
+                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-700 hover:to-yellow-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm">
                               <Download className="h-4 w-4" />
                               Unduh PDF
                             </a>
@@ -454,8 +397,7 @@ export default function MateriPage() {
                               href={`https://www.youtube.com/watch?v=${konten.video_id}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-700 hover:to-blue-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm"
-                            >
+                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white bg-gradient-to-r from-blue-700 to-blue-500 hover:from-blue-700 hover:to-blue-700 transition-all shadow-md hover:shadow-xl hover:scale-105 font-semibold text-sm">
                               <Video className="h-4 w-4" />
                               Tonton Video
                             </a>
@@ -543,8 +485,7 @@ export default function MateriPage() {
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300"
-              >
+                className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300">
                 <X className="h-6 w-6 text-white" />
               </button>
             </div>
@@ -557,8 +498,7 @@ export default function MateriPage() {
                 <button
                   onClick={() => setTopError(null)}
                   className="ml-auto text-rose-700 hover:text-rose-900"
-                  title="Tutup"
-                >
+                  title="Tutup">
                   ×
                 </button>
               </div>
@@ -575,7 +515,6 @@ export default function MateriPage() {
                   onChange={(e) => {
                     const v = e.target.value;
                     setFormData({ ...formData, judul: v });
-                    // realtime hint
                     if (!v.trim()) setFieldErrors((s) => ({ ...s, judul: "Judul wajib diisi." }));
                     else if (v.length > MAX_TITLE) setFieldErrors((s) => ({ ...s, judul: `Judul maksimal ${MAX_TITLE} karakter.` }));
                     else setFieldErrors((s) => ({ ...s, judul: undefined }));
@@ -605,8 +544,7 @@ export default function MateriPage() {
                   value={formData.video_id}
                   onChange={(e) => setFormData({ ...formData, video_id: e.target.value })}
                   placeholder="Contoh: y55Wupx2ZDU"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
-                />
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"/>
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-4">
                   <p className="text-xs text-blue-900">
                     <strong>Contoh:</strong> https://youtube.com/watch?v=
@@ -637,6 +575,28 @@ export default function MateriPage() {
                 />
                 {fieldErrors.file_pdf && (
                   <p className="text-xs text-rose-600 mt-1">{fieldErrors.file_pdf}</p>
+                )}
+
+                {editMode && formData && formData && (
+                  kontenList
+                    .find((k) => k.id === editId)
+                    ?.file_url ? (
+                      <div className="mt-2 p-3 rounded-xl bg-gray-50 border border-gray-200">
+                        <p className="text-sm text-gray-700 mb-1 font-medium">
+                          File PDF saat ini:
+                        </p>
+                        <a
+                          href={toAbsolute(
+                            kontenList.find((k) => k.id === editId)?.file_url || ""
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-yellow-400 text-white text-sm shadow hover:scale-105 transition">
+                          <Download className="h-4 w-4" />
+                          Lihat / Download PDF Lama
+                        </a>
+                      </div>
+                    ) : null
                 )}
 
                 {editMode && (
@@ -677,10 +637,9 @@ export default function MateriPage() {
                 <button
                   onClick={() => setShowModal(false)}
                   disabled={submitting}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold disabled:opacity-50 transition-all hover:scale-105"
-                >
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold disabled:opacity-50 transition-all hover:scale-105">
                   Batal
-                </button>
+                </button> 
                 <button
                   onClick={handleSubmit}
                   disabled={
@@ -730,8 +689,7 @@ export default function MateriPage() {
             <div className="px-5 py-4 flex items-center justify-end gap-3 border-t-2 border-gray-100">
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold transition-all"
-              >
+                className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold transition-all">
                 Batal
               </button>
               <button
@@ -739,8 +697,7 @@ export default function MateriPage() {
                   await handleDelete(confirmDelete.id);
                   setConfirmDelete(null);
                 }}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold shadow-md hover:from-red-600 hover:to-rose-700 hover:shadow-lg transition-all"
-              >
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold shadow-md hover:from-red-600 hover:to-rose-700 hover:shadow-lg transition-all">
                 Hapus
               </button>
             </div>
