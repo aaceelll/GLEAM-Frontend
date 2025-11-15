@@ -96,9 +96,7 @@ function ReviewModal({ open, onClose, data }: { open: boolean; onClose: () => vo
                 <p className="text-xs text-gray-600">{d.nama} - {d.bank_name}</p>
               </div>
             </div>
-            <button
-              aria-label="Tutup"
-              onClick={onClose}
+            <button data-testid="close-review" aria-label="Tutup" onClick={onClose}
               className="p-2 rounded-lg hover:bg-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
               <X className="w-4 h-4 text-gray-600" />
             </button>
@@ -254,9 +252,7 @@ function HistoryModal({
                 <p className="text-xs text-gray-600">{userName}</p>
               </div>
             </div>
-            <button
-              aria-label="Tutup"
-              onClick={onClose}
+            <button data-testid="close-history" aria-label="Tutup" onClick={onClose}
               className="p-2 rounded-lg hover:bg-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
               <X className="w-4 h-4 text-gray-600" />
             </button>
@@ -312,6 +308,7 @@ function HistoryModal({
                         {item.score}%
                       </span>
                       <button
+                        data-testid={`btn-history-${item.id}`}
                         onClick={() => onSelectHistory(item.id)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
                         <Eye className="w-3.5 h-3.5" />
@@ -479,6 +476,7 @@ export default function LaporanKeseluruhan() {
             return (
               <button
                 key={t.key}
+                data-testid={`tab-${t.key}`}
                 onClick={() => setTab(t.key as TabKey)}
                 className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold transition-all duration-300 
                   ${
@@ -501,6 +499,7 @@ export default function LaporanKeseluruhan() {
               <div className="relative flex-1 max-w-xl">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
+                  data-testid="search-user"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Cari nama pengguna"
@@ -592,6 +591,7 @@ export default function LaporanKeseluruhan() {
                         </td>
                         <td className="pr-11 py-4 text-right">
                           <button
+                            data-testid={`btn-detail-${row.userId}`}
                             onClick={() => handleOpenHistory(row.userId, row.name)}
                             className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 whitespace-nowrap"
                             title="Lihat riwayat & detail"
