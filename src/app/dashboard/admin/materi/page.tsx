@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, X, Pencil, Trash2, FileText, Video, CheckCircle2, AlertCircle, Download, Calendar, Clock,} from "lucide-react";
+import { Plus, X, Pencil, Trash2, FileText, Video, CheckCircle2, AlertCircle, Download, Calendar, Clock } from "lucide-react";
 import axios from "axios";
 import { api } from "@/lib/api";
 
@@ -10,16 +10,22 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 const FILE_HOST = API_BASE.replace(/\/api\/?$/, "");
 const MATERI_SLUG = "diabetes-melitus";
 
-function toAbsolute(url?: string | null) {
-  if (!url) return "";
-  return /^https?:\/\//i.test(url) ? url : `${FILE_HOST}${url}`;
-}
-
-const LS_TOKEN_KEY = "gleam_token";
 const getToken = () =>
-  (typeof window !== "undefined" ? localStorage.getItem(LS_TOKEN_KEY) : "") || "";
+  (typeof window !== "undefined" && localStorage.getItem("gleam_token")) || "";
 
-function getFilenameFromCD(cd?: string) {
+const toAbsolute = (url?: string | null) =>
+  !url ? "" : /^https?:\/\//i.test(url) ? url : `${FILE_HOST}${url}`;
+
+const isCross = (url: string) => {
+  try {
+    const u = new URL(url, window.location.href);
+    return u.origin !== window.location.origin;
+  } catch {
+    return true;
+  }
+};
+
+const filenameFromHeader = (cd?: string) => {
   if (!cd) return null;
   const m = /filename\*?=(?:UTF-8''|")?([^\";]+)/i.exec(cd);
   try {
@@ -27,72 +33,61 @@ function getFilenameFromCD(cd?: string) {
   } catch {
     return m?.[1] ?? null;
   }
-}
+};
 
-function isCrossOrigin(url: string) {
+/* Download PDF */
+async function downloadPDF(k: { id?: string; file_url?: string | null; judul: string }) {
+  const url = toAbsolute(k.file_url);
+  const openNew = () => window.open(url, "_blank");
+
+  if (!url) return;
+
+  // Cross origin → buka langsung
+  if (typeof window !== "undefined" && isCross(url)) return openNew();
+
   try {
-    const u = new URL(url, window.location.href);
-    return u.origin !== window.location.origin;
-  } catch {
-    return true;
-  }
-}
-
-async function downloadPdfWithAuth(konten: { id?: string | number; file_url?: string | null; judul: string }) {
-  const raw = konten.file_url ?? "";
-  const url = toAbsolute(raw);
-  if (!url) throw new Error("URL file kosong");
-
-  const openNewTab = () => window.open(url, "_blank", "noopener,noreferrer");
-
-  if (typeof window !== "undefined" && isCrossOrigin(url)) {
-    openNewTab();
-    return;
-  }
-  try {
-    const token = getToken();
     const res = await axios.get(url, {
       responseType: "blob",
       withCredentials: true,
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      validateStatus: () => true, 
+      headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {},
+      validateStatus: () => true,
     });
 
     if (res.status === 200) {
-      const blob = new Blob([res.data], { type: res.headers["content-type"] || "application/pdf" });
+      const blob = new Blob([res.data], {
+        type: res.headers["content-type"] || "application/pdf",
+      });
+      const file = filenameFromHeader(res.headers["content-disposition"]);
+      const fallback =
+        (k.judul || "materi").replace(/[^\w\-]+/g, "_") + ".pdf";
+
       const href = URL.createObjectURL(blob);
-      const cd = res.headers["content-disposition"];
-      const fromHeader = getFilenameFromCD(cd);
-      const fallback = (konten.judul || "materi").replace(/[^\w\-]+/g, "_") + ".pdf";
-      const filename = fromHeader || fallback;
       const a = document.createElement("a");
       a.href = href;
-      a.download = filename;
-      document.body.appendChild(a);
+      a.download = file || fallback;
       a.click();
-      a.remove();
       URL.revokeObjectURL(href);
       return;
     }
 
-    if ((res.status === 403 || res.status === 404) && konten.id != null) {
-      const dl = await api.get(`/admin/materi/konten/${konten.id}/download`, {
+    // Fallback via endpoint download khusus admin
+    if ((res.status === 403 || res.status === 404) && k.id) {
+      const d = await api.get(`/admin/materi/konten/${k.id}/download`, {
         responseType: "blob",
         withCredentials: true,
       });
-      const href = URL.createObjectURL(dl.data);
+      const href = URL.createObjectURL(d.data);
       const a = document.createElement("a");
       a.href = href;
-      a.download = (konten.judul || "materi").replace(/[^\w\-]+/g, "_") + ".pdf";
-      document.body.appendChild(a);
+      a.download = k.judul.replace(/[^\w\-]+/g, "_") + ".pdf";
       a.click();
-      a.remove();
       URL.revokeObjectURL(href);
       return;
     }
-    openNewTab();
+
+    openNew();
   } catch {
-    openNewTab();
+    openNew();
   }
 }
 
@@ -106,169 +101,152 @@ type Konten = {
   updated_at: string;
 };
 
-type FieldErrors = {
-  judul?: string;
-  deskripsi?: string;
-  file_pdf?: string;
-};
-/* ============== Page ============== */
+type Err = { judul?: string; deskripsi?: string; file_pdf?: string };
+
 export default function MateriPage() {
-  const [kontenList, setKontenList] = useState<Konten[]>([]);
+  const [kontenList, setList] = useState<Konten[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+  const [show, setShow] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState<{ id: string; title: string } | null>(null);
-  const [formData, setFormData] = useState({
+  const [submit, setSubmit] = useState(false);
+  const [confirm, setConfirm] = useState<{ id: string; title: string } | null>(null);
+  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [errors, setErrors] = useState<Err>({});
+  const [topErr, setTopErr] = useState<string | null>(null);
+
+  const [form, setForm] = useState({
     judul: "",
     video_id: "",
-    tanpa_video: false,
     file_pdf: null as File | null,
     deskripsi: "",
   });
-  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [topError, setTopError] = useState<string | null>(null);
+
+  /* Fetch konten */
+  const fetchKonten = async () => {
+    try {
+      const r = await api.get("/admin/materi/konten", { params: { slug: MATERI_SLUG } });
+      const list = Array.isArray(r.data?.data) ? r.data.data : [];
+      setList(
+        list.slice().sort((a: Konten, b: Konten) =>
+          new Date(a.created_at ?? a.updated_at ?? 0).getTime() -
+          new Date(b.created_at ?? b.updated_at ?? 0).getTime()
+        )
+      );
+    } catch {
+      setList([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchKonten();
   }, []);
 
-  async function fetchKonten() {
-    setLoading(true);
-    try {
-      const res = await api.get("/admin/materi/konten", { params: { slug: MATERI_SLUG } });
-      const list: Konten[] = Array.isArray(res.data?.data) ? res.data.data : [];
-      const sorted = list.slice().sort((a, b) => {
-        const ta = new Date(a.created_at ?? a.updated_at ?? 0).getTime();
-        const tb = new Date(b.created_at ?? b.updated_at ?? 0).getTime();
-        return ta - tb;
-      });
-      setKontenList(sorted);
-    } catch (error) {
-      console.error("Gagal memuat konten:", error);
-      setKontenList([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function openAddModal() {
-    setEditMode(false);
+  /* Modal Helpers */
+  const openAdd = () => {
     setEditId(null);
-    setFormData({
-      judul: "",
-      video_id: "",
-      tanpa_video: false,
+    setForm({ judul: "", video_id: "", file_pdf: null, deskripsi: "" });
+    setErrors({});
+    setTopErr(null);
+    setShow(true);
+  };
+
+  const openEdit = (k: Konten) => {
+    setEditId(k.id);
+    setForm({
+      judul: k.judul,
+      video_id: k.video_id || "",
       file_pdf: null,
-      deskripsi: "",
+      deskripsi: k.deskripsi,
     });
-    setFieldErrors({});
-    setTopError(null);
-    setShowModal(true);
-  }
+    setErrors({});
+    setTopErr(null);
+    setShow(true);
+  };
 
-  function openEditModal(konten: Konten) {
-    setEditMode(true);
-    setEditId(konten.id);
-    setFormData({
-      judul: konten.judul,
-      video_id: konten.video_id || "",
-      tanpa_video: !konten.video_id,
-      file_pdf: null,
-      deskripsi: konten.deskripsi,
-    });
-    setFieldErrors({});
-    setTopError(null);
-    setShowModal(true);
-  }
+  /* Validasi */
+  const validate = () => {
+    const e: Err = {};
+    const j = form.judul.trim();
+    const d = form.deskripsi.trim();
 
-  function validateForm(): boolean {
-    const errs: FieldErrors = {};
-    const j = formData.judul?.trim() ?? "";
-    const d = formData.deskripsi?.trim() ?? "";
+    if (!j) e.judul = "Judul wajib diisi.";
+    else if (j.length > MAX_TITLE) e.judul = `Judul maksimal ${MAX_TITLE} karakter.`;
 
-    if (!j) errs.judul = "Judul wajib diisi.";
-    else if (j.length > MAX_TITLE) errs.judul = `Judul maksimal ${MAX_TITLE} karakter.`;
-    if (!d) errs.deskripsi = "Deskripsi wajib diisi.";
+    if (!d) e.deskripsi = "Deskripsi wajib diisi.";
 
-    setFieldErrors(errs);
-    setTopError(Object.values(errs)[0] ?? null);
-    return Object.keys(errs).length === 0;
-  }
+    setErrors(e);
+    setTopErr(Object.values(e)[0] || null);
 
-  async function handleSubmit() {
-    setSubmitting(true);
-    setTopError(null);
-    if (!validateForm()) {
-      setSubmitting(false);
-      return; 
-    }
+    return Object.keys(e).length === 0;
+  };
+
+  /* Submit */
+  const handleSubmit = async () => {
+    setSubmit(true);
+    if (!validate()) return setSubmit(false);
 
     try {
       const fd = new FormData();
       fd.append("slug", MATERI_SLUG);
-      fd.append("judul", formData.judul.trim());
-      fd.append("deskripsi", formData.deskripsi.trim());
-      if (formData.video_id.trim()) fd.append("video_id", formData.video_id.trim());
-      if (formData.file_pdf) fd.append("file_pdf", formData.file_pdf);
+      fd.append("judul", form.judul.trim());
+      fd.append("deskripsi", form.deskripsi.trim());
+      if (form.video_id.trim()) fd.append("video_id", form.video_id.trim());
+      if (form.file_pdf) fd.append("file_pdf", form.file_pdf);
 
-      if (editMode && editId) {
+      if (editId) {
         fd.append("_method", "PATCH");
         await api.post(`/admin/materi/konten/${editId}`, fd, {
           headers: { "Content-Type": "multipart/form-data" },
-          withCredentials: true,
         });
-        setMsg({ type: "success", text: "Konten berhasil diperbarui!" });
+        setMsg({ type: "success", text: "Konten diperbarui!" });
       } else {
         await api.post("/admin/materi/konten", fd, {
           headers: { "Content-Type": "multipart/form-data" },
-          withCredentials: true,
         });
-        setMsg({ type: "success", text: "Konten berhasil ditambahkan!" });
+        setMsg({ type: "success", text: "Konten ditambahkan!" });
       }
 
-      setFieldErrors({});
-      setTopError(null);
-      setShowModal(false);
+      setShow(false);
       fetchKonten();
       setTimeout(() => setMsg(null), 3000);
-    } catch (error: any) {
-      const status = error?.response?.status;
-      const errs = (error?.response?.data?.errors ?? {}) as Record<string, string[]>;
-      const mapped: FieldErrors = {};
-      if (errs.judul?.[0]) mapped.judul = errs.judul[0];
-      if (errs.deskripsi?.[0]) mapped.deskripsi = errs.deskripsi[0];
-      if (errs.file_pdf?.[0]) mapped.file_pdf = errs.file_pdf[0];
-      if (status === 422 && Object.keys(mapped).length) {
-        setFieldErrors(mapped);
-        setTopError(Object.values(mapped)[0]);
-      } else {
-        const fallback =
-          error?.response?.data?.message ||
-          error?.message ||
-          "Gagal menyimpan konten.";
-        setTopError(fallback);
-      }
+    } catch (e: any) {
+      const errs = e?.response?.data?.errors || {};
+      const map: Err = {
+        judul: errs.judul?.[0],
+        deskripsi: errs.deskripsi?.[0],
+        file_pdf: errs.file_pdf?.[0],
+      };
+      if (e.response?.status === 422 && Object.values(map).some(Boolean)) {
+        setErrors(map);
+        setTopErr(Object.values(map)[0]);
+      } else setTopErr(e?.response?.data?.message || "Gagal menyimpan.");
     } finally {
-      setSubmitting(false);
+      setSubmit(false);
     }
-  }
+  };
 
-  async function handleDelete(kontenId: string) {
+  /* Delete */
+  const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/admin/materi/konten/${kontenId}`, { withCredentials: true });
-      setMsg({ type: "success", text: "Konten berhasil dihapus!" });
+      await api.delete(`/admin/materi/konten/${id}`);
+      setMsg({ type: "success", text: "Konten dihapus!" });
       fetchKonten();
       setTimeout(() => setMsg(null), 3000);
-    } catch (error) {
+    } catch {
       setMsg({ type: "error", text: "Gagal menghapus konten." });
     }
-  }
-  const greenGrad = "from-emerald-500 to-teal-500";
+  };
+
+/* ----------------- BAGIAN 3/3 - JSX (UI tidak diubah) ----------------- */
+
+  const editMode = !!editId;
+
   return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-9 overflow-x-hidden">
       <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="relative isolate shrink-0">
@@ -281,7 +259,6 @@ export default function MateriPage() {
               </div>
             </div>
 
-            {/* Judul + subjudul */}
             <div>
               <h1 className="text-[22px] leading-[1.15] sm:text-3xl md:text-4xl font-bold text-gray-800">
                 Materi Edukasi<br className="hidden sm:block" />
@@ -294,13 +271,13 @@ export default function MateriPage() {
         </div>
 
         <button
-          onClick={openAddModal}
+          onClick={openAdd}
           className="group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl flex items-center gap-2 px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold">
           <Plus className="h-5 w-5" />
           Tambah Konten
         </button>
 
-        {/* Notification */}
+        {/* Message */}
         {msg && (
           <div
             className={`rounded-2xl px-5 py-4 flex items-start gap-3 shadow-lg border-2 ${
@@ -318,7 +295,7 @@ export default function MateriPage() {
           </div>
         )}
 
-        {/* Content List */}
+        {/* Card */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl border-2 border-gray-100 shadow-xl overflow-hidden">
           <div className="px-6 py-5 border-b-2 border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-t-3xl">
             <div className="flex items-center justify-between">
@@ -382,7 +359,7 @@ export default function MateriPage() {
                               href={toAbsolute(konten.file_url)}
                               onClick={async (e) => {
                                 e.preventDefault();
-                                await downloadPdfWithAuth({ id: konten.id, file_url: konten.file_url, judul: konten.judul });
+                                await downloadPDF({ id: konten.id, file_url: konten.file_url, judul: konten.judul });
                               }}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -439,14 +416,14 @@ export default function MateriPage() {
 
                       <div className="flex md:flex-col flex-row items-center gap-2 flex-shrink-0 w-full md:w-auto">
                         <button
-                          onClick={() => openEditModal(konten)}
+                          onClick={() => openEdit(konten)}
                           className="flex-1 md:flex-none p-3 rounded-xl text-amber-600 bg-amber-50 hover:bg-gradient-to-br hover:from-amber-500 hover:to-orange-500 hover:text-white transition-all shadow-sm hover:shadow-lg hover:scale-110"
                           title="Edit"
                         >
                           <Pencil className="h-5 w-5" />
                         </button>
                         <button
-                          onClick={() => setConfirmDelete({ id: konten.id, title: konten.judul })}
+                          onClick={() => setConfirm({ id: konten.id, title: konten.judul })}
                           className="flex-1 md:flex-none p-3 rounded-xl text-red-600 bg-red-50 hover:bg-gradient-to-br hover:from-red-500 hover:to-pink-500 hover:text-white transition-all shadow-sm hover:shadow-lg hover:scale-110"
                           title="Hapus"
                         >
@@ -470,7 +447,7 @@ export default function MateriPage() {
       </div>
 
       {/* Modal Form */}
-      {showModal && (
+      {show && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full max-h[90vh] max-h-[90vh] overflow-hidden shadow-2xl">
             <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 px-6 py-5 flex items-center justify-between rounded-t-3xl">
@@ -484,19 +461,19 @@ export default function MateriPage() {
                 </p>
               </div>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => setShow(false)}
                 className="p-2 hover:bg-white/20 rounded-xl transition-all hover:rotate-90 duration-300">
                 <X className="h-6 w-6 text-white" />
               </button>
             </div>
 
             {/* Banner error di dalam modal */}
-            {topError && (
+            {topErr && (
               <div className="mx-6 mt-4 mb-0 rounded-xl border-2 border-rose-200 bg-rose-50 text-rose-900 px-4 py-3 flex items-start gap-2">
                 <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                <div className="text-sm font-medium">{topError}</div>
+                <div className="text-sm font-medium">{topErr}</div>
                 <button
-                  onClick={() => setTopError(null)}
+                  onClick={() => setTopErr(null)}
                   className="ml-auto text-rose-700 hover:text-rose-900"
                   title="Tutup">
                   ×
@@ -505,44 +482,45 @@ export default function MateriPage() {
             )}
 
             <div className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-100px)]">
-              {/* JUDUL */}
+              {/* Judul */}
               <div className="space-y-2">
                 <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
                   Judul Konten <span className="text-red-500">*</span>
                 </label>
                 <input
-                  value={formData.judul}
+                  value={form.judul}
                   onChange={(e) => {
                     const v = e.target.value;
-                    setFormData({ ...formData, judul: v });
-                    if (!v.trim()) setFieldErrors((s) => ({ ...s, judul: "Judul wajib diisi." }));
-                    else if (v.length > MAX_TITLE) setFieldErrors((s) => ({ ...s, judul: `Judul maksimal ${MAX_TITLE} karakter.` }));
-                    else setFieldErrors((s) => ({ ...s, judul: undefined }));
+                    setForm((s) => ({ ...s, judul: v }));
+                    if (!v.trim()) setErrors((s) => ({ ...s, judul: "Judul wajib diisi." }));
+                    else if (v.length > MAX_TITLE)
+                      setErrors((s) => ({ ...s, judul: `Judul maksimal ${MAX_TITLE} karakter.` }));
+                    else setErrors((s) => ({ ...s, judul: undefined }));
                   }}
-                  maxLength={MAX_TITLE + 20} // biar user lihat peringatan kalau kelewat
+                  maxLength={MAX_TITLE + 20}
                   placeholder="Contoh: Pengenalan Diabetes Melitus"
                   className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all ${
-                    fieldErrors.judul
+                    errors.judul
                       ? "border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-100"
                       : "border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                   }`}
                 />
                 <div className="mt-1 flex items-center justify-between text-xs">
-                  <span className={formData.judul.length > MAX_TITLE ? "text-rose-600 font-semibold" : "text-gray-500"}>
-                    {Math.min(formData.judul.length, MAX_TITLE + 20)}/{MAX_TITLE}
+                  <span className={form.judul.length > MAX_TITLE ? "text-rose-600 font-semibold" : "text-gray-500"}>
+                    {Math.min(form.judul.length, MAX_TITLE + 20)}/{MAX_TITLE}
                   </span>
-                  {fieldErrors.judul && <span className="text-rose-600 font-medium">{fieldErrors.judul}</span>}
+                  {errors.judul && <span className="text-rose-600 font-medium">{errors.judul}</span>}
                 </div>
               </div>
 
-              {/* VIDEO ID */}
+              {/* Video ID */}
               <div className="space-y-2">
                 <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
                   Video ID YouTube <span className="text-gray-400 font-normal">(opsional)</span>
                 </label>
                 <input
-                  value={formData.video_id}
-                  onChange={(e) => setFormData({ ...formData, video_id: e.target.value })}
+                  value={form.video_id}
+                  onChange={(e) => setForm((s) => ({ ...s, video_id: e.target.value }))}
                   placeholder="Contoh: y55Wupx2ZDU"
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"/>
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-4">
@@ -555,7 +533,7 @@ export default function MateriPage() {
                 </div>
               </div>
 
-              {/* FILE PDF */}
+              {/* File PDF */}
               <div className="space-y-2">
                 <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
                   File PDF <span className="text-gray-400 font-normal">(opsional)</span>
@@ -564,31 +542,25 @@ export default function MateriPage() {
                   type="file"
                   accept=".pdf"
                   onChange={(e) => {
-                    setFormData({ ...formData, file_pdf: e.target.files?.[0] || null });
-                    if (fieldErrors.file_pdf) setFieldErrors((s) => ({ ...s, file_pdf: undefined }));
+                    setForm((s) => ({ ...s, file_pdf: e.target.files?.[0] || null }));
+                    if (errors.file_pdf) setErrors((s) => ({ ...s, file_pdf: undefined }));
                   }}
                   className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gradient-to-r file:from-blue-500 file:to-blue-600 file:text-white file:text-sm file:font-semibold hover:file:from-blue-600 hover:file:to-blue-700 file:cursor-pointer ${
-                    fieldErrors.file_pdf
+                    errors.file_pdf
                       ? "border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-100"
                       : "border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                   }`}
                 />
-                {fieldErrors.file_pdf && (
-                  <p className="text-xs text-rose-600 mt-1">{fieldErrors.file_pdf}</p>
-                )}
+                {errors.file_pdf && <p className="text-xs text-rose-600 mt-1">{errors.file_pdf}</p>}
 
-                {editMode && formData && formData && (
-                  kontenList
-                    .find((k) => k.id === editId)
-                    ?.file_url ? (
+                {editMode && (
+                  (() => {
+                    const old = kontenList.find((k) => k.id === editId)?.file_url;
+                    return old ? (
                       <div className="mt-2 p-3 rounded-xl bg-gray-50 border border-gray-200">
-                        <p className="text-sm text-gray-700 mb-1 font-medium">
-                          File PDF saat ini:
-                        </p>
+                        <p className="text-sm text-gray-700 mb-1 font-medium">File PDF saat ini:</p>
                         <a
-                          href={toAbsolute(
-                            kontenList.find((k) => k.id === editId)?.file_url || ""
-                          )}
+                          href={toAbsolute(old)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-yellow-400 text-white text-sm shadow hover:scale-105 transition">
@@ -596,7 +568,8 @@ export default function MateriPage() {
                           Lihat / Download PDF Lama
                         </a>
                       </div>
-                    ) : null
+                    ) : null;
+                  })()
                 )}
 
                 {editMode && (
@@ -607,57 +580,55 @@ export default function MateriPage() {
                 )}
               </div>
 
-              {/* DESKRIPSI */}
+              {/* Deskripsi */}
               <div className="space-y-2">
                 <label className="font-semibold text-gray-900 text-sm flex items-center gap-1">
                   Deskripsi <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  value={formData.deskripsi}
+                  value={form.deskripsi}
                   onChange={(e) => {
                     const v = e.target.value;
-                    setFormData({ ...formData, deskripsi: v });
-                    if (!v.trim()) setFieldErrors((s) => ({ ...s, deskripsi: "Deskripsi wajib diisi." }));
-                    else setFieldErrors((s) => ({ ...s, deskripsi: undefined }));
+                    setForm((s) => ({ ...s, deskripsi: v }));
+                    if (!v.trim()) setErrors((s) => ({ ...s, deskripsi: "Deskripsi wajib diisi." }));
+                    else setErrors((s) => ({ ...s, deskripsi: undefined }));
                   }}
                   placeholder="Tulis deskripsi singkat tentang konten..."
                   rows={5}
                   className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all resize-none ${
-                    fieldErrors.deskripsi
+                    errors.deskripsi
                       ? "border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-100"
                       : "border-gray-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                   }`}
                 />
-                {fieldErrors.deskripsi && (
-                  <p className="text-xs text-rose-600">{fieldErrors.deskripsi}</p>
-                )}
+                {errors.deskripsi && <p className="text-xs text-rose-600">{errors.deskripsi}</p>}
               </div>
 
               <div className="flex items-center gap-3 pt-4 border-t-2 border-gray-100">
                 <button
-                  onClick={() => setShowModal(false)}
-                  disabled={submitting}
+                  onClick={() => setShow(false)}
+                  disabled={submit}
                   className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl py-3 font-semibold disabled:opacity-50 transition-all hover:scale-105">
                   Batal
-                </button> 
+                </button>
                 <button
                   onClick={handleSubmit}
                   disabled={
-                    submitting ||
-                    !formData.judul.trim() ||
-                    formData.judul.trim().length > MAX_TITLE ||
-                    !formData.deskripsi.trim()
+                    submit ||
+                    !form.judul.trim() ||
+                    form.judul.trim().length > MAX_TITLE ||
+                    !form.deskripsi.trim()
                   }
                   className={`flex-1 rounded-xl py-3 font-semibold transition-all hover:scale-105 shadow-lg text-white ${
-                    submitting ||
-                    !formData.judul.trim() ||
-                    formData.judul.trim().length > MAX_TITLE ||
-                    !formData.deskripsi.trim()
+                    submit ||
+                    !form.judul.trim() ||
+                    form.judul.trim().length > MAX_TITLE ||
+                    !form.deskripsi.trim()
                       ? "bg-gray-300 cursor-not-allowed"
                       : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
                   }`}
                 >
-                  {submitting ? "Menyimpan..." : editMode ? "Simpan" : "Tambah"}
+                  {submit ? "Menyimpan..." : editMode ? "Simpan" : "Tambah"}
                 </button>
               </div>
             </div>
@@ -665,8 +636,8 @@ export default function MateriPage() {
         </div>
       )}
 
-      {/* Modal Konfirmasi Hapus */}
-      {confirmDelete && (
+      {/* Confirm Delete */}
+      {confirm && (
         <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-[92vw] sm:max-w-sm rounded-2xl bg-white border-2 border-gray-100 shadow-2xl">
             <div className="px-5 py-4 border-b-2 border-gray-100 flex items-center gap-3">
@@ -680,7 +651,7 @@ export default function MateriPage() {
               <p className="text-sm text-gray-700">
                 Apakah Anda yakin ingin benar-benar menghapus{" "}
                 <span className="font-semibold break-all [overflow-wrap:anywhere]">
-                  {confirmDelete.title}
+                  {confirm.title}
                 </span>
               </p>
               <p className="text-xs text-gray-500">Tindakan ini tidak dapat dibatalkan.</p>
@@ -688,14 +659,14 @@ export default function MateriPage() {
 
             <div className="px-5 py-4 flex items-center justify-end gap-3 border-t-2 border-gray-100">
               <button
-                onClick={() => setConfirmDelete(null)}
+                onClick={() => setConfirm(null)}
                 className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold transition-all">
                 Batal
               </button>
               <button
                 onClick={async () => {
-                  await handleDelete(confirmDelete.id);
-                  setConfirmDelete(null);
+                  await handleDelete(confirm.id);
+                  setConfirm(null);
                 }}
                 className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold shadow-md hover:from-red-600 hover:to-rose-700 hover:shadow-lg transition-all">
                 Hapus
