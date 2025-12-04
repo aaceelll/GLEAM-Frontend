@@ -216,43 +216,27 @@ export default function DiabetesMelitusPage() {
   const [loadingScreening, setLoadingScreening] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
 
-  /* Pre progress */
+  /* Pre progress — use bank_id dari /quiz/history */
   useEffect(() => {
     (async () => {
       try {
-        const tries = ["/quiz/history?type=pre", "/quiz/history?tipe=pre", "/quiz/history"];
-        let arr: any[] = [];
-        for (const url of tries) {
-          try {
-            const r = await api.get(url);
-            const raw = r?.data?.data ?? r?.data ?? [];
-            arr = Array.isArray(raw) ? raw : [];
-            if (arr.length || url !== "/quiz/history") break;
-          } catch {}
-        }
-        const preOnly = arr.filter((x) => {
-          const t = String(first(x, ["tipe", "type", "quiz_type"], "")).toLowerCase();
-          return t === "pre" || /(^|[^a-z])pre([^a-z]|$)/.test(t);
-        });
-        const done: Record<string, boolean> = {};
-        for (const x of preOnly) {
-          const rawName =
-            first(x, ["nama", "name", "title"]) ?? first(x, ["bank.nama", "bank.name"]) ?? "";
-          const base = normalizeKey(String(rawName));
-          if (!base) continue;
-          if (
-            isCompletedLike(x) ||
-            first(x, ["percentage", "score", "persentase"]) != null ||
-            first(x, ["total_score"]) != null
-          ) {
-            done[base] = true;
+        const r = await api.get("/quiz/history");
+        const pre = r.data.pre || [];
+
+        const doneMap: Record<string, boolean> = {};
+        pre.forEach((item: any) => {
+          // ambil bank id dari beberapa kemungkinan path
+          const bankId =
+            item.bank_id ??
+            first(item, ["bank.id", "bank_id", "bankId", "bank?.id"], undefined);
+
+          if (bankId != null) {
+            // simpan sebagai string key agar konsisten
+            doneMap[String(bankId)] = true;
           }
-        }
-        Object.keys(localStorage).forEach((k) => {
-          const m = k.match(/^quiz_done_pre_(.+)$/);
-          if (m && localStorage.getItem(k) === "true") done[m[1]] = true;
         });
-        setPreDoneMap(done);
+
+        setPreDoneMap(doneMap);
       } catch {
         setPreDoneMap({});
       }
@@ -265,44 +249,65 @@ export default function DiabetesMelitusPage() {
     (async () => {
       setLoading(true);
       setErr(null);
+
       try {
-        const res = await api.get("/materi/konten", { params: { slug: "diabetes-melitus" } });
+        /* 1️. Ambil konten materi */
+        const res = await api.get("/materi/konten", {
+          params: { slug: "diabetes-melitus" },
+        });
+
         const root = (res.data?.data ?? res.data ?? {}) as any;
 
-        const rawKonten: any[] = root.konten ?? root.materi ?? root.items ?? root ?? [];
+        const rawKonten: any[] =
+          root.konten ?? root.materi ?? root.items ?? [];
         const mappedKonten: MateriItem[] = Array.isArray(rawKonten)
           ? rawKonten.map((it: any) => ({
-              id: it.id ?? it.ID ?? it.uuid ?? String(Math.random()),
+              id: it.id,
               judul: it.judul ?? it.title ?? "Tanpa Judul",
-              deskripsi: it.deskripsi ?? it.description ?? "",
-              video_id: it.video_id ?? it.videoId ?? null,
-              file_url: it.file_url ?? it.fileUrl ?? null,
-              created_at: it.created_at ?? it.createdAt ?? undefined,
-              updated_at: it.updated_at ?? it.updatedAt ?? undefined,
+              deskripsi: it.deskripsi ?? "",
+              video_id: it.video_id ?? null,
+              file_url: it.file_url ?? null,
+              created_at: it.created_at,
+              updated_at: it.updated_at,
             }))
           : [];
 
-        const rawTes: any[] = root.tes ?? root.tests ?? root.kuisioner ?? [];
-        const mappedTes: TesItem[] = Array.isArray(rawTes)
-          ? rawTes.map((t: any) => ({
-              id: t.id ?? t.test_id ?? t.uuid ?? String(Math.random()),
-              nama: t.nama ?? t.title ?? "Kuisioner",
-              deskripsi: t.deskripsi ?? t.description ?? null,
-              totalSoal: t.totalSoal ?? t.total_soal ?? t.jumlah_soal ?? undefined,
-              durasiMenit: t.durasiMenit ?? t.duration ?? t.durasi ?? null,
-              bank_id: t.bank_id ?? t.bankId ?? undefined,
-              source: t.source,
-              ...t,
-            }))
-          : [];
+        /* 2️. Ambil TES DARI ENDPOINT YANG BENAR */
+        const tesRes = await api.get("/user/tests");
+
+        const rawTes = tesRes.data?.data ?? [];
+        const mappedTes: TesItem[] = (Array.isArray(rawTes) ? rawTes : []).map((t: any) => {
+          // fallback bank id: t.bank_id || t.pivot?.bank_id || t.id (jika bank = bank soal)
+          const bankId = t.bank_id ?? t.bankId ?? t.pivot?.bank_id ?? t.id ?? null;
+
+          // fallback tipe: t.tipe || t.pivot_tipe || detectType(t.nama)
+          const tipe = t.tipe ?? t.pivot?.tipe ?? t.pivot_tipe ?? detectType(t.nama);
+
+          return {
+            id: t.id ?? String(Math.random()),
+            nama: t.nama ?? t.title ?? "Kuisioner",
+            tipe,
+            bank_id: bankId != null ? Number(bankId) : undefined,
+            totalSoal: t.totalSoal ?? t.total_soal ?? t.jumlah_soal,
+            deskripsi: t.deskripsi ?? t.description ?? null,
+            source: t.source ?? "banks",
+            isLocked: t.isLocked === true,
+            isDone: t.isDone === true,
+
+            raw: t,
+          } as TesItem;
+        });
 
         if (!alive) return;
+
+        /* 3. Sort materi (opsional) */
         const sortedKonten = mappedKonten.slice().sort((a, b) => {
-        const ta = new Date(a.created_at ?? a.updated_at ?? 0).getTime();
-        const tb = new Date(b.created_at ?? b.updated_at ?? 0).getTime();
-        return ta - tb; // ASC: terbaru di paling bawah
-      });
-      setKonten(sortedKonten);
+          const ta = new Date(a.created_at ?? a.updated_at ?? 0).getTime();
+          const tb = new Date(b.created_at ?? b.updated_at ?? 0).getTime();
+          return ta - tb;
+        });
+
+        setKonten(sortedKonten);
         setTes(mappedTes);
       } catch (e: any) {
         if (!alive) return;
@@ -312,6 +317,7 @@ export default function DiabetesMelitusPage() {
         setLoading(false);
       }
     })();
+
     return () => {
       alive = false;
     };
@@ -690,10 +696,10 @@ export default function DiabetesMelitusPage() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
                 {tes.map((t) => {
-                  const tipe = detectType(t.nama);
-                  const baseKey = normalizeKey(t.nama);
-                  const isPost = tipe === "post";
-                  const mustLock = isPost && !preDoneMap[baseKey];
+                  // gunakan string key karena preDoneMap disimpan sebagai string keys
+                  const bankKey = t.bank_id != null ? String(t.bank_id) : null;
+                  const mustLock = t.isLocked === true;
+
 
                 return (
                   <div
@@ -724,7 +730,7 @@ export default function DiabetesMelitusPage() {
                             </p>
 
                             {/* chip status khusus post */}
-                            {isPost && (
+                            {t.tipe === "post" && (
                               <div className="mt-2">
                                 {mustLock ? (
                                   <div
