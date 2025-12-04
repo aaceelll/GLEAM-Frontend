@@ -303,48 +303,52 @@ export function PersonalInfoForm({
           <Label className="text-emerald-700 font-semibold">
             Tanggal Lahir
           </Label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-7 gap-3">
             {/* Tanggal */}
-            <Select value={birthDay} onValueChange={setBirthDay}>
-              <SelectTrigger className={`border-emerald-200 focus:border-emerald-500 ${ageError && birthDay && birthMonth && birthYear ? 'border-red-500' : ''}`}>
-                <SelectValue placeholder="Tgl" />
-              </SelectTrigger>
-              <SelectContent>
-                {days.map((day) => (
-                  <SelectItem key={day} value={day}>
-                    {day}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="col-span-2">
+              <Select value={birthDay} onValueChange={setBirthDay}>
+                <SelectTrigger className={`w-full border-emerald-200 focus:border-emerald-500 ${ageError && birthDay && birthMonth && birthYear ? 'border-red-500' : ''}`}>
+                  <SelectValue placeholder="Tgl" />
+                </SelectTrigger>
+                <SelectContent>
+                  {days.map((day) => (
+                    <SelectItem key={day} value={day}>{day}</SelectItem>
+                  ))} 
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Bulan */}
-            <Select value={birthMonth} onValueChange={setBirthMonth}>
-              <SelectTrigger className={`border-emerald-200 focus:border-emerald-500 ${ageError && birthDay && birthMonth && birthYear ? 'border-red-500' : ''}`}>
-                <SelectValue placeholder="Bulan" />
-              </SelectTrigger>
-              <SelectContent>
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value}>
-                    {month.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="col-span-3"> 
+              <Select value={birthMonth} onValueChange={setBirthMonth}>
+                <SelectTrigger className={`w-full border-emerald-200 focus:border-emerald-500 ${ageError && birthDay && birthMonth && birthYear ? 'border-red-500' : ''}`}>
+                  <SelectValue placeholder="Bulan" />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month) => (
+                    <SelectItem key={month.value} value={month.value}>
+                      {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Tahun */}
-            <Select value={birthYear} onValueChange={setBirthYear}>
-              <SelectTrigger className={`border-emerald-200 focus:border-emerald-500 ${ageError && birthDay && birthMonth && birthYear ? 'border-red-500' : ''}`}>
-                <SelectValue placeholder="Tahun" />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map((year) => (
-                  <SelectItem key={year} value={year}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="col-span-2"> 
+              <Select value={birthYear} onValueChange={setBirthYear}>
+                <SelectTrigger className={`w-full border-emerald-200 focus:border-emerald-500 ${ageError && birthDay && birthMonth && birthYear ? 'border-red-500' : ''}`}>
+                  <SelectValue placeholder="Tahun" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           {ageError && birthDay && birthMonth && birthYear && (
             <p className="text-xs text-red-500 font-semibold">
