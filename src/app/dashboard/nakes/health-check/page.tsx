@@ -218,8 +218,8 @@ export default function HealthCheckPage() {
       }
 
       const bpClass =
-        pred?.tekanan_darah?.klasifikasi ??
-        pred?.bp_classification ??
+        // pred?.tekanan_darah?.klasifikasi ??
+        // pred?.bp_classification ??
         formData.klasifikasi_hipertensi;
 
       const bpRek =
