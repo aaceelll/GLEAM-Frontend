@@ -16,14 +16,31 @@ export default function BankSoalList({ banks, loading, selectedId, onSelect, onC
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<{id:string; nama:string} | null>(null);
   const [nama, setNama] = useState('');
+  const [errorNama, setErrorNama] = useState("");
 
   const addBank = async () => {
-    if (!nama.trim()) return;
+    setErrorNama(""); // reset error dulu
+
+    if (!nama.trim()) {
+      setErrorNama("Nama bank soal wajib diisi.");
+    return;
+    }
     setAdding(true);
     try {
       await api.post('/admin/bank-soal', { nama, status: 'draft' });
+      
+      // sukses
       setNama('');
       onChanged();
+      
+    } catch (err: any) {
+      const msg =
+      err?.response?.data?.errors?.nama?.[0] ||
+      err?.response?.data?.message ||
+      "Gagal menambahkan bank soal.";
+
+    setErrorNama(msg); // tampilkan error
+
     } finally {
       setAdding(false);
     }
@@ -60,6 +77,12 @@ export default function BankSoalList({ banks, loading, selectedId, onSelect, onC
           Tambah
         </button>
       </div>
+
+      {errorNama && (
+        <p className="text-red-600 text-sm mt-1 flex items-center gap-1">
+          ⚠️ {errorNama}
+        </p>
+      )}
 
       <ul className="divide-y rounded-xl border overflow-hidden max-h-[60vh] overflow-auto">
         {banks.map(b => (

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 
-type Soal = { id:string; teks:string; tipe:'pilihan_ganda'|'true_false'; bobot:number; opsi?:string[]; kunci?:string; };
+type Soal = { id:string; teks:string; tipe:'pilihan_ganda'; bobot:number; opsi?:string[]; };
 
 type Props = {
   bankId: string | null;
@@ -14,20 +14,31 @@ type Props = {
 };
 
 export default function SoalList({ bankId, soal, loading, onChanged }: Props) {
-  const [form, setForm] = useState<Partial<Soal>>({ teks:'', tipe:'true_false', bobot:1, kunci:'true' });
+  const [form, setForm] = useState<Partial<Soal>>({ teks:'', tipe:'pilihan_ganda', bobot:1, });
   const disabled = !bankId;
 
   const tambah = async () => {
     if (!bankId || !form.teks) return;
-    await api.post(`/admin/bank-soal/${bankId}/soal`, { ...form, bankId });
-    setForm({ teks:'', tipe:'true_false', bobot:1, kunci:'true' });
+    try {
+    await api.post(`/admin/bank-soal/${bankId}/soal`, {
+      teks: form.teks, tipe: "pilihan_ganda", bobot: 1,
+    });
+
+    setForm({ teks: "", tipe: "pilihan_ganda", bobot: 1 });
     onChanged();
-  };
+  } catch (err) {
+    console.error("Gagal menambah soal:", err);
+  }
+};
 
   const hapus = async (id: string) => {
     if (!confirm('Hapus soal ini?')) return;
-    await api.delete(`/admin/soal/${id}`);
-    onChanged();
+    try {
+      await api.delete(`/admin/soal/${id}`);
+      onChanged();
+    } catch (err) {
+      console.error("Gagal menghapus soal:", err);
+    }
   };
 
   return (
@@ -46,16 +57,6 @@ export default function SoalList({ bankId, soal, loading, onChanged }: Props) {
           className="w-full border rounded-md px-3 py-2 min-h-[88px] bg-white"
         />
         <div className="flex flex-wrap items-center gap-3">
-          <select
-            disabled={disabled}
-            value={form.tipe}
-            onChange={e=>setForm(f=>({...f, tipe:e.target.value as any}))}
-            className="border rounded-md px-3 py-2"
-          >
-            <option value="true_false">Benar/Salah</option>
-            <option value="pilihan_ganda">Pilihan Ganda</option>
-          </select>
-
           <input
             disabled={disabled}
             type="number"
@@ -65,19 +66,6 @@ export default function SoalList({ bankId, soal, loading, onChanged }: Props) {
             className="w-28 border rounded-md px-3 py-2"
             placeholder="Bobot"
           />
-
-          {form.tipe === 'true_false' && (
-            <select
-              disabled={disabled}
-              value={form.kunci as string}
-              onChange={e=>setForm(f=>({...f, kunci:e.target.value}))}
-              className="border rounded-md px-3 py-2"
-            >
-              <option value="true">Benar</option>
-              <option value="false">Salah</option>
-            </select>
-          )}
-
           <button
             disabled={disabled}
             onClick={tambah}
@@ -95,7 +83,7 @@ export default function SoalList({ bankId, soal, loading, onChanged }: Props) {
               <div className="text-sm leading-relaxed">
                 <span className="font-semibold">{i+1}.</span> {s.teks}
                 <div className="text-xs text-muted-foreground mt-1">
-                  tipe: {s.tipe} • bobot: {s.bobot}{s.tipe==='true_false' ? ` • kunci: ${s.kunci}` : ''}
+                  tipe: pilihan_ganda • bobot: {s.bobot}
                 </div>
               </div>
               <button className="text-rose-600 text-sm" onClick={()=>hapus(s.id)}>Hapus</button>
