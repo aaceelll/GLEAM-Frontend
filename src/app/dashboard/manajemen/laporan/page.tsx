@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { FileText, Search, Calendar, X, ClipboardList, CheckCircle, XCircle, Eye } from "lucide-react";
+import { FileText, Search, X, ClipboardList, CheckCircle, XCircle, Eye } from "lucide-react";
 import { api } from "@/lib/api";
 
 // ============ Types ============
 type TabKey = "pre" | "post";
-type Row = {
+type Row = { // data per pengguna (1 user = 1 row)
   userId: string | number;
   name: string;
   latestDate: string;
@@ -46,20 +46,39 @@ type SubmissionDetail = {
   percentage?: number;
   total_score?: number;
   max_score?: number;
-  answers?: any;
+  answers?: any[];
   review?: Review[];
 };
 
 // ============ Constants ============
-const TZ = "Asia/Jakarta";
 const LIST_PATH = "/manajemen/quiz/submissions";
 const DETAIL_PATH = "/manajemen/quiz/submissions";
-
 const TABS = [
   { key: "pre" as TabKey, label: "Pre Test" },
   { key: "post" as TabKey, label: "Post Test" },
 ];
 
+// =========== Helper & Utility Functions ============
+// Format tanggal Indonesia
+function formatIDTime(input?: string) {
+  if (!input) return "-";
+  const d = new Date(input);
+  if (isNaN(d.getTime())) return "-";
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+}
+// Warna badge skor
+function getScoreColor(score: number) {
+  if (score >= 80) return "bg-emerald-100 text-emerald-700";
+  if (score >= 60) return "bg-amber-100 text-amber-700";
+  return "bg-rose-100 text-rose-700";
+}
+// Data ringkasan untuk modal review
 const SUMMARY_FIELDS = (d: SubmissionDetail) => [
   { k: "Nama", v: d.nama ?? "-" },
   { k: "Bank Soal", v: d.bank_name ?? "-" },
@@ -75,39 +94,14 @@ const SUMMARY_FIELDS = (d: SubmissionDetail) => [
   },
 ];
 
-// ============ Utility Functions ============
-function formatIDTime(input?: string) {
-  if (!input) return "-";
-  let s = String(input).trim();
-  const hasOffset = /[+-]\d{2}:\d{2}$/.test(s);
-  const hasZ = /Z$/.test(s);
-  const isoish = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(s);
-  if (isoish && !hasOffset && !hasZ) s = s.replace(" ", "T") + "Z";
-  const d = new Date(s);
-  if (isNaN(d.getTime())) return "-";
-  return new Intl.DateTimeFormat("id-ID", {
-    timeZone: TZ,
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d);
-}
-
-function getScoreColor(score: number) {
-  if (score >= 80) return "bg-emerald-100 text-emerald-700";
-  if (score >= 60) return "bg-amber-100 text-amber-700";
-  return "bg-rose-100 text-rose-700";
-}
-
-// ============ Sub Components ============
+// ============ Reusable UI Components ============
+// Header modal (dipakai di History & Review)
 function ModalHeader({ 
   icon: Icon, 
   title, 
   subtitle, 
   onClose, 
-  testId 
+  testId, 
 }: { 
   icon: any; 
   title: string; 
@@ -126,41 +120,29 @@ function ModalHeader({
           <p className="text-xs text-gray-600">{subtitle}</p>
         </div>
       </div>
-      <button 
-        data-testid={testId}
-        aria-label="Tutup" 
-        onClick={onClose}
-        className="p-2 rounded-lg hover:bg-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
-      >
+      <button data-testid={testId} onClick={onClose}
+        className="p-2 rounded-lg hover:bg-gray-100 hover:shadow-md">
         <X className="w-4 h-4 text-gray-600" />
       </button>
     </div>
   );
 }
-
+// Loading spinner 
 function LoadingSpinner({ text = "Memuat data…" }: { text?: string }) {
-  return (
-    <div className="text-center py-12">
-      <div className="inline-flex items-center gap-2 text-gray-500">
-        <div className="w-5 h-5 border-2 border-gray-300 border-t-emerald-600 rounded-full animate-spin" />
-        <span>{text}</span>
-      </div>
+   return (
+    <div className="py-12 flex flex-col items-center justify-center text-gray-500">
+      <div className="w-10 h-10 border-4 border-gray-200 border-t-emerald-600 rounded-full animate-spin" />
+      <p className="mt-4 text-sm font-medium">{text}</p>
     </div>
   );
 }
-
+// Item review per soal
 function ReviewItem({ review, idx }: { review: Review; idx: number }) {
   return (
-    <div
-      className={`rounded-xl border-2 p-4 ${
-        review.is_correct
-          ? "border-emerald-200 bg-emerald-50/50"
-          : "border-rose-200 bg-rose-50/50"
-      }`}
-    >
+    <div className={`p-4 rounded-xl border ${review.is_correct ? "bg-emerald-50" : "bg-rose-50"}`}>
       <div className="flex items-start gap-3">
         {review.is_correct ? (
-          <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+          <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" /> 
         ) : (
           <XCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
         )}
@@ -170,7 +152,7 @@ function ReviewItem({ review, idx }: { review: Review; idx: number }) {
           </p>
           <div className="text-xs space-y-1">
             <p>
-              <span className="font-medium text-gray-700">Jawaban Anda:</span>{" "}
+              <span className="font-medium text-gray-700">Jawaban Pengguna:</span>{" "}
               <span className="text-gray-900">{review.user_answer_text}</span>
               <span className="ml-2 text-gray-600">(Skor: {review.user_score})</span>
             </p>
@@ -188,18 +170,15 @@ function ReviewItem({ review, idx }: { review: Review; idx: number }) {
   );
 }
 
-// ============ Modal Components ============
-function ReviewModal({ 
-  open, 
-  onClose, 
-  data 
+// ============ Modal Review Jawaban ============
+// info user + bank soal + tanggal + skor
+function ReviewModal({ open, onClose, data 
 }: { 
   open: boolean; 
   onClose: () => void; 
   data?: SubmissionDetail | null; 
 }) {
   if (!open) return null;
-
   const d = data ?? {};
   const review = d.review || [];
 
@@ -215,9 +194,8 @@ function ReviewModal({
             onClose={onClose}
             testId="close-review"
           />
-
+          {/* Card Summary Info */}
           <div className="p-6 space-y-6">
-            {/* Summary Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {SUMMARY_FIELDS(d).map((it) => (
                 <div key={it.k} className="rounded-xl border-2 border-gray-100 bg-gray-50 px-4 py-3">
@@ -226,10 +204,9 @@ function ReviewModal({
                 </div>
               ))}
             </div>
-
-            {/* Review Jawaban */}
+            {/* Card Review Jawaban */}
             <div className="rounded-2xl border-2 border-gray-100">
-              <div className="px-5 py-3 border-b bg-gradient-to-r from-emerald-50 to-teal-50">
+              <div className="px-5 py-3 border-b bg-emerald-50">
                 <p className="text-sm font-semibold text-gray-700">Detail Jawaban</p>
               </div>
               <div className="p-5 space-y-4 max-h-96 overflow-y-auto">
@@ -247,6 +224,8 @@ function ReviewModal({
   );
 }
 
+// ===== MODAL RIWAYAT USER =====
+// Menampilkan semua attempt user untuk 1 jenis test
 function HistoryModal({
   open,
   onClose,
@@ -270,7 +249,7 @@ function HistoryModal({
       fetchHistory();
     }
   }, [open, userId, type]);
-
+  // Fetch riwayat attempt user
   async function fetchHistory() {
     setLoading(true);
     try {
@@ -295,7 +274,6 @@ function HistoryModal({
       setLoading(false);
     }
   }
-
   if (!open) return null;
 
   return (
@@ -310,13 +288,13 @@ function HistoryModal({
             onClose={onClose}
             testId="close-history"
           />
-
+          {/* UI List Riwayat */}
           <div className="p-6">
             {loading ? (
               <LoadingSpinner text="Memuat riwayat…" />
             ) : history.length === 0 ? (
               <p className="text-center py-12 text-gray-500">Tidak ada riwayat.</p>
-            ) : (
+            ) : ( 
               <div className="space-y-3">
                 {history.map((item, idx) => (
                   <div
@@ -370,6 +348,7 @@ export default function LaporanKeseluruhan() {
   const [tab, setTab] = useState<TabKey>("pre");
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState<Row[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -383,20 +362,14 @@ export default function LaporanKeseluruhan() {
     try {
       const res = await api.get(LIST_PATH, { params: { tipe: current } });
       const all = Array.isArray(res.data?.data) ? res.data.data : [];
-
+      // group by user_id
       const grouped = all.reduce((acc: any, item: any) => {
         const userId = item.user_id;
-        if (!acc[userId]) {
-          acc[userId] = {
-            userId,
-            name: item.nama || "Tanpa Nama",
-            submissions: [],
-          };
-        }
+        acc[userId] ??= { userId, name: item.nama, submissions: [] };
         acc[userId].submissions.push(item);
         return acc;
       }, {});
-
+      // sort berdasarkan tanggal submission terbaru per user
       const userRows: Row[] = Object.values(grouped).map((user: any) => {
         const sorted = user.submissions.sort((a: any, b: any) =>
           new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
@@ -412,7 +385,7 @@ export default function LaporanKeseluruhan() {
           type: current,
         };
       });
-
+      // sort antar user berdasarkan tanggal terbaru
       userRows.sort((a, b) => new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime());
       setRows(userRows);
     } catch (e) {
@@ -423,7 +396,8 @@ export default function LaporanKeseluruhan() {
       setLoading(false);
     }
   }
-
+  // ===== DETAIL SUBMISSION =====
+  // Dipanggil saat klik "Lihat"
   async function fetchReviewDetail(id: string | number) {
     try {
       const res = await api.get(`${DETAIL_PATH}/${id}`);
@@ -455,13 +429,8 @@ export default function LaporanKeseluruhan() {
     setHistoryOpen(true);
   }
 
-  useEffect(() => {
-    fetchList("pre");
-  }, []);
-
-  useEffect(() => {
-    fetchList(tab);
-  }, [tab]);
+  useEffect(() => {fetchList("pre");}, []);
+  useEffect(() => {fetchList(tab);}, [tab]);
 
   const q = search.trim().toLowerCase();
   const filtered = useMemo(
@@ -469,10 +438,19 @@ export default function LaporanKeseluruhan() {
     [q, rows]
   );
 
+  // ===== Pagination Logic =====
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedRows = filtered.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
+
+  // ===== Header Halaman =====
   return (
     <div className="min-h-screen bg-white px-6 md:px-10 py-9">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="relative isolate shrink-0">
@@ -484,7 +462,6 @@ export default function LaporanKeseluruhan() {
                 <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
-
             <div>
               <h1 className="text-[22px] leading-[1.15] sm:text-3xl md:text-4xl font-bold text-gray-800">
                 Laporan Keseluruhan<br className="hidden sm:block" />
@@ -510,12 +487,10 @@ export default function LaporanKeseluruhan() {
                 data-testid={`tab-${t.key}`}
                 onClick={() => setTab(t.key)}
                 className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold transition-all duration-300 
-                  ${
-                    isActive
+                  ${isActive
                       ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.03] hover:-translate-y-0.5"
                       : "text-gray-600 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:text-emerald-700 hover:shadow-md hover:-translate-y-0.5"
-                  }`}
-              >
+                  }`}>
                 {t.label}
               </button>
             );
@@ -582,12 +557,13 @@ export default function LaporanKeseluruhan() {
                       </td>
                     </tr>
                   ) : (
-                    filtered.map((row, idx) => (
+                    paginatedRows.map((row, idx) => (
                       <tr
                         key={row.userId}
-                        className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-emerald-50/50 hover:to-teal-50/50 transition-colors"
-                      >
-                        <td className="pl-12 py-4 text-sm text-gray-600">{idx + 1}</td>
+                        className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-emerald-50/50 hover:to-teal-50/50 transition-colors">
+                        <td className="pl-12 py-4 text-sm text-gray-600">
+                          {startIndex + idx + 1}
+                        </td>
                         <td className="py-4 text-sm font-medium text-gray-900">
                           {row.name}
                           {row.count > 1 && (
@@ -598,7 +574,6 @@ export default function LaporanKeseluruhan() {
                         </td>
                         <td className="py-4 text-sm text-gray-600">
                           <div className="flex items-center gap-1.5">
-                            <Calendar className="w-4 h-4 text-gray-400" />
                             {formatIDTime(row.latestDate)}
                           </div>
                         </td>
@@ -612,8 +587,7 @@ export default function LaporanKeseluruhan() {
                             data-testid={`btn-detail-${row.userId}`}
                             onClick={() => handleOpenHistory(row.userId, row.name)}
                             className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 whitespace-nowrap"
-                            title="Lihat riwayat & detail"
-                          >
+                            title="Lihat riwayat & detail">
                             Detail
                           </button>
                         </td>
@@ -623,6 +597,62 @@ export default function LaporanKeseluruhan() {
                 </tbody>
               </table>
             </div>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="relative z-10 px-6 py-4 border-t bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
+                {/* Keterangan kiri */}
+                <p className="text-sm text-gray-600"> Menampilkan{" "}
+                  <span className="font-medium text-gray-900">
+                    {startIndex + 1}–{Math.min(startIndex + ITEMS_PER_PAGE, filtered.length)}
+                  </span>{" "}dari{" "}
+                  <span className="font-medium text-gray-900">
+                    {filtered.length}
+                  </span>{" "}user
+                </p>
+
+                {/* Pagination kanan */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    data-testid="pagination-prev"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-xl border text-sm font-medium
+                              disabled:opacity-50 disabled:cursor-not-allowed
+                              hover:bg-gray-50">
+                    Sebelumnya
+                  </button>
+
+                  {Array.from({ length: totalPages }).map((_, i) => {
+                    const page = i + 1;
+                    return (
+                      <button
+                        key={page}
+                        type="button"
+                        data-testid={`pagination-page-${page}`}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 rounded-xl text-sm font-semibold transition
+                          ${currentPage === page
+                              ? "bg-emerald-600 text-white shadow"
+                              : "border hover:bg-gray-50 text-gray-700"
+                          }`}>
+                        {page}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    data-testid="pagination-next"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 rounded-xl border text-sm font-medium
+                              disabled:opacity-50 disabled:cursor-not-allowed
+                              hover:bg-gray-50">
+                    Selanjutnya
+                  </button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
